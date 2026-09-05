@@ -1,0 +1,21 @@
+{
+  "_review_date": "2026-09-04",
+  "_comment": "EUR per kWh. 'solar' is NOT zero: self-consumed PV forgoes the feed-in tariff, so its marginal cost is the feed-in rate (or LCOE if you prefer the full-cost view).",
+  "eur_per_usd": 0.92,
+  "tariffs": {
+    "grid-de-household": {"eur_per_kwh": 0.370, "label": "Germany household (BDEW, Aug 2026)",
+                          "source": "https://www.rechnerportal.net/news/bdew-haushaltsstrompreis-2026/"},
+    "solar-de-feed-in": {"eur_per_kwh": 0.0771, "label": "Germany PV self-consumption, opportunity cost = feed-in tariff <=10 kWp (Aug 2026-Jan 2027)",
+                         "source": "https://photovoltaik.org/kosten/einspeiseverguetung"},
+    "solar-de-lcoe": {"eur_per_kwh": 0.10, "label": "Germany residential PV LCOE, mid-range estimate (primary Fraunhofer ISE figure still to be cited)",
+                      "source": "estimate"},
+    "grid-us-avg": {"eur_per_kwh": 0.16, "label": "US residential average (approx.)", "source": "estimate"}
+  },
+  "cloud_tiers_usd_per_mtok": {
+    "haiku":  {"input": 1.0,  "output": 5.0,  "label": "Claude Haiku 4.5"},
+    "sonnet": {"input": 2.0,  "output": 10.0, "label": "Claude Sonnet 5"},
+    "opus":   {"input": 5.0,  "output": 25.0, "label": "Claude Opus 5"},
+    "fable":  {"input": 10.0, "output": 50.0, "label": "Claude Fable 5.1"}
+  },
+  "co2_g_per_kwh": {"grid-de-household": 380, "grid-us-avg": 390, "solar-de-feed-in": 40, "solar-de-lcoe": 40}
+}

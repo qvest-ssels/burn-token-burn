@@ -1,0 +1,67 @@
+{
+  "_comment": "Editable defaults. Numbers marked 'aggregator' are order-of-magnitude, not measured by us. Replace with your own: run llama-bench / ollama run --verbose and read power with `sudo powermetrics --samplers gpu_power` (macOS) or `nvidia-smi --query-gpu=power.draw --format=csv` (NVIDIA). Prices are street prices in USD at review date.",
+  "_review_date": "2026-09-04",
+  "hardware": {
+    "mac-mini-m4-pro-64gb": {
+      "label": "Mac mini M4 Pro, 64 GB",
+      "price_usd": 2199, "idle_w": 4, "load_w": 65, "vram_gb": 64,
+      "source": "Apple pricing; power: Jeff Geerling M4 mini measurements (system) — model-specific W is an estimate"
+    },
+    "mac-studio-m4-max-128gb": {
+      "label": "Mac Studio M4 Max, 128 GB",
+      "price_usd": 3999, "idle_w": 9, "load_w": 90, "vram_gb": 128,
+      "source": "Apple pricing; load W estimate from llama.cpp discussion #4167 class machines (aggregator)"
+    },
+    "mac-studio-m3-ultra-256gb": {
+      "label": "Mac Studio M3 Ultra, 256 GB",
+      "price_usd": 5599, "idle_w": 9, "load_w": 250, "vram_gb": 256,
+      "source": "Apple pricing; skorppio.com DGX-Spark-vs-Mac-Studio bench peak 370 W (aggregator)"
+    },
+    "rtx-4090-workstation": {
+      "label": "PC + RTX 4090 (24 GB)",
+      "price_usd": 2800, "idle_w": 60, "load_w": 450, "vram_gb": 24,
+      "source": "GPU 450 W TGP + host; aggregator"
+    },
+    "rtx-5090-workstation": {
+      "label": "PC + RTX 5090 (32 GB)",
+      "price_usd": 3800, "idle_w": 70, "load_w": 575, "vram_gb": 32,
+      "source": "GPU 575 W TGP + host; aggregator"
+    },
+    "dgx-spark": {
+      "label": "NVIDIA DGX Spark (128 GB unified)",
+      "price_usd": 3999, "idle_w": 45, "load_w": 143, "vram_gb": 128,
+      "source": "skorppio.com efficiency bench (aggregator)"
+    },
+    "strix-halo-128gb": {
+      "label": "AMD Ryzen AI Max+ 395 mini-PC, 128 GB",
+      "price_usd": 2200, "idle_w": 12, "load_w": 120, "vram_gb": 96,
+      "source": "hardware-corner.net single data point; W estimate"
+    }
+  },
+  "models": {
+    "_comment": "decode tok/s per hardware key; quality_tier is an *assumption* about which cloud tier the model plausibly replaces for coding-agent work (haiku|sonnet|opus). Open models rarely match frontier quality.",
+    "qwen3-8b": {
+      "label": "Qwen3 8B (Q4/Q8 or MLX 8-bit)", "quality_tier": "haiku",
+      "tok_s": {"mac-mini-m4-pro-64gb": 45, "mac-studio-m4-max-128gb": 70, "mac-studio-m3-ultra-256gb": 90,
+                "rtx-4090-workstation": 140, "rtx-5090-workstation": 180, "dgx-spark": 60, "strix-halo-128gb": 35}
+    },
+    "qwen3-32b": {
+      "label": "Qwen3 32B (Q4)", "quality_tier": "sonnet",
+      "tok_s": {"mac-mini-m4-pro-64gb": 11, "mac-studio-m4-max-128gb": 25, "mac-studio-m3-ultra-256gb": 35,
+                "rtx-4090-workstation": 35, "rtx-5090-workstation": 45, "dgx-spark": 18, "strix-halo-128gb": 9}
+    },
+    "gpt-oss-120b": {
+      "label": "gpt-oss-120b (MoE, MXFP4)", "quality_tier": "sonnet",
+      "tok_s": {"mac-studio-m4-max-128gb": 40, "mac-studio-m3-ultra-256gb": 60, "dgx-spark": 30, "strix-halo-128gb": 20}
+    },
+    "llama-3.3-70b": {
+      "label": "Llama 3.3 70B (Q4)", "quality_tier": "sonnet",
+      "tok_s": {"mac-studio-m4-max-128gb": 12, "mac-studio-m3-ultra-256gb": 18, "rtx-4090-workstation": 8,
+                "dgx-spark": 9, "strix-halo-128gb": 3}
+    },
+    "qwen3-235b-a22b": {
+      "label": "Qwen3 235B-A22B (MoE, Q4)", "quality_tier": "opus",
+      "tok_s": {"mac-studio-m3-ultra-256gb": 20}
+    }
+  }
+}
