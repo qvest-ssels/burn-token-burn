@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 
-from token_finops.adapters.codex import CodexAdapter, build_synthetic_codex
-from token_finops.core.model import Unit
+from token_finops_cli.adapters.codex import CodexAdapter, build_synthetic_codex
+from token_finops_cli.core.model import Unit
 
 
 def _make_adapter(tmp_path, monkeypatch, **kwargs):

@@ -20,12 +20,13 @@ jobs:
 
       - name: Build sdist + wheel
         run: uv build
+        working-directory: token-finops-cli
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: dist/
+          path: token-finops-cli/dist/
 
   github-release:
     needs: build

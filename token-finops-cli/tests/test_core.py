@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta, timezone
 
-from token_finops.core.model import BudgetPolicy, CycleKind, QuotaSnapshot, Status, Unit, UsageEvent
-from token_finops.core.pricing import estimate_usd, normalize_model_id
-from token_finops.core.runway import (binding_constraint, calendar_month_window, compute_runway,
+from token_finops_cli.core.model import BudgetPolicy, CycleKind, QuotaSnapshot, Status, Unit, UsageEvent
+from token_finops_cli.core.pricing import estimate_usd, normalize_model_id
+from token_finops_cli.core.runway import (binding_constraint, calendar_month_window, compute_runway,
                                       ema_daily_burn)
 
 NOW = datetime(2026, 9, 15, 12, 0, tzinfo=timezone.utc)

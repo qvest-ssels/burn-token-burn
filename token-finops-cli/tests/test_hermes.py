@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from token_finops.adapters.hermes import HermesAdapter, build_synthetic_hermes
-from token_finops.core.model import Status, Unit
-from token_finops.core.runway import compute_runway
+from token_finops_cli.adapters.hermes import HermesAdapter, build_synthetic_hermes
+from token_finops_cli.core.model import Status, Unit
+from token_finops_cli.core.runway import compute_runway
 
 
 def test_hermes_synthetic(tmp_path, monkeypatch):

@@ -2,11 +2,11 @@ import json
 import subprocess
 import sys
 
-from token_finops.savings import cloud_blended_usd_per_mtok, local_cost
+from token_finops_cli.savings import cloud_blended_usd_per_mtok, local_cost
 
 
 def run(*args, env=None):
-    return subprocess.run([sys.executable, "-m", "token_finops", *args], capture_output=True, text=True,
+    return subprocess.run([sys.executable, "-m", "token_finops_cli", *args], capture_output=True, text=True,
                           check=False, env=env)
 
 
@@ -23,7 +23,7 @@ def test_adapters_runs():
 
 
 def test_report_json_on_synthetic_copilot(tmp_path, monkeypatch):
-    from token_finops.adapters.copilot import build_synthetic_db
+    from token_finops_cli.adapters.copilot import build_synthetic_db
     db = tmp_path / "s.db"
     build_synthetic_db(str(db), days=5, events_per_day=4)
     import os

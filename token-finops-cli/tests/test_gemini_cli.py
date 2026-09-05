@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from token_finops.adapters.gemini_cli import GeminiCliAdapter, build_synthetic_gemini
-from token_finops.core.model import CycleKind, Unit
-from token_finops.core.runway import compute_runway
+from token_finops_cli.adapters.gemini_cli import GeminiCliAdapter, build_synthetic_gemini
+from token_finops_cli.core.model import CycleKind, Unit
+from token_finops_cli.core.runway import compute_runway
 
 
 def _make_adapter(tmp_path, monkeypatch, **kwargs):

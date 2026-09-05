@@ -1,6 +1,6 @@
-from token_finops.adapters.copilot import CopilotAdapter, build_synthetic_db
-from token_finops.core.model import Status, Unit
-from token_finops.core.runway import compute_runway
+from token_finops_cli.adapters.copilot import CopilotAdapter, build_synthetic_db
+from token_finops_cli.core.model import Status, Unit
+from token_finops_cli.core.runway import compute_runway
 
 
 def test_copilot_scan_and_runway(tmp_path):

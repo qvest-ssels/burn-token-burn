@@ -4,15 +4,15 @@ build-backend = "hatchling.build"
 
 [project]
 name = "token-finops-cli"
-version = "0.2.0"
-description = "Read-only CLI to monitor GitHub Copilot CLI token usage and estimate a monthly budget runway"
+version = "0.3.0"
+description = "Read-only, local-first token usage and budget-runway tracker for AI coding agents (Copilot CLI, Claude Code, Codex CLI, Gemini CLI, Hermes Agent, ...) plus a local-vs-cloud savings estimator"
 readme = "README.md"
 license = "AGPL-3.0-or-later"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
     { name = "tronicum" },
 ]
-keywords = ["github-copilot", "copilot-cli", "finops", "token-usage", "cli"]
+keywords = ["github-copilot", "copilot-cli", "claude-code", "codex", "gemini-cli", "hermes-agent", "finops", "token-usage", "cli", "local-llm"]
 classifiers = [
     "Environment :: Console",
     "Intended Audience :: Developers",
@@ -30,7 +30,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/oh-my-agent-code/token-finops-cli"
+Homepage = "https://github.com/tronicum/burn-token-burn"
+Origin = "https://github.com/oh-my-agent-code/token-finops-cli"
 Issues = "https://github.com/oh-my-agent-code/token-finops-cli/issues"
 
 [project.scripts]
@@ -40,5 +41,9 @@ token-finops = "token_finops_cli:main"
 packages = ["src/token_finops_cli"]
 
 [tool.ruff]
-line-length = 100
-target-version = "py39"
+line-length = 110
+target-version = "py310"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

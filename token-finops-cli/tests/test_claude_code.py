@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timedelta, timezone
 
-from token_finops.adapters.claude_code import ClaudeCodeAdapter, five_hour_blocks, parse_transcript
+from token_finops_cli.adapters.claude_code import ClaudeCodeAdapter, five_hour_blocks, parse_transcript
 
 
 def _line(ts, msg_id, req_id, model="claude-sonnet-5", block="text", tool=None, agent=None,
@@ -75,7 +75,7 @@ def test_five_hour_blocks(tmp_path):
 
 
 def test_one_hour_cache_write_priced_at_2x(tmp_path):
-    from token_finops.core.pricing import estimate_usd
+    from token_finops_cli.core.pricing import estimate_usd
     five_min = estimate_usd("claude-sonnet-5", cache_write_tokens=1_000_000)
     one_hour = estimate_usd("claude-sonnet-5", cache_write_tokens=1_000_000, cache_write_1h_tokens=1_000_000)
     assert abs(five_min - 2.5) < 1e-9 and abs(one_hour - 4.0) < 1e-9
