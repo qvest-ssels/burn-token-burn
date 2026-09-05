@@ -1,6 +1,6 @@
 # ADR-0011: Windsurf adapter
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-09-05, reference-only as proposed)
 - **Date:** 2026-09-05
 
 ## Context

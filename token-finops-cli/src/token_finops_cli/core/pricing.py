@@ -59,16 +59,21 @@ PRICING: dict[str, dict] = {
 
 _DATE_SUFFIX = re.compile(r"[-_](?:20\d{2})[-_]?\d{2}[-_]?\d{2}$")
 _PREFIXES = ("anthropic/", "openai/", "google/", "openrouter/", "models/", "us.anthropic.",
-             "eu.anthropic.", "bedrock/", "vertex_ai/", "azure/")
+             "eu.anthropic.", "apac.anthropic.", "anthropic.", "bedrock/", "vertex_ai/", "azure/")
 
 
 def normalize_model_id(model: str) -> str:
     """'claude-sonnet-4-5-20250929' -> 'claude-sonnet-4-5'; strips provider
     prefixes, date suffixes, 'latest', and Bedrock '-v1:0' style versions."""
     m = (model or "").strip().lower()
-    for p in _PREFIXES:
-        if m.startswith(p):
-            m = m[len(p):]
+    # prefixes can stack (e.g. "bedrock/us.anthropic.claude-…"); strip until none matches
+    changed = True
+    while changed:
+        changed = False
+        for p in _PREFIXES:
+            if m.startswith(p):
+                m = m[len(p):]
+                changed = True
     m = re.sub(r"-v\d+:\d+$", "", m)
     m = re.sub(r"[-_@]latest$", "", m)
     m = _DATE_SUFFIX.sub("", m)
@@ -81,7 +86,9 @@ def _load_overrides() -> dict:
     try:
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
-        return {normalize_model_id(k): v for k, v in data.items()}
+        if not isinstance(data, dict):
+            return {}
+        return {normalize_model_id(k): v for k, v in data.items() if isinstance(v, dict)}
     except (OSError, ValueError):
         return {}
 
@@ -92,6 +99,8 @@ def _load_litellm() -> dict:
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
     except (OSError, ValueError):
+        return {}
+    if not isinstance(data, dict):
         return {}
     out = {}
     for k, v in data.items():

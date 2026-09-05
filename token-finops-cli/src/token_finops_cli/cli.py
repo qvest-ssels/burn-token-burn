@@ -81,7 +81,7 @@ def cmd_report(args) -> str:
     if not runways:
         return "No supported tool data found. Run `token-finops adapters` to see what was probed."
     if args.json:
-        return json.dumps(payload, indent=2, default=str)
+        return json.dumps(payload, indent=2, default=_json_default, allow_nan=False)
     binding = binding_constraint([rw for _, rw, _ in runways])
     if binding and len(runways) > 1:
         lines.append("")
@@ -90,13 +90,22 @@ def cmd_report(args) -> str:
     return "\n".join(lines)
 
 
+def _json_default(o):
+    return str(o)
+
+
+def _finite(x):
+    """JSON has no Infinity; report an unbounded runway as null."""
+    return None if isinstance(x, float) and (x != x or x in (float("inf"), float("-inf"))) else x
+
+
 def _runway_json(ad, rw) -> dict:
     return {
         "tool": ad.tool, "display_name": ad.display_name, "window": rw.window_id,
         "unit": rw.unit.value, "used": rw.used, "allowance": rw.allowance,
         "used_fraction": rw.used_fraction, "time_fraction": rw.time_fraction,
         "pace_ratio": rw.pace_ratio, "burn_per_day_avg": rw.burn_per_day_avg,
-        "burn_per_day_ema": rw.burn_per_day_ema, "runway_days": rw.runway_days,
+        "burn_per_day_ema": rw.burn_per_day_ema, "runway_days": _finite(rw.runway_days),
         "days_left": rw.days_left, "resets_at": rw.resets_at, "status": rw.status.value,
         "notes": rw.notes,
     }

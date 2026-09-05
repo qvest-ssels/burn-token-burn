@@ -1,6 +1,6 @@
 # ADR-0010: Continue.dev adapter
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-09-05, adapter implemented)
 - **Date:** 2026-09-05
 
 ## Context

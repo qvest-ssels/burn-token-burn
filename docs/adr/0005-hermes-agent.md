@@ -1,6 +1,6 @@
 # ADR-0005: Hermes Agent adapter
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-09-05, adapter implemented)
 - **Date:** 2026-09-05
 
 ## Context

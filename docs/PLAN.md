@@ -1,6 +1,6 @@
 # Plan: from token-finops-cli (Copilot) to a modular multi-assistant runway tracker
 
-Status: **in progress** — last updated 2026-09-05. Decisions per assistant: `docs/adr/`.
+Status: **Phases 0–3 done, Phase 4 open** — last updated 2026-09-05. Test suite: 326 tests, core/report/savings at 100 % line coverage. Decisions per assistant: `docs/adr/`.
 
 ## Goal
 
@@ -9,7 +9,7 @@ a budget runway, `--watch`, `--compact`, session/break reports) and make it work
 every coding assistant whose telemetry we can read — with one adapter per assistant, one ADR per
 assistant, and a shared runway engine that never mixes units.
 
-## Phase 0 — consolidate (this week)
+## Phase 0 — consolidate — **done 2026-09-05**
 
 1. `token-finops-cli/` is Stefan's original repository as a git subtree (full history). It becomes
    the **single package**; the interim `src/token_finops/` at the repo root is merged into it and removed.
@@ -33,8 +33,8 @@ assistant, and a shared runway engine that never mixes units.
 
 ## Phase 2 — usage-only adapters (tokens + API-equivalent, no intrinsic budget)
 
-Hermes Agent (0005, done), OpenCode/Kilo CLI (0006), Cline/Roo/Kilo VS Code (0007), Aider (0009),
-Continue.dev (0010). Each: `scan()` + fixture + test; `default_policy()` = USD, sliding 30 d,
+Hermes Agent (0005), OpenCode/Kilo CLI (0006), Cline/Roo/Kilo VS Code (0007), Aider (0009),
+Continue.dev (0010) — **all implemented 2026-09-05** (Sonnet sub-agents, ~$0.30 each). Each: `scan()` + fixture + test; `default_policy()` = USD, sliding 30 d,
 allowance optional (`--allowance` gives them a runway against a self-set monthly budget).
 
 ## Phase 3 — reference-only / not feasible

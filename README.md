@@ -17,6 +17,13 @@ Everything is Python ≥ 3.10, **standard library only**, and never writes to an
 | OpenAI Codex CLI | `~/.codex/sessions/**/rollout-*.jsonl` | % of rolling 5 h / 7 d window — **written to disk by Codex itself** | usage ✓, quota ✓ offline |
 | Gemini CLI | `~/.gemini/tmp/*/chats/*.jsonl` | requests / day (1000 free, 1500/2000 paid) | usage ✓, daily request runway |
 | Hermes Agent | `~/.hermes/state.db` | provider-dependent (OpenRouter $, local = none) | usage ✓, local models flagged |
+| OpenCode / Kilo CLI | `~/.local/share/{opencode,kilo}/*.db` | BYO provider ($) | usage ✓ |
+| Cline / Roo / Kilo (VS Code) | `…/globalStorage/<ext>/tasks/*/ui_messages.json` | BYO provider ($) | usage ✓ |
+| Aider | `.aider.chat.history.md`, opt-in analytics JSONL | BYO provider ($) | usage ✓ (timestamps approximate) |
+| Continue.dev | `~/.continue/sessions/*.json` | BYO provider ($) | usage ✓ (low confidence) |
+| Cursor · Windsurf · Ollama | — | see `docs/adr/0008`, `0011`, `0012` | reference-only |
+
+Usage-only tools get a runway too when you pass `--allowance <USD per 30 days>`.
 
 Heterogeneous units are **never summed**. Each tool gets its own runway; the report tells you which one is the *binding constraint* — the one that runs out first.
 
@@ -33,9 +40,9 @@ binding constraint: Claude Code (5h) — runway 1.9h -> WARN
 ## Quick start
 
 ```bash
-pip install -e .            # or: pipx install .
-token-finops adapters       # which data sources were found on this machine
-token-finops report         # per-tool usage (7d) + runway
+uv venv && uv pip install -e "token-finops-cli[dev]"   # the package lives in token-finops-cli/
+uv run token-finops adapters                            # which data sources were found on this machine
+uv run token-finops report  # per-tool usage (7d) + runway
 token-finops report --tool copilot --budget 1500      # your plan's monthly credits
 token-finops sessions --tool claude_code --since 30d
 token-finops self-audit     # what did the last Claude Code session cost, incl. sub-agents
@@ -101,7 +108,10 @@ Solar is priced at the feed-in tariff you forgo (7.7 ct/kWh in Germany), not at 
 
 - [`docs/guide/`](docs/guide/) — **The Qvest Digital Guide to Token Burning** (formerly: Token Efficiency)
 - [`docs/landscape.md`](docs/landscape.md) — the niche we cover and who else does: local quota/runway trackers per coding agent
+- [`docs/adr/`](docs/adr/) — one Architecture Decision Record per coding assistant (support tier, data source, open questions)
 - [`docs/ADAPTERS.md`](docs/ADAPTERS.md) — how to add a tool, with verified field tables
+- [`docs/PLAN.md`](docs/PLAN.md) — the structured plan and dogfooding record
+- [`AGENTS.md`](AGENTS.md) — rules for coding agents (Claude Code, Codex, Copilot) working in this repo
 - [`docs/sources.md`](docs/sources.md) — every price, quota and endpoint with its source and review date
 
 ## Design rules

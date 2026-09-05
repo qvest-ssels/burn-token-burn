@@ -1,6 +1,6 @@
 # ADR-0004: Gemini CLI adapter
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-09-05, adapter implemented)
 - **Date:** 2026-09-05
 
 ## Context
