@@ -25,7 +25,7 @@ dependencies = []
 dev = ["pytest>=8.0", "ruff>=0.6"]
 
 [project.urls]
-Homepage = "https://github.com/qvest-digital/token-finops"
+Homepage = "https://github.com/tronicum/burn-token-burn"
 Origin = "https://github.com/oh-my-agent-code/token-finops-cli"
 
 [project.scripts]
