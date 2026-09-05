@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "token-finops-cli"
+version = "0.2.0"
+description = "Read-only CLI to monitor GitHub Copilot CLI token usage and estimate a monthly budget runway"
+readme = "README.md"
+license = "AGPL-3.0-or-later"
+requires-python = ">=3.9"
+authors = [
+    { name = "tronicum" },
+]
+keywords = ["github-copilot", "copilot-cli", "finops", "token-usage", "cli"]
+classifiers = [
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Utilities",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[project.urls]
+Homepage = "https://github.com/oh-my-agent-code/token-finops-cli"
+Issues = "https://github.com/oh-my-agent-code/token-finops-cli/issues"
+
+[project.scripts]
+token-finops = "token_finops_cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/token_finops_cli"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
