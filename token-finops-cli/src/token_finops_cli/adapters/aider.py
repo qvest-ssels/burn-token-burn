@@ -276,21 +276,38 @@ class AiderAdapter(BaseAdapter):
 # --------------------------------------------------------------------------- #
 # Synthetic fixture builder (for tests/demos)
 # --------------------------------------------------------------------------- #
-def build_synthetic_aider(root_dir: str) -> int:
+def build_synthetic_aider(root_dir: str, scenario: str = "steady",
+                          now: Optional[datetime] = None) -> int:
     """Write one `.aider.chat.history.md` (two chat blocks, one number-format
     each) plus one `analytics.jsonl` (one `message_send` row) under
-    `root_dir`. Returns the total number of usage events represented across
-    both sources.
+    `root_dir`.
+
+    `scenario` shifts the two chat-block timestamps to "yesterday" and
+    "today" (relative to `now`) instead of a fixed 2026-09 date, and (for
+    "quiet") widens the gap between them; it does not change the token/cost
+    figures. "steady" (the default) reproduces the exact pre-scenario output.
+
+    Returns the total number of usage events represented across both
+    sources.
     """
     os.makedirs(root_dir, exist_ok=True)
     history_path = os.path.join(root_dir, _HISTORY_NAME)
+    if scenario == "steady":
+        ts_a, ts_b = "2026-09-01 10:00:00", "2026-09-02 11:30:00"
+        analytics_time = datetime.now(timezone.utc).timestamp()
+    else:
+        base = now or datetime.now(timezone.utc)
+        gap_days = 7 if scenario == "quiet" else 1
+        ts_a = (base - timedelta(days=gap_days, hours=1)).strftime("%Y-%m-%d %H:%M:%S")
+        ts_b = (base - timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
+        analytics_time = base.timestamp()
     with open(history_path, "w", encoding="utf-8") as fh:
         fh.write(
-            "# aider chat started at 2026-09-01 10:00:00\n\n"
+            f"# aider chat started at {ts_a}\n\n"
             "> Model: gpt-4.1 with diff edit format\n\n"
             "#### add a test\n\n"
             "> Tokens: 3,052 sent, 502 received. Cost: $0.02 message, $0.02 session.\n\n"
-            "# aider chat started at 2026-09-02 11:30:00\n\n"
+            f"# aider chat started at {ts_b}\n\n"
             "> Model: gpt-4.1 with diff edit format\n\n"
             "#### refactor\n\n"
             "> Tokens: 12k sent, 1.5k received. Cost: $0.15 message, $0.15 session.\n\n"
@@ -307,7 +324,7 @@ def build_synthetic_aider(root_dir: str) -> int:
                 "completion_tokens": 200,
                 "cost": 0.01,
                 "main_model": "gpt-4.1",
-                "time": datetime.now(timezone.utc).timestamp(),
+                "time": analytics_time,
             },
         }) + "\n")
 

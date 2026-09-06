@@ -1,0 +1,87 @@
+# Changelog
+
+All notable changes to this project are documented here, in the format of
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [0.3.0] — 2026-09-05
+
+Everything since 0.2.0: the original Copilot-only tool becomes a modular,
+multi-assistant runway tracker plus a local-vs-cloud savings estimator.
+
+### Added
+
+- **Nine adapters**, each with `scan()`/`events()`, an optional `quota()`,
+  a `default_policy()`, a synthetic-fixture builder, and its own test file:
+  GitHub Copilot CLI (original, ported), Claude Code, OpenAI Codex CLI,
+  Gemini CLI, Hermes Agent, OpenCode/Kilo CLI, Cline/Roo/Kilo (VS Code),
+  Aider, Continue.dev.
+- **Shared runway engine** (`core/runway.py`, `core/model.py`) that never
+  sums heterogeneous units across tools; `binding_constraint()` reports
+  which tool's budget runs out first.
+- **`token-finops collect-statusline`** — a Claude Code `statusLine.command`
+  hook that persists `rate_limits` snapshots to `~/.token-finops/quota.json`
+  and `quota_history.jsonl`, giving Claude Code (which only ever exposes a
+  percentage) a real burn-rate and runway estimate from two or more
+  snapshots in the same window.
+- **`token-finops self-audit`** — per-session cost report for Claude Code,
+  deduplicated on `(message.id, requestId)`, including sub-agent
+  transcripts and a by-model breakdown; `--json` for scripting.
+- **`token-finops savings`** and **`token-finops break-even`** — local
+  ($/hardware+power) vs. cloud (API-equivalent) cost estimator, with
+  editable, sourced `hardware_profiles.json` / `energy.json`; break-even
+  replays real usage (Haiku/Sonnet-class only) against a box's amortised
+  cost.
+- **`token-finops synth`** — writes a complete synthetic fake-home tree
+  (all nine tools) for offline demos, bug reports and the test suite, with
+  seven burn-profile scenarios (`steady`, `burst`, `exhausted`, `weekend`,
+  `fresh`, `quiet`, `subagent-heavy`) and `--print-env` for a one-line
+  `eval "$(token-finops synth ...)" && token-finops report` demo.
+- **`token-finops adapters`** — lists which data sources were found on the
+  current machine and where each one looked.
+- One **Architecture Decision Record per coding assistant** (`docs/adr/`),
+  recording data source, support tier, offline-quota availability and open
+  questions.
+- **394 tests** and **50 executable use cases** (`docs/USECASES.md`,
+  generated from `tests/test_usecases.py`), covering every adapter, the
+  runway engine, the savings estimator, and multi-tool report/JSON output.
+- `AGENTS.md` / `CLAUDE.md`, `docs/PLAN.md`, `docs/ADAPTERS.md`,
+  `docs/landscape.md`, `docs/sources.md`, and the six-chapter
+  `docs/guide/` ("The Qvest Digital Guide to Token Burning").
+- `status` subcommand: one renderer family (`--format plain|tmux|starship|waybar|polybar|i3|xbar|json`)
+  over a cache in `~/.token-finops/last.json` (`--fresh`, `--max-age`, `--all`), so status bars never
+  rescan telemetry; `contrib/` with a tmux plugin, systemd/launchd refresh timers and
+  starship/waybar/SwiftBar recipes; `docs/TMUX.md`.
+- `docs/INTEGRATIONS.md` — design for editor, agent-native (`/runway`) and desktop surfaces.
+
+### Changed
+
+- Consolidated the interim `src/token_finops/` package into
+  `token-finops-cli/src/token_finops_cli/`, which is now the single
+  package; `token-finops-cli/` itself is kept as a git subtree of the
+  original repository so its history is preserved.
+- CI moved to `uv`-based `pytest`/`ruff` at the repository root, running
+  on Python 3.10–3.13.
+- Repository restructured around one root (`README.md`, `AGENTS.md`,
+  `docs/`) with the package underneath; original Copilot CLI flags and
+  output (`report`, `sessions`, `--budget`, `--cycle-day`, `--watch`,
+  `--compact`) are unchanged and still the default when no `--tool` is
+  given.
+
+### Fixed
+
+- Bedrock-style Claude model identifiers (e.g. region/vendor-prefixed IDs)
+  were not normalising to their plain model name, so `self-audit`'s
+  by-model table under-reported one model and over-reported another.
+- Non-object pricing override files (e.g. a bare number instead of an
+  `{"input": ..., "output": ...}` mapping) crashed pricing lookup instead
+  of being rejected or ignored cleanly.
+- `report --json` could emit `Infinity` for an unbounded runway, which is
+  not valid JSON; unbounded runways now serialise as `null`
+  (see `cli.py::_finite`).
+- `token-finops synth` crashed on regeneration into an existing output
+  directory instead of overwriting cleanly.
+
+## [0.2.0] and earlier
+
+Predates this repository's restructuring. See the original repository:
+[oh-my-agent-code/token-finops-cli](https://github.com/oh-my-agent-code/token-finops-cli).

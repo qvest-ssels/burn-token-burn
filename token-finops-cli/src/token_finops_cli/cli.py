@@ -8,6 +8,8 @@
     token-finops break-even ...
     token-finops collect-statusline                              # Claude Code statusLine.command hook
     token-finops adapters                                        # what data sources were found
+    token-finops synth --out DIR [--tools t1,t2] [--days N] [--scenario NAME] [--seed N] [--print-env]
+                                                                  # write a synthetic fake-home tree
 """
 from __future__ import annotations
 
@@ -47,26 +49,40 @@ def _adapters(tool_filter):
 # --------------------------------------------------------------------------- #
 # report
 # --------------------------------------------------------------------------- #
-def cmd_report(args) -> str:
+def _report_rows(args):
+    """(adapter, runway, events) for every available tool, honouring --tool/--db-path."""
     if getattr(args, "db_path", None):
         os.environ["TOKEN_FINOPS_COPILOT_DB"] = args.db_path
         args.tool = ["copilot"]
-    lines: list[str] = []
-    runways = []
-    payload = []
-    for ad in _adapters(args.tool):
+    rows = []
+    for ad in _adapters(getattr(args, "tool", None)):
         if not ad.available():
             continue
         if ad.tool == "copilot":
-            policy = ad.default_policy(args.budget, cycle_day=args.cycle_day)
+            policy = ad.default_policy(getattr(args, "budget", None), cycle_day=getattr(args, "cycle_day", 1))
         else:
-            policy = ad.default_policy(args.allowance)
+            policy = ad.default_policy(getattr(args, "allowance", None))
         events = ad.events(since=None)
         quota = ad.quota()
         history = ad.quota_history() if hasattr(ad, "quota_history") else None
-        rw = compute_runway(events, policy, quota=quota, quota_history=history)
-        runways.append((ad, rw, events))
-        payload.append(_runway_json(ad, rw))
+        rows.append((ad, compute_runway(events, policy, quota=quota, quota_history=history), events))
+    return rows
+
+
+def collect_report_payload(args) -> list[dict]:
+    """The `report --json` objects — shared with `status` and its cache."""
+    return [_runway_json(ad, rw) for ad, rw, _ in _report_rows(args)]
+
+
+def cmd_report(args) -> str:
+    lines: list[str] = []
+    rows = _report_rows(args)
+    if not rows:
+        return "No supported tool data found. Run `token-finops adapters` to see what was probed."
+    if args.json:
+        return json.dumps([_runway_json(ad, rw) for ad, rw, _ in rows], indent=2,
+                          default=_json_default, allow_nan=False)
+    for ad, rw, events in rows:
         if args.compact:
             lines.append(compact_line(rw, ad.display_name))
         else:
@@ -78,14 +94,10 @@ def cmd_report(args) -> str:
                                     [e for e in events if cutoff is None or e.ts_utc >= cutoff])
             lines.append("")
             lines += render_runway(rw, ad.display_name)
-    if not runways:
-        return "No supported tool data found. Run `token-finops adapters` to see what was probed."
-    if args.json:
-        return json.dumps(payload, indent=2, default=_json_default, allow_nan=False)
-    binding = binding_constraint([rw for _, rw, _ in runways])
-    if binding and len(runways) > 1:
+    binding = binding_constraint([rw for _, rw, _ in rows])
+    if binding and len(rows) > 1:
         lines.append("")
-        name = next(ad.display_name for ad, rw, _ in runways if rw is binding)
+        name = next(ad.display_name for ad, rw, _ in rows if rw is binding)
         lines.append(f"binding constraint: {name} ({binding.window_id}) — runway {fmt_days(binding.runway_days)} -> {binding.status.value}")
     return "\n".join(lines)
 
@@ -283,6 +295,32 @@ def cmd_collect_statusline(args) -> str:
 
 
 # --------------------------------------------------------------------------- #
+# synth
+# --------------------------------------------------------------------------- #
+def cmd_synth(args) -> str:
+    """Write a synthetic fake-home tree so every adapter (and the whole CLI)
+    can be exercised offline. See `token_finops_cli.synth.generate`."""
+    from .synth import generate
+    from .synth.env import env_for
+
+    tools = None
+    if args.tools:
+        tools = [t.strip() for chunk in args.tools for t in chunk.split(",") if t.strip()]
+    manifest = generate(args.out, tools=tools, days=args.days, scenario=args.scenario, seed=args.seed)
+
+    lines = [f"Synthetic data written under {os.path.abspath(args.out)} (scenario={args.scenario}):"]
+    for tool, info in manifest.items():
+        lines.append(f"  {tool:<12} events={info['events']:<6} {info['path']}")
+        for note in info.get("notes", []):
+            lines.append(f"    - {note}")
+    if args.print_env:
+        lines.append("")
+        for var, val in env_for(args.out).items():
+            lines.append(f"export {var}={val}")
+    return "\n".join(lines)
+
+
+# --------------------------------------------------------------------------- #
 # adapters
 # --------------------------------------------------------------------------- #
 def cmd_adapters(args) -> str:
@@ -330,8 +368,23 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("collect-statusline", help="Claude Code statusLine hook: persist rate_limits")
     sub.add_parser("adapters", help="list detected data sources")
 
+    from .synth.scenarios import KNOWN as SYNTH_SCENARIOS
+    from .synth import ALL_TOOLS as SYNTH_TOOLS
+    sy = sub.add_parser("synth", help="write a synthetic fake-home tree for offline demos/tests")
+    sy.add_argument("--out", required=True, help="output directory for the synthetic fake-home tree")
+    sy.add_argument("--tools", action="append", default=None,
+                    help=f"comma-separated tool(s) to generate (default: all). known: {', '.join(SYNTH_TOOLS)}")
+    sy.add_argument("--days", type=int, default=14, help="how many days of history (default 14)")
+    sy.add_argument("--scenario", choices=SYNTH_SCENARIOS, default="steady",
+                    help="burn profile shaping timestamps/volume (default steady)")
+    sy.add_argument("--seed", type=int, default=42, help="RNG seed for reproducible fixtures")
+    sy.add_argument("--print-env", action="store_true",
+                    help="also print `export VAR=...` lines for eval \"$(token-finops synth ...)\"")
+
     from .savings import add_savings_parsers
     add_savings_parsers(sub)
+    from .status import add_status_parser
+    add_status_parser(sub)
     return p
 
 
@@ -339,7 +392,7 @@ def _normalize_argv(argv):
     if not argv:
         return ["report"]
     known = {"report", "sessions", "self-audit", "collect-statusline", "adapters", "savings",
-             "break-even", "-h", "--help"}
+             "break-even", "synth", "status", "-h", "--help"}
     return argv if argv[0] in known else ["report", *argv]
 
 
@@ -349,7 +402,12 @@ def main(argv=None):
     parser = build_parser()
     args = parser.parse_args(_normalize_argv(sys.argv[1:] if argv is None else argv))
     handlers = {"report": cmd_report, "sessions": cmd_sessions, "self-audit": cmd_self_audit,
-                "collect-statusline": cmd_collect_statusline, "adapters": cmd_adapters}
+                "collect-statusline": cmd_collect_statusline, "adapters": cmd_adapters,
+                "synth": cmd_synth}
+    if args.command == "status":
+        from .status import cmd_status
+        print(cmd_status(args))
+        return
     if args.command in ("savings", "break-even"):
         from .savings import cmd_savings, cmd_break_even
         print((cmd_savings if args.command == "savings" else cmd_break_even)(args))

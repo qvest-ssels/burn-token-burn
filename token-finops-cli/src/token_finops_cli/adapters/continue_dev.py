@@ -213,17 +213,24 @@ class ContinueAdapter(BaseAdapter):
 # --------------------------------------------------------------------------- #
 # Synthetic fixture builder (for tests/demos)
 # --------------------------------------------------------------------------- #
-def build_synthetic_continue(root_dir: str) -> int:
+def build_synthetic_continue(root_dir: str, scenario: str = "steady",
+                             now: Optional[datetime] = None) -> int:
     """Write a synthetic `~/.continue/sessions/`-shaped tree under
     `root_dir`: one `sessions.json` index plus two session files, one using
     the `promptTokens`/`completionTokens` alias and one using nested
-    `usage.input_tokens`/`usage.output_tokens`. Returns the number of usage
-    events represented.
+    `usage.input_tokens`/`usage.output_tokens`.
+
+    `scenario` is accepted for interface parity with the other
+    build_synthetic_* generators but does not change the fixed 2-session
+    output (Continue's own event count is too small for a burn profile to be
+    meaningful).
+
+    Returns the number of usage events represented.
     """
     sessions_dir = os.path.join(root_dir, "sessions")
     os.makedirs(sessions_dir, exist_ok=True)
 
-    now = datetime.now(timezone.utc)
+    now = now or datetime.now(timezone.utc)
     session_a = "aaaa1111-0000-0000-0000-000000000001"
     session_b = "bbbb2222-0000-0000-0000-000000000002"
 

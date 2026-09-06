@@ -270,7 +270,8 @@ _MODELS = ["gemini-2.5-pro", "gemini-2.5-flash"]
 
 
 def build_synthetic_gemini(root_dir: str, days: int = 3, sessions_per_day: int = 2,
-                           seed: int = 1) -> int:
+                           seed: int = 1, scenario: str = "steady",
+                           now: Optional[datetime] = None) -> int:
     """Write a synthetic `~/.gemini`-shaped tree under `root_dir`.
 
     Layout: `tmp/<projectHash>/chats/session-YYYY-MM-DDTHH-MM-<id8>.jsonl`
@@ -278,8 +279,14 @@ def build_synthetic_gemini(root_dir: str, days: int = 3, sessions_per_day: int =
     `tmp/<projectHash>/chats/<parentSessionId>/<id8>.jsonl`, and a
     `projects.json` mapping the project hash back to a fake cwd.
 
+    `scenario` (see `synth.scenarios`) scales per-day session count; "steady"
+    (the default) reproduces the exact pre-scenario output for the same
+    seed/days/sessions_per_day.
+
     Returns the number of `type == "gemini"` message events written.
     """
+    from ..synth.scenarios import scaled_count
+
     rng = random.Random(seed)
     project_hash = "abc123deadbeef"
     project_cwd = "/home/demo/my-project"
@@ -289,13 +296,15 @@ def build_synthetic_gemini(root_dir: str, days: int = 3, sessions_per_day: int =
     with open(os.path.join(root_dir, "projects.json"), "w", encoding="utf-8") as fh:
         json.dump({"projects": {project_cwd: project_hash}}, fh)
 
-    now = datetime.now(timezone.utc)
+    now = now or datetime.now(timezone.utc)
     n_events = 0
     parent_session_id = None
 
     for day_offset in range(days):
         day = now - timedelta(days=day_offset)
-        for s in range(sessions_per_day):
+        day_sessions = (sessions_per_day if scenario == "steady"
+                        else scaled_count(scenario, day, day_offset, sessions_per_day))
+        for s in range(day_sessions):
             session_id = f"sess-{day_offset}-{s}-{rng.randint(1000, 9999)}"
             file_id = f"{rng.getrandbits(32):08x}"
             ts_label = day.strftime("%Y-%m-%dT%H-%M")

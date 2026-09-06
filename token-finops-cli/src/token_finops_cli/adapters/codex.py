@@ -284,21 +284,33 @@ class CodexAdapter(BaseAdapter):
 # Synthetic fixture builder for tests/demos.
 # --------------------------------------------------------------------------- #
 def build_synthetic_codex(root_dir: str, days: int = 3, sessions_per_day: int = 2,
-                          seed: int = 1) -> int:
+                          seed: int = 1, scenario: str = "steady",
+                          now: Optional[datetime] = None) -> int:
     """Write realistic rollout JSONL fixtures under
     `root_dir/sessions/YYYY/MM/DD/rollout-*.jsonl`. Returns the number of
-    distinct positive-delta token_count events written across all files."""
+    distinct positive-delta token_count events written across all files.
+
+    `scenario` (see `synth.scenarios`) shapes per-day session count and, for
+    "exhausted", pins the primary/secondary rate_limits windows near 95-100%
+    instead of the baseline ramp. "steady" (the default) reproduces the exact
+    pre-scenario output for the same seed/days/sessions_per_day."""
+    from ..synth.scenarios import rate_limit_pct, scaled_count
+
     rng = random.Random(seed)
-    now = datetime.now(timezone.utc)
+    now = now or datetime.now(timezone.utc)
     models = ["gpt-5", "gpt-5-mini", "o4-mini"]
     total_events = 0
 
     for day_offset in range(days):
         day = now - timedelta(days=day_offset)
+        day_sessions = (sessions_per_day if scenario == "steady"
+                        else scaled_count(scenario, day, day_offset, sessions_per_day))
+        if day_sessions <= 0:
+            continue
         day_dir = os.path.join(root_dir, "sessions", f"{day.year:04d}", f"{day.month:02d}",
                                 f"{day.day:02d}")
         os.makedirs(day_dir, exist_ok=True)
-        for s in range(sessions_per_day):
+        for s in range(day_sessions):
             session_id = f"sess-{day_offset}-{s}-{rng.randint(1000, 9999)}"
             model = models[(day_offset + s) % len(models)]
             path = os.path.join(day_dir, f"rollout-{session_id}.jsonl")
@@ -330,8 +342,10 @@ def build_synthetic_codex(root_dir: str, days: int = 3, sessions_per_day: int = 
                 cum["reasoning_output_tokens"] += rng.randint(0, 200)
                 cum["total_tokens"] = (cum["input_tokens"] + cum["output_tokens"])
                 ts = base_ts + timedelta(minutes=t * 2)
-                used_pct_primary = min(95.0, 5.0 + t * 12.5 + day_offset * 3)
-                used_pct_secondary = min(90.0, 2.0 + t * 5.0 + day_offset * 2)
+                base_primary = min(95.0, 5.0 + t * 12.5 + day_offset * 3)
+                base_secondary = min(90.0, 2.0 + t * 5.0 + day_offset * 2)
+                used_pct_primary, used_pct_secondary = rate_limit_pct(
+                    scenario, day_offset, days, base_primary, base_secondary)
                 resets_primary = ts + timedelta(minutes=300)
                 resets_secondary = ts + timedelta(minutes=10080)
                 rec = {

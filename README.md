@@ -48,6 +48,15 @@ token-finops sessions --tool claude_code --since 30d
 token-finops self-audit     # what did the last Claude Code session cost, incl. sub-agents
 ```
 
+No real telemetry on hand? Generate a throwaway one — a complete synthetic
+fake-home tree for all nine adapters, nothing real ever touched:
+
+```bash
+eval "$(token-finops synth --out /tmp/demo-home --print-env)" && token-finops report --compact
+```
+
+See [`docs/SYNTH.md`](docs/SYNTH.md) for burn-profile scenarios (`burst`, `exhausted`, `weekend`, ...).
+
 ### Claude Code: get the real quota
 
 Anthropic subscriptions expose only a percentage, and only through the status line. Wire the collector as your status line and every redraw stores a snapshot; two snapshots in the same window are enough for a burn estimate:
@@ -104,6 +113,29 @@ $ token-finops break-even --hardware mac-studio-m4-max-128gb
 
 Solar is priced at the feed-in tariff you forgo (7.7 ct/kWh in Germany), not at zero. Capex is amortised per hour of *actual* inference. Only Haiku/Sonnet-class work counts as replaceable — a 32B model does not do Opus/Fable-class work. All hardware numbers live in editable JSON with their sources and a review date; measure your own with `powermetrics` / `nvidia-smi` and overwrite them.
 
+## Status line / tmux / editors
+
+One renderer for every surface, backed by a cache so widgets never rescan your transcripts:
+
+```bash
+token-finops status                       # CC 61% 2h! | CX 17% 3h | CP 29% 41d | binds: CC
+token-finops status --format tmux         # colour escapes for status-right
+token-finops status --format starship     # binding constraint only
+token-finops status --format waybar       # JSON with class/tooltip; also polybar, i3, xbar, json
+```
+
+`contrib/` ships a tmux plugin, systemd/launchd refresh timers, and starship/waybar/SwiftBar
+recipes — see [`docs/TMUX.md`](docs/TMUX.md). Editors, agent-native `/runway` skills and the
+remaining desktop surfaces are designed in [`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md).
+
+## Tested against 50 real-world use cases
+
+394 tests back this tool, including [`docs/USECASES.md`](docs/USECASES.md)
+— 50 executable use cases (`UC-01` … `UC-50`) covering every adapter, the
+runway engine's edge cases (year rollover, mid-cycle joins, stale
+snapshots), the savings/break-even estimator, and multi-tool reports.
+Each row names the pytest id, so `pytest -k UC-13` runs exactly that case.
+
 ## Documentation
 
 - [`docs/guide/`](docs/guide/) — **The Qvest Digital Guide to Token Burning** (formerly: Token Efficiency)
@@ -111,8 +143,14 @@ Solar is priced at the feed-in tariff you forgo (7.7 ct/kWh in Germany), not at 
 - [`docs/adr/`](docs/adr/) — one Architecture Decision Record per coding assistant (support tier, data source, open questions)
 - [`docs/ADAPTERS.md`](docs/ADAPTERS.md) — how to add a tool, with verified field tables
 - [`docs/PLAN.md`](docs/PLAN.md) — the structured plan and dogfooding record
+- [`docs/SYNTH.md`](docs/SYNTH.md) — the synthetic telemetry generator, used for demos and the whole test suite
+- [`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md) — status line / tmux / waybar / editor / desktop integrations (design proposal)
+- [`docs/USECASES.md`](docs/USECASES.md) — all 50 executable use cases
+- [`docs/README.md`](docs/README.md) — index of everything under `docs/`
 - [`AGENTS.md`](AGENTS.md) — rules for coding agents (Claude Code, Codex, Copilot) working in this repo
 - [`docs/sources.md`](docs/sources.md) — every price, quota and endpoint with its source and review date
+- [`CHANGELOG.md`](CHANGELOG.md) — release history
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — setup, tests/lint, how to add an adapter, PR checklist
 
 ## Design rules
 

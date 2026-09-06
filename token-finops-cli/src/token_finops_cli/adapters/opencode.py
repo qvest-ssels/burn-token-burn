@@ -335,17 +335,29 @@ class OpencodeAdapter(BaseAdapter):
         )
 
 
-def build_synthetic_opencode(db_path: str, sessions: int = 6, seed: int = 1) -> int:
+def build_synthetic_opencode(db_path: str, sessions: int = 6, seed: int = 1,
+                             scenario: str = "steady", now: Optional[datetime] = None) -> int:
     """Create a synthetic OpenCode/Kilo-shaped `opencode.db` at `db_path` with
     `session` and `session_message` tables, mixing anthropic/claude-sonnet-4-5
     (with `cost` set), openai/gpt-5 (no `cost` -> pricing table fallback) and
     ollama/qwen3:32b (local, unbilled) assistant turns. One session is a
-    sub-agent of the first (`parent_id` set). Returns the number of assistant
-    `session_message` rows written."""
+    sub-agent of the first (`parent_id` set).
+
+    `scenario` (see `synth.scenarios`) scales the total session count and
+    shapes how far back timestamps land; "steady" (the default) reproduces
+    the exact pre-scenario output for the same seed/sessions.
+
+    Returns the number of assistant `session_message` rows written."""
     import random
 
+    from ..synth.scenarios import adjust_for_weekend, session_count_multiplier, session_hour_offset
+
+    if scenario != "steady":
+        sessions = max(1, round(sessions * session_count_multiplier(scenario)))
     rng = random.Random(seed)
     os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
+    if os.path.exists(db_path):
+        os.remove(db_path)  # re-generating: start from a clean db, not an append
     con = sqlite3.connect(db_path)
     cur = con.cursor()
     cur.execute(
@@ -359,10 +371,11 @@ def build_synthetic_opencode(db_path: str, sessions: int = 6, seed: int = 1) -> 
         )"""
     )
 
-    now = datetime.now(timezone.utc)
+    now = now or datetime.now(timezone.utc)
     sess_rows = []
     msg_rows = []
     n_assistant = 0
+    max_hours = 24 * 20
     for i in range(sessions):
         sid = f"opencode-session-{i}"
         parent_id = ""
@@ -377,8 +390,13 @@ def build_synthetic_opencode(db_path: str, sessions: int = 6, seed: int = 1) -> 
             kind = kinds_cycle[i]
         else:
             kind = rng.choice(["anthropic", "anthropic", "openai", "ollama"])
-        created_ms = int((now - timedelta(hours=rng.randint(1, 24 * 20),
-                                           minutes=rng.randint(0, 59))).timestamp() * 1000)
+        if scenario == "steady":
+            created_dt = now - timedelta(hours=rng.randint(1, max_hours), minutes=rng.randint(0, 59))
+        else:
+            hours_ago = session_hour_offset(scenario, rng, max_hours)
+            created_dt = adjust_for_weekend(scenario, now - timedelta(hours=hours_ago,
+                                                                        minutes=rng.randint(0, 59)))
+        created_ms = int(created_dt.timestamp() * 1000)
         inp, out = rng.randint(500, 8000), rng.randint(200, 4000)
         cache_read, cache_write = rng.randint(0, 3000), rng.randint(0, 500)
         reasoning = rng.randint(0, 500)

@@ -1,0 +1,6 @@
+[Unit]
+Description=token-finops: refresh ~/.token-finops/last.json for status widgets
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/token-finops status --fresh --format plain

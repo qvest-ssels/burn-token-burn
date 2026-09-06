@@ -203,3 +203,162 @@ def five_hour_blocks(events: list[UsageEvent], length: timedelta = timedelta(hou
         cur["models"][ev.model_norm] = cur["models"].get(ev.model_norm, 0) + 1
         last_ts = ev.ts_utc
     return blocks
+
+
+# --------------------------------------------------------------------------- #
+# Synthetic fixture builder (for tests/demos)
+# --------------------------------------------------------------------------- #
+def _synthetic_transcript_line(ts: datetime, msg_id: str, req_id: str, *, model: str,
+                               tool: Optional[str], session: str, inp: int, out: int,
+                               cr: int, cw: int, agent: str = "", block_suffix: str = "") -> str:
+    """One line of a Claude Code transcript (see `parse_transcript`'s
+    docstring for the on-disk shape). Used only by
+    `build_synthetic_claude_code`."""
+    content = ([{"type": "tool_use", "id": f"toolu_{msg_id}{block_suffix}", "name": tool, "input": {}}]
+              if tool else [{"type": "text", "text": "synthetic"}])
+    e = {
+        "type": "assistant",
+        "timestamp": ts.isoformat().replace("+00:00", "Z"),
+        "sessionId": session,
+        "requestId": req_id,
+        "uuid": f"u-{msg_id}{block_suffix}",
+        "isSidechain": bool(agent),
+        "cwd": "/home/demo/project",
+        "message": {
+            "id": msg_id, "model": model, "role": "assistant", "content": content,
+            "usage": {
+                "input_tokens": inp, "output_tokens": out,
+                "cache_read_input_tokens": cr, "cache_creation_input_tokens": cw,
+                "cache_creation": {"ephemeral_1h_input_tokens": 0, "ephemeral_5m_input_tokens": cw},
+            },
+        },
+    }
+    if agent:
+        e["agentId"] = agent
+    return json.dumps(e)
+
+
+def build_synthetic_claude_code(config_dir: str, days: int = 14, seed: int = 42,
+                                scenario: str = "steady", now: Optional[datetime] = None,
+                                events_per_day: int = 6) -> dict:
+    """Write a synthetic `${CLAUDE_CONFIG_DIR}/projects/<project>/<session>.jsonl`
+    tree (plus `<session>/subagents/agent-*.jsonl`) under `config_dir`, and a
+    status-line `<parent of config_dir>/.token-finops/quota.json` +
+    `quota_history.jsonl` pair (what `token-finops collect-statusline`
+    normally writes -- see the QUOTA_FILE/QUOTA_HISTORY_FILE caveat in
+    `synth.env`).
+
+    One project directory, one session per active day. Each API response is
+    written as two duplicated content-block lines (mirrors what Claude Code
+    actually writes -- one line per content block of the same response) so
+    parsers exercise dedup. `scenario` (see `synth.scenarios`) shapes per-day
+    call volume, the main-loop/sub-agent split ("subagent-heavy" raises
+    sub-agent share to ~60% vs. a 25% baseline), and the rolling-window quota
+    snapshots ("exhausted" pins 5h/7d usage near 95-100%).
+
+    Returns `{"main_calls": int, "sub_calls": int, "session_ids": [...],
+    "quota_written": bool}`.
+    """
+    import random
+
+    from ..synth.scenarios import rate_limit_pct, scaled_count, subagent_probability
+
+    rng = random.Random(seed)
+    now = now or datetime.now(timezone.utc)
+    config_dir = config_dir.rstrip(os.sep)
+    project_dir = os.path.join(config_dir, "projects", "-home-demo-project")
+    os.makedirs(project_dir, exist_ok=True)
+
+    main_models = ["claude-sonnet-5"]
+    sub_models = ["claude-haiku-4-5", "claude-sonnet-5"]
+    sub_prob = subagent_probability(scenario)
+    tool_choices = [None, "Bash", "Read", "Edit", "Grep", "WebSearch",
+                    "mcp__github__list", "TodoWrite"]
+
+    main_calls = 0
+    sub_calls = 0
+    session_ids: list[str] = []
+    quota_snapshots: list[tuple[datetime, float, float]] = []
+
+    for day_offset in range(days - 1, -1, -1):
+        day = now - timedelta(days=day_offset)
+        n_calls = (events_per_day if scenario == "steady"
+                  else scaled_count(scenario, day, day_offset, events_per_day))
+        if n_calls <= 0:
+            continue
+        session_id = f"sess-{day.strftime('%Y%m%d')}"
+        session_ids.append(session_id)
+        main_lines: list[str] = []
+        sub_lines: dict[str, list[str]] = {}
+
+        for i in range(n_calls):
+            ts = (day.replace(hour=9, minute=0, second=0, microsecond=0)
+                 + timedelta(minutes=i * 7, seconds=rng.randint(0, 59)))
+            msg_id, req_id = f"m-{session_id}-{i}", f"r-{session_id}-{i}"
+            tool = rng.choice(tool_choices)
+            inp, out = rng.randint(200, 6000), rng.randint(100, 3000)
+            cr, cw = rng.randint(0, 30000), rng.randint(0, 5000)
+
+            if rng.random() < sub_prob:
+                agent_name = f"sub-{rng.randint(1, 3)}"
+                model = rng.choice(sub_models)
+                lines = sub_lines.setdefault(agent_name, [])
+                for suffix in ("", "-b"):
+                    lines.append(_synthetic_transcript_line(
+                        ts, msg_id, req_id, model=model, tool=tool, session=session_id,
+                        inp=inp, out=out, cr=cr, cw=cw, agent=agent_name, block_suffix=suffix))
+                sub_calls += 1
+            else:
+                model = rng.choice(main_models)
+                for suffix in ("", "-b"):
+                    main_lines.append(_synthetic_transcript_line(
+                        ts, msg_id, req_id, model=model, tool=tool, session=session_id,
+                        inp=inp, out=out, cr=cr, cw=cw, block_suffix=suffix))
+                main_calls += 1
+
+        with open(os.path.join(project_dir, f"{session_id}.jsonl"), "w", encoding="utf-8") as fh:
+            fh.write("\n".join(main_lines) + ("\n" if main_lines else ""))
+
+        if sub_lines:
+            subagents_dir = os.path.join(project_dir, session_id, "subagents")
+            os.makedirs(subagents_dir, exist_ok=True)
+            for agent_name, lines in sub_lines.items():
+                with open(os.path.join(subagents_dir, f"agent-{agent_name}.jsonl"), "w",
+                         encoding="utf-8") as fh:
+                    fh.write("\n".join(lines) + "\n")
+
+        base_primary = min(95.0, 4.0 + day_offset * 2.0)
+        base_secondary = min(90.0, 3.0 + day_offset * 1.5)
+        primary, secondary = rate_limit_pct(scenario, day_offset, days, base_primary, base_secondary)
+        quota_snapshots.append((day.replace(hour=23, minute=59, second=0, microsecond=0),
+                               primary, secondary))
+
+    # Status-line quota.json / quota_history.jsonl live one directory up from
+    # CLAUDE_CONFIG_DIR (mirrors `token-finops collect-statusline`'s
+    # `~/.token-finops/...`, independent of `~/.claude`).
+    home_dir = os.path.dirname(config_dir) or config_dir
+    quota_dir = os.path.join(home_dir, ".token-finops")
+    quota_written = False
+    if quota_snapshots:
+        os.makedirs(quota_dir, exist_ok=True)
+        history_lines = []
+        for observed_at, primary, secondary in quota_snapshots:
+            snap = {
+                "observed_at": observed_at.isoformat(),
+                "rate_limits": {
+                    "five_hour": {"used_percentage": primary,
+                                 "resets_at": (observed_at + timedelta(hours=5)).isoformat()},
+                    "seven_day": {"used_percentage": secondary,
+                                 "resets_at": (observed_at + timedelta(days=7)).isoformat()},
+                },
+                "model": "claude-sonnet-5",
+            }
+            history_lines.append(json.dumps(snap))
+        with open(os.path.join(quota_dir, "quota_history.jsonl"), "w", encoding="utf-8") as fh:
+            fh.write("\n".join(history_lines) + "\n")
+        with open(os.path.join(quota_dir, "quota.json"), "w", encoding="utf-8") as fh:
+            fh.write(history_lines[-1])
+        quota_written = True
+
+    return {"main_calls": main_calls, "sub_calls": sub_calls, "session_ids": session_ids,
+            "quota_written": quota_written}

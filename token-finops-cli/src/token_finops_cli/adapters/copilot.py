@@ -114,13 +114,24 @@ class CopilotAdapter(BaseAdapter):
 
 
 def build_synthetic_db(path: str, days: int = 14, events_per_day: int = 8, seed: int = 42,
-                       with_extra_columns: bool = True) -> int:
+                       with_extra_columns: bool = True, scenario: str = "steady",
+                       now: Optional[datetime] = None) -> int:
     """Synthetic session-store.db for demos/tests (from the original repo,
-    extended with the optional columns the real CLI writes)."""
+    extended with the optional columns the real CLI writes).
+
+    `scenario` (see `synth.scenarios`) shapes per-day volume and, for
+    "exhausted", scales the AI-unit cost per event so total usage over the
+    period lands past the default 50,000 AIU monthly allowance. The default
+    "steady" scenario reproduces the exact pre-scenario output for the same
+    seed/days/events_per_day."""
     import random
     from datetime import timedelta
 
+    from ..synth.scenarios import adjust_for_weekend, copilot_volume_multiplier, scaled_count
+
     rng = random.Random(seed)
+    if os.path.exists(path):
+        os.remove(path)  # re-generating: start from a clean db, not an append
     con = sqlite3.connect(path)
     cur = con.cursor()
     extra_ddl = (
@@ -133,17 +144,21 @@ def build_synthetic_db(path: str, days: int = 14, events_per_day: int = 8, seed:
             session_id TEXT, created_at TEXT, input_tokens INTEGER, output_tokens INTEGER,
             reasoning_tokens INTEGER, duration_ms REAL, total_nano_aiu INTEGER{extra_ddl})"""
     )
-    now = datetime.now(timezone.utc)
+    now = now or datetime.now(timezone.utc)
     rows = []
     models = ["gpt-5", "claude-sonnet-4-5", "gpt-5-mini"]
+    vol_mult = copilot_volume_multiplier(scenario)
     for day_offset in range(days):
         day = now - timedelta(days=day_offset)
         session_id = f"demo-session-{day_offset // 3}"
-        for _ in range(events_per_day):
+        n_events = (events_per_day if scenario == "steady"
+                   else scaled_count(scenario, day, day_offset, events_per_day))
+        for _ in range(n_events):
             ts = day - timedelta(minutes=rng.randint(0, 1439))
+            ts = adjust_for_weekend(scenario, ts)
             inp, out, reas = rng.randint(200, 4000), rng.randint(100, 2500), rng.randint(0, 800)
             dur = rng.uniform(800, 15000)
-            nano = int((inp + out) * rng.uniform(150_000_000, 400_000_000))
+            nano = int((inp + out) * rng.uniform(150_000_000, 400_000_000) * vol_mult)
             base = (session_id, ts.isoformat(), inp, out, reas, dur, nano)
             if with_extra_columns:
                 sub = rng.random() < 0.25
@@ -151,8 +166,9 @@ def build_synthetic_db(path: str, days: int = 14, events_per_day: int = 8, seed:
                          "explore-agent" if sub else "", "call-1" if sub else "",
                          "agent" if sub else "user", 1.0)
             rows.append(base)
-    ph = ", ".join("?" * len(rows[0]))
-    cur.executemany(f"INSERT INTO assistant_usage_events VALUES ({ph})", rows)
+    if rows:
+        ph = ", ".join("?" * len(rows[0]))
+        cur.executemany(f"INSERT INTO assistant_usage_events VALUES ({ph})", rows)
     con.commit()
     con.close()
     return len(rows)

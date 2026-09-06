@@ -397,17 +397,30 @@ class HermesAdapter(BaseAdapter):
         )
 
 
-def build_synthetic_hermes(root_dir: str, sessions: int = 12, seed: int = 1) -> int:
+def build_synthetic_hermes(root_dir: str, sessions: int = 12, seed: int = 1,
+                          scenario: str = "steady", now: Optional[datetime] = None) -> int:
     """Create a synthetic `${root_dir}/state.db` with both `sessions` and
     `session_model_usage` tables, mixing OpenRouter (billed), Nous portal
     (billed, unknown pricing -> pricing table fallback), and local Ollama
     (unbilled) rows. One session is a sub-agent (parent_session_id set).
+
+    `scenario` (see `synth.scenarios`) scales the total session count and
+    shapes how far back timestamps land (e.g. "burst" clusters most sessions
+    in the most recent ~2 days); "steady" (the default) reproduces the exact
+    pre-scenario output for the same seed/sessions.
+
     Returns the number of session_model_usage rows written."""
     import random
 
+    from ..synth.scenarios import adjust_for_weekend, session_count_multiplier, session_hour_offset
+
+    if scenario != "steady":
+        sessions = max(1, round(sessions * session_count_multiplier(scenario)))
     rng = random.Random(seed)
     os.makedirs(root_dir, exist_ok=True)
     db_path = os.path.join(root_dir, "state.db")
+    if os.path.exists(db_path):
+        os.remove(db_path)  # re-generating: start from a clean db, not an append
     con = sqlite3.connect(db_path)
     cur = con.cursor()
     cur.execute(
@@ -429,12 +442,18 @@ def build_synthetic_hermes(root_dir: str, sessions: int = 12, seed: int = 1) -> 
         )"""
     )
 
-    now = datetime.now(timezone.utc)
+    now = now or datetime.now(timezone.utc)
     sess_rows = []
     smu_rows = []
+    max_hours = 24 * 20
     for i in range(sessions):
         sid = f"hermes-session-{i}"
-        started = now - timedelta(hours=rng.randint(1, 24 * 20), minutes=rng.randint(0, 59))
+        if scenario == "steady":
+            started = now - timedelta(hours=rng.randint(1, max_hours), minutes=rng.randint(0, 59))
+        else:
+            hours_ago = session_hour_offset(scenario, rng, max_hours)
+            started = adjust_for_weekend(scenario, now - timedelta(hours=hours_ago,
+                                                                     minutes=rng.randint(0, 59)))
         ended = started + timedelta(minutes=rng.randint(1, 45))
         inp, out = rng.randint(500, 8000), rng.randint(200, 4000)
         cache_read, cache_write = rng.randint(0, 3000), rng.randint(0, 500)

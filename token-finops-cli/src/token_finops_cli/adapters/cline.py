@@ -343,17 +343,27 @@ _MODELS = ["claude-sonnet-4-5", "gpt-4.1", "gemini-2.5-flash"]
 _LOCAL_MODEL = "ollama/qwen3-235b-a22b"
 
 
-def build_synthetic_cline(root_dir: str, tasks: int = 5, seed: int = 1) -> int:
+def build_synthetic_cline(root_dir: str, tasks: int = 5, seed: int = 1,
+                         scenario: str = "steady", now: Optional[datetime] = None) -> int:
     """Write a synthetic VS Code `globalStorage`-shaped tree under `root_dir`,
     with all three extension ids present. Roughly a third of tasks omit
     `cost` (forcing estimate_usd), and one task uses a local model.
 
+    `scenario` (see `synth.scenarios`) scales the total task count and shapes
+    how far back timestamps land; "steady" (the default) reproduces the exact
+    pre-scenario output for the same seed/tasks.
+
     Returns the number of `api_req_started` events written.
     """
+    from ..synth.scenarios import adjust_for_weekend, session_count_multiplier, session_hour_offset
+
+    if scenario != "steady":
+        tasks = max(1, round(tasks * session_count_multiplier(scenario)))
     rng = random.Random(seed)
-    now = datetime.now(timezone.utc)
+    now = now or datetime.now(timezone.utc)
     ext_ids = list(EXTENSION_TAGS)
     n_events = 0
+    max_minutes = 500
 
     for i in range(tasks):
         ext_id = ext_ids[i % len(ext_ids)]
@@ -368,7 +378,11 @@ def build_synthetic_cline(root_dir: str, tasks: int = 5, seed: int = 1) -> int:
         n_requests = rng.randint(1, 3)
         entries = []
         for r in range(n_requests):
-            ts = now - timedelta(minutes=rng.randint(0, 500))
+            if scenario == "steady":
+                ts = now - timedelta(minutes=rng.randint(0, max_minutes))
+            else:
+                hours_ago = session_hour_offset(scenario, rng, max_minutes / 60.0)
+                ts = adjust_for_weekend(scenario, now - timedelta(hours=hours_ago))
             ts_ms = int(ts.timestamp() * 1000)
             tokens_in = rng.randint(200, 4000)
             tokens_out = rng.randint(50, 1500)
