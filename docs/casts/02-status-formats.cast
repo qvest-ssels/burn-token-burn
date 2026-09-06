@@ -1,0 +1,13 @@
+{"version": 2, "width": 110, "height": 40, "timestamp": 1788694309, "env": {"SHELL": "/bin/bash", "TERM": "linux"}, "title": "token-finops: 02-status-formats"}
+[0.014138, "o", "\u001b[1;32m$ \u001b[0mtoken-finops status --fresh --budget 20000\r\n"]
+[0.702185, "o", "CC 4% inf | CX 94% n/a!! | CP 447% 0hX | GM 3% 15d | binds: CP\r\n"]
+[0.71336, "o", "\r\n"]
+[1.915973, "o", "\u001b[1;32m$ \u001b[0mtoken-finops status --format tmux\r\n"]
+[2.571628, "o", "#[fg=colour2]CC 4% inf#[default] #[fg=colour1]CX 94% n/a!!#[default] #[fg=colour1]CP 447% 0hX#[default] #[fg=colour2]GM 3% 15d#[default]\r\n"]
+[2.581275, "o", "\r\n"]
+[3.783906, "o", "\u001b[1;32m$ \u001b[0mtoken-finops status --format starship\r\n"]
+[4.440072, "o", "CP 447% 0hX\r\n"]
+[4.450032, "o", "\r\n"]
+[5.652267, "o", "\u001b[1;32m$ \u001b[0mtoken-finops status --format waybar\r\n"]
+[6.31871, "o", "{\"text\": \"CC 4% inf | CX 94% n/a!! | CP 447% 0hX | GM 3% 15d | binds: CP\", \"tooltip\": \"Claude Code: 4% used, runway inf (OK)\\nOpenAI Codex CLI: 94% used, runway n/a (CRITICAL)\\nGitHub Copilot CLI: 447% used, runway 0h (EXHAUSTED)\\nGemini CLI: 3% used, runway 15d (OK)\", \"class\": \"exhausted\", \"percentage\": 100}\r\n"]
+[6.331547, "o", "\r\n"]

@@ -32,7 +32,7 @@ dev = [
 [project.urls]
 Homepage = "https://github.com/tronicum/burn-token-burn"
 Origin = "https://github.com/oh-my-agent-code/token-finops-cli"
-Issues = "https://github.com/oh-my-agent-code/token-finops-cli/issues"
+Issues = "https://github.com/tronicum/burn-token-burn/issues"
 
 [project.scripts]
 token-finops = "token_finops_cli:main"
