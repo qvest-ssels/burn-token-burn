@@ -183,12 +183,17 @@ class HermesAdapter(BaseAdapter):
         yield from self._scan_legacy_jsonl(since, seen)
 
     def _scan_db(self, since: Optional[datetime], seen: set[str]) -> Iterable[UsageEvent]:
-        con = sqlite_readonly(self.db_path)
+        try:
+            con = sqlite_readonly(self.db_path)
+        except sqlite3.Error:
+            return  # a directory / unopenable path where state.db should be
         try:
             if _table_exists(con, "session_model_usage"):
                 yield from self._scan_session_model_usage(con, since, seen)
             elif _table_exists(con, "sessions"):
                 yield from self._scan_sessions_only(con, since, seen)
+        except sqlite3.Error:
+            return  # corrupt / not-a-database: skip, don't abort the report
         finally:
             con.close()
 
@@ -326,7 +331,7 @@ class HermesAdapter(BaseAdapter):
         for path in sorted(glob.glob(pattern)):
             session_id = os.path.splitext(os.path.basename(path))[0]
             try:
-                with open(path, encoding="utf-8") as f:
+                with open(path, encoding="utf-8", errors="replace") as f:
                     for line in f:
                         line = line.strip()
                         if not line:

@@ -80,7 +80,13 @@ def parse_rollout(path: str, since: Optional[datetime] = None) -> Iterable[Usage
     model = "codex"
     prev_totals: Optional[dict] = None
 
-    with open(path, encoding="utf-8") as fh:
+    try:
+        # errors="replace"/OSError: a half-written or unreadable rollout (or a
+        # directory named rollout-*.jsonl) must not abort the whole scan.
+        fh = open(path, encoding="utf-8", errors="replace")
+    except OSError:
+        return
+    with fh:
         for line_no, line in enumerate(fh):
             line = line.strip()
             if not line.startswith("{"):
@@ -90,7 +96,9 @@ def parse_rollout(path: str, since: Optional[datetime] = None) -> Iterable[Usage
             except ValueError:
                 continue
             rtype = rec.get("type")
-            payload = rec.get("payload") or {}
+            payload = rec.get("payload")
+            if not isinstance(payload, dict):
+                payload = {}  # drifted/garbage shape: treat as "no payload"
 
             if rtype == "session_meta":
                 session_id = str(payload.get("id") or session_id)
@@ -102,7 +110,9 @@ def parse_rollout(path: str, since: Optional[datetime] = None) -> Iterable[Usage
             if rtype != "event_msg" or payload.get("type") != "token_count":
                 continue
 
-            info = payload.get("info") or {}
+            info = payload.get("info")
+            if not isinstance(info, dict):
+                continue
             totals = info.get("total_token_usage")
             delta_src = None
             if isinstance(totals, dict):
@@ -179,22 +189,32 @@ def parse_rollout(path: str, since: Optional[datetime] = None) -> Iterable[Usage
 
 
 def _rate_limits_from_line(rec: dict) -> Optional[dict]:
-    payload = rec.get("payload") or {}
+    payload = rec.get("payload")
+    if not isinstance(payload, dict):
+        return None
     if rec.get("type") != "event_msg" or payload.get("type") != "token_count":
         return None
-    info = payload.get("info") or {}
+    info = payload.get("info")
+    if not isinstance(info, dict):
+        return None
     rl = info.get("rate_limits")
     return rl if isinstance(rl, dict) and rl else None
 
 
 def _snapshot_from_window(win: dict, window_id: str, observed_at: datetime) -> Optional[QuotaSnapshot]:
-    if not win:
+    if not isinstance(win, dict) or not win:
         return None
-    pct = win.get("used_percent")
+    try:
+        pct = float(win["used_percent"]) if win.get("used_percent") is not None else None
+    except (TypeError, ValueError):
+        pct = None
     resets = win.get("resets_at")
     resets_at = None
-    if isinstance(resets, (int, float)):
-        resets_at = datetime.fromtimestamp(resets, tz=timezone.utc)
+    if isinstance(resets, (int, float)) and not isinstance(resets, bool):
+        try:
+            resets_at = datetime.fromtimestamp(resets, tz=timezone.utc)
+        except (OverflowError, OSError, ValueError):
+            resets_at = None
     elif isinstance(resets, str):
         resets_at = _parse_ts(resets)
     return QuotaSnapshot(
@@ -240,7 +260,11 @@ class CodexAdapter(BaseAdapter):
             return None
         last_rl = None
         last_ts = None
-        with open(path, encoding="utf-8") as fh:
+        try:
+            fh = open(path, encoding="utf-8", errors="replace")
+        except OSError:
+            return None
+        with fh:
             for line in fh:
                 line = line.strip()
                 if not line.startswith("{"):
@@ -264,8 +288,8 @@ class CodexAdapter(BaseAdapter):
         if found is None:
             return None, None
         rl, observed_at = found
-        primary = _snapshot_from_window(rl.get("primary") or {}, "5h", observed_at)
-        secondary = _snapshot_from_window(rl.get("secondary") or {}, "7d", observed_at)
+        primary = _snapshot_from_window(rl.get("primary"), "5h", observed_at)
+        secondary = _snapshot_from_window(rl.get("secondary"), "7d", observed_at)
         return primary, secondary
 
     def quota(self) -> Optional[QuotaSnapshot]:
@@ -388,5 +412,12 @@ def build_synthetic_codex(root_dir: str, days: int = 3, sessions_per_day: int = 
             with open(path, "w", encoding="utf-8") as fh:
                 for rec in lines:
                     fh.write(json.dumps(rec) + "\n")
+            # A real ~/.codex has file mtimes matching the session date; this
+            # generator writes newest-day-first, so stamp each rollout with its
+            # own session time. `quota()` picks the *newest* rollout by mtime
+            # and would otherwise report the oldest day's rate_limits.
+            last_ts = (turn_records[-1]["timestamp"] if turn_records else base_ts.isoformat())
+            stamp = (_parse_ts(last_ts) or base_ts).timestamp()
+            os.utime(path, (stamp, stamp))
 
     return total_events

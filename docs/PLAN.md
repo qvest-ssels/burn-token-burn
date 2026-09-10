@@ -1,6 +1,6 @@
 # Plan: from token-finops-cli (Copilot) to a modular multi-assistant runway tracker
 
-Status: **Phases 0–3 done, Phase 4 open** — last updated 2026-09-05. Test suite: 326 tests, core/report/savings at 100 % line coverage. Decisions per assistant: `docs/adr/`.
+Status: **Phases 0–3 done, Phase 4 open** — last updated 2026-09-09. Test suite: 704 tests (incl. 50 use cases, e2e matrix, robustness); work packages for agents in `claude-tasks.md`. Decisions per assistant: `docs/adr/`.
 
 ## Goal
 

@@ -36,13 +36,32 @@ def _columns(con: sqlite3.Connection, table: str) -> set[str]:
     return {row[1] for row in cur.fetchall()}
 
 
-def _parse_ts(s: str) -> datetime:
-    s = (s or "").replace("Z", "+00:00")
+def _as_int(value) -> int:
+    """A drifted db can hold TEXT where an INTEGER is expected — never raise."""
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _as_float(value) -> float:
+    try:
+        return float(value or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _parse_ts(s) -> Optional[datetime]:
+    s = str(s or "").replace("Z", "+00:00")
     try:
         dt = datetime.fromisoformat(s)
     except ValueError:
-        # epoch millis fallback
-        dt = datetime.fromtimestamp(float(s) / 1000.0, tz=timezone.utc)
+        # epoch millis fallback; an unparsable created_at drops the row rather
+        # than aborting the scan (schema drift is normal, AGENTS.md #7).
+        try:
+            dt = datetime.fromtimestamp(float(s) / 1000.0, tz=timezone.utc)
+        except (TypeError, ValueError, OSError, OverflowError):
+            return None
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc)
@@ -59,7 +78,10 @@ class CopilotAdapter(BaseAdapter):
     def scan(self, since: Optional[datetime] = None) -> Iterable[UsageEvent]:
         if not os.path.exists(self.root):
             return
-        con = sqlite_readonly(self.root)
+        try:
+            con = sqlite_readonly(self.root)
+        except sqlite3.Error:
+            return  # a directory / unopenable path where the db should be
         try:
             cols = _columns(con, "assistant_usage_events")
             if not cols:
@@ -82,25 +104,32 @@ class CopilotAdapter(BaseAdapter):
                     i = idx.get(name)
                     return row[i] if i is not None and row[i] is not None else default
 
+                ts = _parse_ts(g("created_at", ""))
+                if ts is None:
+                    continue
                 yield UsageEvent(
-                    ts_utc=_parse_ts(g("created_at", "")),
+                    ts_utc=ts,
                     tool=self.tool,
                     model_raw=str(g("model", "copilot")),
-                    input_tokens=int(g("input_tokens", 0)),
-                    output_tokens=int(g("output_tokens", 0)),
-                    cache_read_tokens=int(g("cache_read_tokens", 0)),
-                    cache_write_tokens=int(g("cache_write_tokens", 0)),
-                    reasoning_tokens=int(g("reasoning_tokens", 0)),
+                    input_tokens=_as_int(g("input_tokens", 0)),
+                    output_tokens=_as_int(g("output_tokens", 0)),
+                    cache_read_tokens=_as_int(g("cache_read_tokens", 0)),
+                    cache_write_tokens=_as_int(g("cache_write_tokens", 0)),
+                    reasoning_tokens=_as_int(g("reasoning_tokens", 0)),
                     reasoning_is_subset_of_output=True,
                     session_id=str(g("session_id", "")),
                     agent_id=str(g("agent_id", "")),
                     parent_id=str(g("parent_tool_call_id", "")),
                     initiator=str(g("initiator", "")),
-                    native_cost=float(g("total_nano_aiu", 0)) / 1e9,
+                    native_cost=_as_float(g("total_nano_aiu", 0)) / 1e9,
                     native_unit=Unit.AIU,
-                    duration_ms=float(g("duration_ms", 0.0)),
+                    duration_ms=_as_float(g("duration_ms", 0.0)),
                     event_id=f"{g('session_id','')}:{g('created_at','')}",
                 )
+        except sqlite3.Error:
+            # corrupt / truncated / not-a-database: skip this source instead of
+            # aborting the whole report (schema drift is normal, AGENTS.md #7).
+            return
         finally:
             con.close()
 

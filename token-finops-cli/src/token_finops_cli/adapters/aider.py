@@ -193,7 +193,7 @@ def parse_analytics_jsonl(path: str, since: Optional[datetime] = None) -> Iterab
             if t is not None:
                 try:
                     ts = datetime.fromtimestamp(float(t), tz=timezone.utc)
-                except (TypeError, ValueError, OSError):
+                except (TypeError, ValueError, OSError, OverflowError):
                     try:
                         ts = datetime.fromisoformat(str(t).replace("Z", "+00:00"))
                         if ts.tzinfo is None:
@@ -212,9 +212,16 @@ def parse_analytics_jsonl(path: str, since: Optional[datetime] = None) -> Iterab
                 continue
             model = str(props.get("main_model") or "")
             cost = props.get("cost")
-            inp = int(prompt_tokens or 0)
-            out = int(completion_tokens or 0)
-            usd = float(cost) if cost is not None else estimate_usd(model, inp, out)
+            # Aider's analytics log is opt-in and version-dependent: coerce
+            # defensively rather than raising on a drifted field type.
+            try:
+                inp, out = int(prompt_tokens or 0), int(completion_tokens or 0)
+            except (TypeError, ValueError):
+                continue
+            try:
+                usd = float(cost) if cost is not None else estimate_usd(model, inp, out)
+            except (TypeError, ValueError):
+                usd = estimate_usd(model, inp, out)
 
             yield UsageEvent(
                 ts_utc=ts,

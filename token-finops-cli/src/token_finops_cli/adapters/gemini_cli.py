@@ -70,7 +70,7 @@ def _parse_ts(s: str) -> Optional[datetime]:
     except (ValueError, TypeError):
         try:
             dt = datetime.fromtimestamp(float(s) / 1000.0, tz=timezone.utc)
-        except (ValueError, TypeError, OSError):
+        except (ValueError, TypeError, OSError, OverflowError):
             return None
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
@@ -123,7 +123,9 @@ def _event_from_message(msg: dict, *, session_id: str, agent_id: str, cwd: str,
                         since: Optional[datetime]) -> Optional[UsageEvent]:
     if msg.get("type") != "gemini":
         return None
-    tokens = msg.get("tokens") or {}
+    tokens = msg.get("tokens")
+    if not isinstance(tokens, dict):
+        tokens = {}  # drifted shape (list/string/null): no counters to read
     model = str(msg.get("model") or "")
     raw_input = _int(tokens, "input", "promptTokenCount")
     raw_output = _int(tokens, "output", "candidatesTokenCount")
@@ -131,7 +133,7 @@ def _event_from_message(msg: dict, *, session_id: str, agent_id: str, cwd: str,
     thoughts = _int(tokens, "thoughts", "thoughtsTokenCount")
     tool_tokens = _int(tokens, "tool")
 
-    ts = _parse_ts(msg.get("timestamp") or msg.get("ts") or "")
+    ts = _parse_ts(str(msg.get("timestamp") or msg.get("ts") or ""))
     if ts is None:
         ts = datetime.now(timezone.utc)
     if since is not None and ts < since:
@@ -173,7 +175,13 @@ def parse_jsonl(path: str, root: str, projects_by_hash: dict,
     cwd = projects_by_hash.get(phash, "")
 
     seen: set[str] = set()
-    with open(path, encoding="utf-8") as fh:
+    try:
+        # errors="replace"/OSError: a chat transcript with invalid UTF-8, an
+        # unreadable file or a directory named *.jsonl must not abort the scan.
+        fh = open(path, encoding="utf-8", errors="replace")
+    except OSError:
+        return
+    with fh:
         for i, line in enumerate(fh):
             line = line.strip()
             if not line:

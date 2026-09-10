@@ -67,7 +67,18 @@ multi-assistant runway tracker plus a local-vs-cloud savings estimator.
   `--compact`) are unchanged and still the default when no `--tool` is
   given.
 
+- End-to-end matrix (`tests/test_e2e_matrix.py`): 9 tools × 7 synthetic scenarios through the real
+  CLI as a subprocess (adapters, report text/json, sessions, status cache, self-audit dedup, break-even,
+  determinism, regeneration). Robustness suite (`tests/test_robustness.py`): garbage/truncated JSONL,
+  binary bytes, minimal SQLite schemas, unknown models/fields, odd timestamps, empty/unreadable paths,
+  1 MB lines, 200-seed fuzz. Total 704 tests.
+- `claude-tasks.md`: work packages for coding agents on their own branches.
+
 ### Fixed
+- Adapters no longer abort a scan on non-UTF-8 bytes, directories/unreadable files where transcripts
+  are expected, corrupt SQLite stores, drifted record shapes (non-dict payloads, string percentages,
+  out-of-range epochs) or TEXT in numeric Copilot columns — the offending source is skipped.
+- Codex synthetic rollouts now carry their own mtime, so `quota()` picks the newest day.
 
 - Bedrock-style Claude model identifiers (e.g. region/vendor-prefixed IDs)
   were not normalising to their plain model name, so `self-audit`'s

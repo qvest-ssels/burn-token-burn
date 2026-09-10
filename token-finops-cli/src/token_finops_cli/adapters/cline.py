@@ -92,7 +92,7 @@ def _default_roots() -> list[str]:
 def _parse_ts_ms(v) -> Optional[datetime]:
     try:
         return datetime.fromtimestamp(float(v) / 1000.0, tz=timezone.utc)
-    except (TypeError, ValueError, OSError):
+    except (TypeError, ValueError, OSError, OverflowError):
         return None
 
 

@@ -118,14 +118,20 @@ def _event_from_payload(data: dict, *, session_id: str, source: str,
     tokens = data.get("tokens") or {}
     if not isinstance(tokens, dict):
         tokens = {}
-    input_tokens = int(tokens.get("input") or 0)
-    output_tokens = int(tokens.get("output") or 0)
-    reasoning_tokens = int(tokens.get("reasoning") or 0)
+    def _int(value) -> int:
+        try:
+            return int(value or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    input_tokens = _int(tokens.get("input"))
+    output_tokens = _int(tokens.get("output"))
+    reasoning_tokens = _int(tokens.get("reasoning"))
     cache = tokens.get("cache") or {}
     if not isinstance(cache, dict):
         cache = {}
-    cache_read = int(cache.get("read") or 0)
-    cache_write = int(cache.get("write") or 0)
+    cache_read = _int(cache.get("read"))
+    cache_write = _int(cache.get("write"))
 
     ts = None
     time_field = data.get("time")
@@ -240,7 +246,10 @@ class OpencodeAdapter(BaseAdapter):
 
     def _scan_db(self, db_path: str, source: str, since: Optional[datetime],
                  seen: set[str]) -> Iterable[UsageEvent]:
-        con = sqlite_readonly(db_path)
+        try:
+            con = sqlite_readonly(db_path)
+        except sqlite3.Error:
+            return  # a directory / unopenable path where the db should be
         try:
             if not _table_exists(con, "session_message"):
                 return
@@ -288,6 +297,8 @@ class OpencodeAdapter(BaseAdapter):
                     continue
                 seen.add(event_id)
                 yield ev
+        except sqlite3.Error:
+            return  # corrupt / not-a-database: skip, don't abort the report
         finally:
             con.close()
 

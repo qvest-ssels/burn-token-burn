@@ -50,7 +50,7 @@ def _parse_ts(v) -> Optional[datetime]:
         if f > 1e12:
             f /= 1000.0
         return datetime.fromtimestamp(f, tz=timezone.utc)
-    except (TypeError, ValueError, OSError):
+    except (TypeError, ValueError, OSError, OverflowError):
         pass
     try:
         dt = datetime.fromisoformat(str(v).replace("Z", "+00:00"))

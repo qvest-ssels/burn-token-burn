@@ -32,8 +32,17 @@ QUOTA_FILE = os.path.expanduser("~/.token-finops/quota.json")
 QUOTA_HISTORY_FILE = os.path.expanduser("~/.token-finops/quota_history.jsonl")
 
 
-def _parse_ts(s: str) -> datetime:
-    dt = datetime.fromisoformat((s or "").replace("Z", "+00:00"))
+def _int(value) -> int:
+    """Token counters are ints in every build seen so far, but a drifted or
+    hand-edited transcript can hold a string/null/object — never raise."""
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _parse_ts(s) -> datetime:
+    dt = datetime.fromisoformat(str(s or "").replace("Z", "+00:00"))
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc)
@@ -51,7 +60,15 @@ def parse_transcript(path: str, since: Optional[datetime] = None) -> Iterable[Us
     # One API response is spread over several lines (one per content block).
     # Collect them, take usage from the first line and tool_use names from all.
     events: dict[tuple, UsageEvent] = {}
-    with open(path, encoding="utf-8") as fh:
+    try:
+        # errors="replace": a transcript can contain invalid UTF-8 (a killed
+        # write, a binary blob pasted into a tool result); a bad byte must
+        # never abort the scan. OSError covers an unreadable file or a
+        # directory that happens to be named *.jsonl.
+        fh = open(path, encoding="utf-8", errors="replace")
+    except OSError:
+        return
+    with fh:
         for line in fh:
             if not line.startswith("{"):
                 continue
@@ -61,9 +78,11 @@ def parse_transcript(path: str, since: Optional[datetime] = None) -> Iterable[Us
                 continue
             if e.get("type") != "assistant":
                 continue
-            msg = e.get("message") or {}
+            msg = e.get("message")
+            if not isinstance(msg, dict):
+                continue
             usage = msg.get("usage")
-            if not usage:
+            if not isinstance(usage, dict) or not usage:
                 continue
             key = (msg.get("id"), e.get("requestId")) if msg.get("id") else (e.get("uuid"), None)
             tools = [c.get("name") for c in (msg.get("content") or [])
@@ -77,17 +96,19 @@ def parse_transcript(path: str, since: Optional[datetime] = None) -> Iterable[Us
             seen.add(key)
             try:
                 ts = _parse_ts(e.get("timestamp", ""))
-            except ValueError:
+            except (TypeError, ValueError):
                 continue
             if since is not None and ts < since:
                 continue
-            cc = usage.get("cache_creation") or {}
-            cw_total = int(usage.get("cache_creation_input_tokens") or 0)
-            cw_1h = int(cc.get("ephemeral_1h_input_tokens") or 0)
+            cc = usage.get("cache_creation")
+            if not isinstance(cc, dict):
+                cc = {}
+            cw_total = _int(usage.get("cache_creation_input_tokens"))
+            cw_1h = _int(cc.get("ephemeral_1h_input_tokens"))
             model = str(msg.get("model") or "")
-            inp = int(usage.get("input_tokens") or 0)
-            out = int(usage.get("output_tokens") or 0)
-            cr = int(usage.get("cache_read_input_tokens") or 0)
+            inp = _int(usage.get("input_tokens"))
+            out = _int(usage.get("output_tokens"))
+            cr = _int(usage.get("cache_read_input_tokens"))
             events[key] = UsageEvent(
                 tags={"first_tool": tools[0] if tools else "", "tools": list(tools)},
                 ts_utc=ts,
@@ -126,9 +147,18 @@ class ClaudeCodeAdapter(BaseAdapter):
             yield from parse_transcript(path, since)
 
     @staticmethod
-    def _snapshot(data: dict, window: str = "five_hour") -> Optional[QuotaSnapshot]:
-        rl = (data.get("rate_limits") or {}).get(window) or {}
-        if not rl or rl.get("used_percentage") is None:
+    def _snapshot(data, window: str = "five_hour") -> Optional[QuotaSnapshot]:
+        # A status-line snapshot is written by whatever Claude Code version is
+        # installed; tolerate any shape rather than raising on a drifted one.
+        if not isinstance(data, dict):
+            return None
+        rate_limits = data.get("rate_limits")
+        rl = rate_limits.get(window) if isinstance(rate_limits, dict) else None
+        if not isinstance(rl, dict) or rl.get("used_percentage") is None:
+            return None
+        try:
+            used_pct = float(rl["used_percentage"])
+        except (TypeError, ValueError):
             return None
         resets = rl.get("resets_at")
         if isinstance(resets, str):
@@ -136,14 +166,21 @@ class ClaudeCodeAdapter(BaseAdapter):
                 resets_dt = _parse_ts(resets)
             except ValueError:
                 resets_dt = None
-        elif isinstance(resets, (int, float)):
-            resets_dt = datetime.fromtimestamp(resets, tz=timezone.utc)
+        elif isinstance(resets, (int, float)) and not isinstance(resets, bool):
+            try:
+                resets_dt = datetime.fromtimestamp(resets, tz=timezone.utc)
+            except (OverflowError, OSError, ValueError):
+                resets_dt = None
         else:
             resets_dt = None
+        try:
+            observed_at = _parse_ts(data.get("observed_at") or datetime.now(timezone.utc).isoformat())
+        except (TypeError, ValueError):
+            observed_at = datetime.now(timezone.utc)
         return QuotaSnapshot(
             tool="claude_code", window_id="5h" if window == "five_hour" else "7d",
-            observed_at=_parse_ts(data.get("observed_at") or datetime.now(timezone.utc).isoformat()),
-            used_fraction=float(rl["used_percentage"]) / 100.0,
+            observed_at=observed_at,
+            used_fraction=used_pct / 100.0,
             resets_at=resets_dt, source="claude_statusline",
         )
 
