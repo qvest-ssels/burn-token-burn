@@ -6,7 +6,7 @@
   <key>ProgramArguments</key>
   <array>
     <string>/bin/sh</string><string>-lc</string>
-    <string>token-finops status --fresh --format plain >/dev/null</string>
+    <string>token-finops status --fresh --format plain >/dev/null && token-finops burn --record --since 7d >/dev/null</string>
   </array>
   <key>StartInterval</key><integer>120</integer>
   <key>RunAtLoad</key><true/>

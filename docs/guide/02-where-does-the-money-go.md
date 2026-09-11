@@ -32,3 +32,5 @@ Sub-agent calls aren't free extras — they draw from the same 5-hour and 7-day 
 | claude-sonnet-5 | 217 | 33.3M / 2.0M | $14.94 | 15% |
 
 Fable ran 270 of 488 calls (55%) but generated 85% of the API-equivalent cost. Sonnet ran nearly as many calls — 217 — for 15% of the cost. That gap, roughly 5.5x per call on average, is bigger than any caching optimization or dedup fix could ever produce. Retries and agent loops (a tool call that fails and gets retried, a sub-agent that re-derives context because it didn't get handed the parent's cache) add real waste on top of this, but they're rounding error next to the plain fact that which model answers the call decides the bill more than anything else you could tune. That's the subject of the next chapter.
+
+You don't have to take our numbers for it: `token-finops burn --efficiency` runs this exact breakdown against your own transcripts — cache hit ratio, frontier-tier share, sub-agent share, and the routing dividend (what mixing in a cheaper model actually saved versus running everything on the most expensive one in the mix). See `docs/BURN.md` for the formula behind each figure and its caveats.

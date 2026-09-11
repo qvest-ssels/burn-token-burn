@@ -46,6 +46,7 @@ uv run token-finops report  # per-tool usage (7d) + runway
 token-finops report --tool copilot --budget 1500      # your plan's monthly credits
 token-finops sessions --tool claude_code --since 30d
 token-finops self-audit     # what did the last Claude Code session cost, incl. sub-agents
+token-finops burn --plan claude:max-20x --efficiency  # are you maxing your plan?
 ```
 
 No real telemetry on hand? Generate a throwaway one — a complete synthetic
@@ -94,6 +95,33 @@ Sub-agents = 30 % of API-equivalent cost
 
 That session is the one that built this repository. The three research sub-agents that ran on the frontier model cost more than all the Sonnet work combined — see the [guide](docs/guide/) for what we changed after seeing that.
 
+## Are you maxing your plan?
+
+Subscriptions never publish a token allowance, so a flat fee can't be turned into "$ per
+token" directly — but it can be compared the other way round: price the same calls at
+pay-per-token list prices and divide by what the plan costs. `token-finops burn` does exactly
+that, plus a weekly/monthly token report and a burn-efficiency breakdown (cache hit rate,
+frontier-model share, sub-agent share, routing dividend).
+
+```
+$ token-finops burn --plan claude:max-20x
+Burn report: Claude Code (last 30d)
+  span: 2026-09-04 -> 2026-09-11  (6.5 days, 5 active)   calls 645   tokens 70.4M
+  API-equivalent:      $64.21   (list prices, reviewed 2026-09-11)
+  run-rate:           $298.00   per 30 days
+
+Plan equivalents — maxing = API-equivalent per 30 days / plan price:
+  plan                          $/month  plan-months   maxing  verdict
+  Claude Pro                      20.00          3.2    14.9x  arson
+  Claude Max 5x                  100.00          0.6     3.0x  token maxing
+  Claude Max 20x                 200.00          0.3     1.5x  normal heavy use  <- yours
+  Claude Team (premium seat)     150.00          0.4     2.0x  normal heavy use
+  -> on Claude Max 20x you burn 1.5x the fee in API terms: normal heavy use
+```
+
+See [`docs/BURN.md`](docs/BURN.md) for the maxing multiplier, plan-months, `--by day|week|month`,
+recorded history past a tool's own retention, and the full efficiency-metric reference.
+
 ### Local vs cloud
 
 ```
@@ -130,7 +158,7 @@ remaining desktop surfaces are designed in [`docs/INTEGRATIONS.md`](docs/INTEGRA
 
 ## Tested against 50 real-world use cases
 
-704 tests back this tool, including [`docs/USECASES.md`](docs/USECASES.md)
+775 tests back this tool, including [`docs/USECASES.md`](docs/USECASES.md)
 — 50 executable use cases (`UC-01` … `UC-50`) covering every adapter, the
 runway engine's edge cases (year rollover, mid-cycle joins, stale
 snapshots), the savings/break-even estimator, and multi-tool reports.
@@ -146,6 +174,7 @@ Each row names the pytest id, so `pytest -k UC-13` runs exactly that case.
 - [`docs/SYNTH.md`](docs/SYNTH.md) — the synthetic telemetry generator, used for demos and the whole test suite
 - [`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md) — status line / tmux / waybar / editor / desktop integrations (design proposal)
 - [`docs/USECASES.md`](docs/USECASES.md) — all 50 executable use cases
+- [`docs/BURN.md`](docs/BURN.md) — `burn`: maxing multiplier, weekly/monthly tables, history, burn efficiency
 - [`docs/README.md`](docs/README.md) — index of everything under `docs/`
 - [`AGENTS.md`](AGENTS.md) — rules for coding agents (Claude Code, Codex, Copilot) working in this repo
 - [`docs/sources.md`](docs/sources.md) — every price, quota and endpoint with its source and review date

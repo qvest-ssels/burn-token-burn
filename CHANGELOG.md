@@ -52,6 +52,12 @@ multi-assistant runway tracker plus a local-vs-cloud savings estimator.
   rescan telemetry; `contrib/` with a tmux plugin, systemd/launchd refresh timers and
   starship/waybar/SwiftBar recipes; `docs/TMUX.md`.
 - `docs/INTEGRATIONS.md` — design for editor, agent-native (`/runway`) and desktop surfaces.
+- **`token-finops burn`** — the maxing multiplier (API-equivalent per 30 days / plan price,
+  against a bundled, overridable plan catalogue), plan-months, a weekly/monthly token table
+  (`--by day|week|month`), history recording and merging (`--record`/`--history`) so `--by` can
+  reach past a tool's own retention, a burn-efficiency block (`--efficiency`/`--nerdy`: cache hit
+  ratio, frontier/sub-agent share, routing dividend, ...), a prepaid/committed-spend rate
+  (`--rate IN/OUT[/CR[/CW]]`), and a flat promo discount (`--discount`); see `docs/BURN.md`.
 
 ### Changed
 
@@ -71,8 +77,14 @@ multi-assistant runway tracker plus a local-vs-cloud savings estimator.
   CLI as a subprocess (adapters, report text/json, sessions, status cache, self-audit dedup, break-even,
   determinism, regeneration). Robustness suite (`tests/test_robustness.py`): garbage/truncated JSONL,
   binary bytes, minimal SQLite schemas, unknown models/fields, odd timestamps, empty/unreadable paths,
-  1 MB lines, 200-seed fuzz. Total 704 tests.
+  1 MB lines, 200-seed fuzz. Total 775 tests.
 - `claude-tasks.md`: work packages for coding agents on their own branches.
+- ruff rule set pinned explicitly in `pyproject.toml` — ruff 0.16 widened its default rule set,
+  which broke CI on rules the project had never opted into.
+- CI (`.github/workflows/ci.yml`) runs `uv run` against the matrix Python for each job instead of
+  whatever interpreter `uv` happened to resolve first, so 3.10–3.13 are each actually exercised.
+- `test_cli.py` subprocess invocations now set `PYTHONPATH` explicitly, so they pick up the
+  package under test instead of whatever is already installed on `PATH`.
 
 ### Fixed
 - Adapters no longer abort a scan on non-UTF-8 bytes, directories/unreadable files where transcripts

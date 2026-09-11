@@ -27,7 +27,7 @@ jobs:
         run: uv sync --python ${{ matrix.python-version }} --extra dev
 
       - name: Lint with ruff
-        run: uv run --extra dev ruff check .
+        run: uv run --python ${{ matrix.python-version }} --extra dev ruff check .
 
       - name: Run tests
-        run: uv run --extra dev pytest -v
+        run: uv run --python ${{ matrix.python-version }} --extra dev pytest -q

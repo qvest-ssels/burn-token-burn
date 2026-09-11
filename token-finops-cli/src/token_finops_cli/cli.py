@@ -385,6 +385,8 @@ def build_parser() -> argparse.ArgumentParser:
     add_savings_parsers(sub)
     from .status import add_status_parser
     add_status_parser(sub)
+    from .burn import add_burn_parser
+    add_burn_parser(sub)
     return p
 
 
@@ -392,7 +394,7 @@ def _normalize_argv(argv):
     if not argv:
         return ["report"]
     known = {"report", "sessions", "self-audit", "collect-statusline", "adapters", "savings",
-             "break-even", "synth", "status", "-h", "--help"}
+             "break-even", "synth", "status", "burn", "-h", "--help"}
     return argv if argv[0] in known else ["report", *argv]
 
 
@@ -404,6 +406,10 @@ def main(argv=None):
     handlers = {"report": cmd_report, "sessions": cmd_sessions, "self-audit": cmd_self_audit,
                 "collect-statusline": cmd_collect_statusline, "adapters": cmd_adapters,
                 "synth": cmd_synth}
+    if args.command == "burn":
+        from .burn import cmd_burn
+        print(cmd_burn(args))
+        return
     if args.command == "status":
         from .status import cmd_status
         print(cmd_status(args))

@@ -58,6 +58,30 @@ Remote: `origin = https://github.com/tronicum/burn-token-burn.git` (branch `main
   in the JSON, derive the tier from index bands, document the bands in `docs/guide/04`. Keep the
   "it's an assumption" caveat.
 
+- [ ] **T-15 self-audit across compaction** — branch `fix/self-audit-compaction` — model: Sonnet — S
+  When Claude Code compacts context it starts a new transcript for the same session id (and Cowork
+  cloud sessions do the same). `self-audit --session X` currently sees only the newest transcript;
+  the dogfooding run split into $224.95 + $56.63. Stitch every transcript sharing the session id
+  (main + `subagents/`), dedup across them, and print "segments: N" in the header. Fixture: two
+  JSONL files with the same `sessionId` in `tests/`. Acceptance: totals equal the sum of the parts.
+
+- [ ] **T-16 Claude Desktop / Cowork (macOS) coverage** — branch `docs/adr-0013-claude-desktop` — model: Opus — S
+  Question from the field: "can we measure Claude Desktop?" Investigate and write ADR-0013:
+  the desktop chat app keeps no local usage telemetry (conversations are server-side; check
+  `~/Library/Application Support/Claude/` for anything usable and document what is there);
+  Cowork cloud sessions leave their transcripts in the sandbox, not on the Mac, so `self-audit`
+  must run *inside* the session (as this repo did) and export JSON into the repo; on-computer
+  Cowork runs in a local VM — check whether its transcripts are reachable. The only account-wide
+  number across Desktop + Code + Cowork is the OAuth usage percentage (T-03 `--online`), and the
+  macOS menu-bar surface is already `status --format xbar` (SwiftBar). Verdict tier: reference-only
+  or usage-via-online. Add a row to README and `docs/landscape.md`.
+
+- [ ] **T-17 `burn --by` partial periods** — branch `fix/burn-partial-periods` — model: Sonnet — S
+  `hist.period_days` returns the calendar length (7 / 28–31) even when the window only covers part
+  of the first/last period, so `/30d $` and `maxing` are understated at the edges. Normalise by the
+  days actually inside the window (min(period end, last day) − max(period start, first day) + 1) and
+  mark partial periods with `*`. Tests in `tests/test_burn_history.py`.
+
 ## Next
 
 - [ ] **T-08 Neovim plugin `token-finops.nvim`** — branch `feat/nvim` — model: Sonnet — M

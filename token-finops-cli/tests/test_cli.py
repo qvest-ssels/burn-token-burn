@@ -1,6 +1,11 @@
 """Smoke tests for token_finops_cli — no live Copilot DB required."""
+import os
 import subprocess
 import sys
+
+# run the CLI from the checkout even when pytest's interpreter lacks the installed package
+_SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src")
+_ENV = {**os.environ, "PYTHONPATH": _SRC + os.pathsep + os.environ.get("PYTHONPATH", "")}
 
 
 def test_help_runs():
@@ -9,6 +14,7 @@ def test_help_runs():
         capture_output=True,
         text=True,
         check=False,
+        env=_ENV,
     )
     assert result.returncode == 0
     assert "report" in result.stdout
@@ -21,6 +27,7 @@ def test_report_help_runs():
         capture_output=True,
         text=True,
         check=False,
+        env=_ENV,
     )
     assert result.returncode == 0
     assert "--budget" in result.stdout
@@ -35,6 +42,7 @@ def test_default_command_is_report():
         capture_output=True,
         text=True,
         check=False,
+        env=_ENV,
     )
     assert result.returncode == 0
 
@@ -45,6 +53,7 @@ def test_sessions_help_runs():
         capture_output=True,
         text=True,
         check=False,
+        env=_ENV,
     )
     assert result.returncode == 0
     assert "--gap-minutes" in result.stdout
@@ -63,6 +72,7 @@ def test_sessions_list_against_synthetic_db(tmp_path):
         capture_output=True,
         text=True,
         check=False,
+        env=_ENV,
     )
     assert result.returncode == 0
     assert "demo-session-0" in result.stdout
@@ -80,6 +90,7 @@ def test_sessions_totals_report(tmp_path):
         capture_output=True,
         text=True,
         check=False,
+        env=_ENV,
     )
     assert result.returncode == 0
     assert "All sessions report" in result.stdout

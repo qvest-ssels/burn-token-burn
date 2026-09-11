@@ -21,3 +21,9 @@ launchctl load ~/Library/LaunchAgents/com.tronicum.token-finops.refresh.plist
 
 Widgets then call `token-finops status --format <fmt> --max-age 0` (never rescans) or read
 `~/.token-finops/last-line.txt` directly.
+
+Both units also chain `token-finops burn --record --since 7d` after the status refresh, so
+`~/.token-finops/history.jsonl` stays current without a second timer — `burn --by month
+--history` then has today's numbers without you remembering to run `--record` by hand. `--since
+7d` is enough since `--record` upserts by `(tool, day)`; a wider window just re-writes days that
+were already recorded.

@@ -1,0 +1,31 @@
+{
+  "_comment": "Subscription plan catalogue used by `token-finops burn`. Prices are monthly list prices in USD, billed monthly (annual discounts ignored). Plans expose no public token allowance, so the only honest comparison is API-equivalent $ vs. the price you pay. Override or extend via ~/.token-finops/plans.json (same shape, merged by id). Review these on every release.",
+  "review_date": "2026-09-11",
+  "sources": [
+    "https://www.anthropic.com/pricing",
+    "https://github.com/features/copilot/plans",
+    "https://openai.com/chatgpt/pricing",
+    "https://gemini.google/subscriptions",
+    "https://cursor.com/pricing"
+  ],
+  "plans": [
+    {"id": "claude:pro",     "tool": "claude_code", "name": "Claude Pro",       "usd_month": 20.0,  "multiplier": 1,  "notes": "5h/7d rolling windows; Claude Code included"},
+    {"id": "claude:max-5x",  "tool": "claude_code", "name": "Claude Max 5x",    "usd_month": 100.0, "multiplier": 5,  "notes": "5x Pro usage"},
+    {"id": "claude:max-20x", "tool": "claude_code", "name": "Claude Max 20x",   "usd_month": 200.0, "multiplier": 20, "notes": "20x Pro usage"},
+    {"id": "claude:team",    "tool": "claude_code", "name": "Claude Team (premium seat)", "usd_month": 150.0, "multiplier": 5, "notes": "per seat, Claude Code enabled"},
+
+    {"id": "copilot:pro",        "tool": "copilot", "name": "Copilot Pro",        "usd_month": 10.0, "premium_requests": 300,  "notes": "300 premium requests / month"},
+    {"id": "copilot:pro-plus",   "tool": "copilot", "name": "Copilot Pro+",       "usd_month": 39.0, "premium_requests": 1500, "notes": "1500 premium requests / month"},
+    {"id": "copilot:business",   "tool": "copilot", "name": "Copilot Business",   "usd_month": 19.0, "premium_requests": 300,  "notes": "per seat"},
+    {"id": "copilot:enterprise", "tool": "copilot", "name": "Copilot Enterprise", "usd_month": 39.0, "premium_requests": 1000, "notes": "per seat"},
+
+    {"id": "chatgpt:plus", "tool": "codex", "name": "ChatGPT Plus", "usd_month": 20.0,  "notes": "Codex CLI included, 5h/7d windows"},
+    {"id": "chatgpt:pro",  "tool": "codex", "name": "ChatGPT Pro",  "usd_month": 200.0, "notes": "Codex CLI included, larger windows"},
+
+    {"id": "gemini:ai-pro",   "tool": "gemini_cli", "name": "Google AI Pro",   "usd_month": 19.99,  "notes": "Gemini CLI: higher daily request limits"},
+    {"id": "gemini:ai-ultra", "tool": "gemini_cli", "name": "Google AI Ultra", "usd_month": 249.99, "notes": "highest Gemini CLI limits"},
+
+    {"id": "cursor:pro",   "tool": "cursor", "name": "Cursor Pro",   "usd_month": 20.0,  "notes": "reference-only tool (ADR-0008)"},
+    {"id": "cursor:ultra", "tool": "cursor", "name": "Cursor Ultra", "usd_month": 200.0, "notes": "reference-only tool (ADR-0008)"}
+  ]
+}

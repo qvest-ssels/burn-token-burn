@@ -27,6 +27,21 @@ Anthropic's subscription plans expose usage only as a percentage, and only throu
 { "statusLine": { "type": "command", "command": "token-finops collect-statusline" } }
 ```
 
+## The maxing multiplier as a team metric
+
+`token-finops burn --plan <id>` prices a person's or team's actual usage at pay-per-token list
+rates and divides by what the seat costs, giving a single number per person: how many times over
+they'd have paid the seat's fee on the API. As a team-level signal this is more honest than
+"who's using the most tokens", because it's normalised against what the org is already paying —
+a Max 20x seat sitting under 1x is money left on the table (the person would be cheaper on a
+smaller plan, or is barely using the tool at all); the same seat over 3x is a power user getting
+real value out of it. Neither reading is a judgement of the person's work: it says whether the
+plan shape fits the usage, not whether the usage was good. Use it to right-size seats, not to
+rank people. `burn --by month --history` (recording history from the same refresh timer as
+`status --fresh`) turns this into a monthly review: one table per team or per person, maxing
+multiplier per month, without waiting for a live tool's own retention window to still hold the
+data.
+
 ## Checklist
 
 - Set warning and critical alert thresholds (75% / 90%) — never a silent hard cutoff.
