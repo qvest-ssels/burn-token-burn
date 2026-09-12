@@ -46,6 +46,12 @@ offline and provider-sourced when the key API is queried.
 of backends (local models, OpenRouter, Codex-subscription passthrough)
 without inventing a fictitious "Hermes budget" that doesn't exist.
 
+**Robustness:** The adapter degrades gracefully when the newer `session_model_usage`
+table is absent, falling back to the `sessions` table; when the `sessions` table
+exists without optional columns (e.g. reasoning tokens, cache columns), they
+default to zero. Corrupt SQLite files are skipped silently, leaving the adapter
+non-functional for that store but not crashing the overall scan.
+
 **Risks:**
 - `billing_mode` values are not a fixed enum across versions; alias/
   fallback logic is required, and an unrecognized mode should default to

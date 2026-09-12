@@ -17,9 +17,9 @@ total_$/Mtok     = energy_$/Mtok + capex_$/Mtok
 
 Energy cost is fixed by the hardware's power draw and the model's throughput. Capex cost is not fixed at all — it's inversely proportional to utilisation, because a machine that sits idle 23 hours a day is still depreciating for all 24.
 
-## German constants (reviewed 2026-09-04)
+## German constants (reviewed 2026-09-12)
 
-Household grid electricity in Germany runs **37.0 ct/kWh** (BDEW, August 2026). If you'd run the box on your own solar instead, the honest price isn't zero — it's the feed-in tariff you give up by self-consuming instead of exporting: **7.71 ct/kWh** for systems ≤10 kWp (Aug 2026–Jan 2027). A full-cost LCOE view of residential PV lands around **8–12 ct/kWh** as a mid-range estimate (a primary Fraunhofer ISE figure is still to be sourced — treat that number as an estimate, not a citation). Solar is not free power; it's power with a different, lower opportunity cost.
+Household grid electricity in Germany runs **37.0 ct/kWh** (BDEW, August 2026). If you'd run the box on your own solar instead, the honest price isn't zero — it's the feed-in tariff you give up by self-consuming instead of exporting: **7.71 ct/kWh** for systems ≤10 kWp (Aug 2026–Jan 2027). A full-cost LCOE view of small rooftop PV (≤30 kWp) ranges **6.3–14.4 ct/kWh** depending on system cost and irradiation (Fraunhofer ISE, "Levelized Cost of Electricity – Renewable Energy Technologies", July 2024); we use the midpoint, **10.4 ct/kWh**. Solar is not free power; it's power with a different, lower opportunity cost.
 
 ## Worked example: Mac Studio M4 Max + Qwen3-32B
 

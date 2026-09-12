@@ -3,7 +3,7 @@ file, period grouping) and for the `token-finops burn` CLI end-to-end on a synth
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
@@ -135,6 +135,75 @@ def test_group_sums_fields_and_sorts_keys():
     wk = hist.group(days, "week")
     assert list(wk) == ["2026-W36", "2026-W37"]  # 2026-08-31 (Mon) and 2026-09-01 share week 36
     assert wk["2026-W36"]["days"] == 2
+
+
+# --------------------------------------------------------------------------- #
+# partial periods (run-rate normalisation by actually-observed days, not calendar length)
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("key, by, first_day, last_day, expected_days, expected_partial", [
+    # window fully covers the calendar week -> unclipped, not partial
+    ("2026-W37", "week", "2026-09-07", "2026-09-13", 7, False),
+    # window starts mid-week -> only the tail of the week is observed
+    ("2026-W37", "week", "2026-09-11", "2026-09-20", 3, True),  # Fri..Sun of that week = 3 days
+    # window ends mid-week -> only the head of the week is observed
+    ("2026-W37", "week", "2026-09-01", "2026-09-09", 3, True),  # Mon..Wed = 3 days
+    # window fully covers the calendar month -> unclipped
+    ("2026-09", "month", "2026-09-01", "2026-09-30", 30, False),
+    ("2026-09", "month", "2026-08-01", "2026-10-31", 30, False),  # window wider than the month
+    # window covers only part of the month at each edge
+    ("2026-09", "month", "2026-09-20", "2026-10-05", 11, True),  # Sep 20..30
+    ("2026-09", "month", "2026-08-25", "2026-09-05", 5, True),   # Sep 1..5
+    ("2026-09-11", "day", "2026-09-11", "2026-09-11", 1, False),
+])
+def test_period_window_days(key, by, first_day, last_day, expected_days, expected_partial):
+    days, partial = hist.period_window_days(key, by, first_day, last_day)
+    assert (days, partial) == (expected_days, expected_partial)
+
+
+def test_period_bounds():
+    assert hist.period_bounds("2026-09-11", "day") == (date(2026, 9, 11), date(2026, 9, 11))
+    assert hist.period_bounds("2026-W37", "week") == (date(2026, 9, 7), date(2026, 9, 13))
+    assert hist.period_bounds("2026-09", "month") == (date(2026, 9, 1), date(2026, 9, 30))
+    assert hist.period_bounds("2026-02", "month") == (date(2026, 2, 1), date(2026, 2, 28))
+
+
+def test_group_week_with_only_three_of_seven_days_normalises_by_three():
+    """Only Fri/Sat/Sun (3 of the 7 calendar days of that ISO week) have events -> the group's
+    period_days must be 3, not the calendar 7, so a run-rate divided by it isn't understated."""
+    days = {"2026-09-11": _rec(day="2026-09-11", calls=1, usd=3.0),   # Friday, week 37
+            "2026-09-12": _rec(day="2026-09-12", calls=1, usd=3.0),   # Saturday
+            "2026-09-13": _rec(day="2026-09-13", calls=1, usd=3.0)}   # Sunday
+    g = hist.group(days, "week")
+    assert list(g) == ["2026-W37"]
+    wk = g["2026-W37"]
+    assert wk["days"] == 3  # days with data
+    assert wk["period_days"] == 3  # normalisation denominator: actually observed, not 7
+    assert wk["partial"] is True
+    usd_per_30d = wk["usd"] * 30.0 / wk["period_days"]
+    assert usd_per_30d == pytest.approx(9.0 * 30 / 3)
+    assert usd_per_30d != pytest.approx(9.0 * 30 / 7)  # the bug being fixed: NOT the calendar length
+
+
+def test_group_full_week_normalises_by_seven_and_is_not_partial():
+    days = {f"2026-09-{d:02d}": _rec(day=f"2026-09-{d:02d}", calls=1, usd=1.0) for d in range(7, 14)}
+    g = hist.group(days, "week")
+    wk = g["2026-W37"]
+    assert wk["days"] == 7 and wk["period_days"] == 7 and wk["partial"] is False
+
+
+def test_group_full_month_normalises_by_calendar_days_in_that_month():
+    days = {f"2026-09-{d:02d}": _rec(day=f"2026-09-{d:02d}", calls=1, usd=1.0) for d in range(1, 31)}
+    g = hist.group(days, "month")
+    mo = g["2026-09"]
+    assert mo["days"] == 30 and mo["period_days"] == 30 and mo["partial"] is False
+    # a different, shorter month: February 2026 has 28 days
+    feb = {f"2026-02-{d:02d}": _rec(day=f"2026-02-{d:02d}", calls=1, usd=1.0) for d in range(1, 29)}
+    gf = hist.group(feb, "month")
+    assert gf["2026-02"]["period_days"] == 28 and gf["2026-02"]["partial"] is False
+
+
+def test_group_empty_days_has_no_periods():
+    assert hist.group({}, "month") == {}
 
 
 def test_cutoff_day():

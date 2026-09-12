@@ -37,6 +37,13 @@ via one parsing path, useful for the cross-tool cost roll-up and the
 local-vs-cloud savings estimator when local models are used through
 either CLI.
 
+**Robustness:** The adapter tolerates missing columns in the `session_message`
+table — when the optional `cost` field is absent from the JSON `data` blob,
+the adapter falls back to LiteLLM pricing instead of skipping the record.
+When the `session` table itself is missing, messages are still parsed with
+empty values for session-level fields. Corrupt SQLite files are skipped
+silently without raising.
+
 **Risks:**
 - Schema drift: the `data` JSON blob is undocumented and could change
   shape between OpenCode/Kilo releases without notice; field-alias lists

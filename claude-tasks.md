@@ -23,13 +23,6 @@ Remote: `origin = https://github.com/tronicum/burn-token-burn.git` (branch `main
   install path, skip it in CI, note why). Extend `tests/test_cli_smoke_workflow.py`'s TIER1 dict
   (or add a TIER2 one) to keep the doc/workflow drift guard covering these too.
 
-- [ ] **T-01 ADR hardening notes** — branch `adr/robustness-notes` — model: Haiku/Sonnet — S
-  `tests/test_robustness.py` hardened every adapter (non-UTF-8 bytes, directories where files are
-  expected, corrupt SQLite, drifted record shapes, absurd epochs). Add a short "Robustness" line to
-  the *Consequences* section of ADRs 0001–0007, 0009, 0010 describing what the adapter now tolerates
-  and what it silently skips. Acceptance: each ADR mentions skip-on-error behaviour; `docs/adr/README.md`
-  table unchanged.
-
 - [ ] **T-02 Copilot synth scale** — branch `synth/copilot-aiu-scale` — model: Sonnet — S
   `build_synthetic_db` bills ~900 AI units per request (≈ $9/req), so a 14-day "steady" home is
   EXHAUSTED against a Pro allowance (1500). Rescale `total_nano_aiu` so steady ≈ 40–60 % of 1500
@@ -59,11 +52,6 @@ Remote: `origin = https://github.com/tronicum/burn-token-burn.git` (branch `main
   trusted publisher for `tronicum/burn-token-burn` → project `token-finops-cli`, then
   `git tag v0.3.0 && git push --tags`. Acceptance: dry-run `uv build` in CI on the PR.
 
-- [ ] **T-06 Fraunhofer ISE LCOE citation** — branch `docs/lcoe-source` — model: Sonnet — S
-  `savings/energy.json` `solar-de-lcoe` is an estimate. Find the current Fraunhofer ISE
-  "Stromgestehungskosten" residential PV range, set the value, cite it in `docs/sources.md`
-  with review date, adjust `docs/guide/04-local-vs-cloud.md` if the number moved.
-
 - [ ] **T-07 Quality-tier mapping from Artificial Analysis** — branch `savings/quality-tiers` — model: Opus — M
   `hardware_profiles.json` assigns `quality_tier` (haiku/sonnet/opus) by hand. Fetch the
   Artificial Analysis intelligence index for the listed open models, store index values with a date
@@ -87,12 +75,6 @@ Remote: `origin = https://github.com/tronicum/burn-token-burn.git` (branch `main
   number across Desktop + Code + Cowork is the OAuth usage percentage (T-03 `--online`), and the
   macOS menu-bar surface is already `status --format xbar` (SwiftBar). Verdict tier: reference-only
   or usage-via-online. Add a row to README and `docs/landscape.md`.
-
-- [ ] **T-17 `burn --by` partial periods** — branch `fix/burn-partial-periods` — model: Sonnet — S
-  `hist.period_days` returns the calendar length (7 / 28–31) even when the window only covers part
-  of the first/last period, so `/30d $` and `maxing` are understated at the edges. Normalise by the
-  days actually inside the window (min(period end, last day) − max(period start, first day) + 1) and
-  mark partial periods with `*`. Tests in `tests/test_burn_history.py`.
 
 ## Next
 
@@ -132,6 +114,18 @@ Remote: `origin = https://github.com/tronicum/burn-token-burn.git` (branch `main
 
 ## Done (keep for history)
 
+- [x] **T-17 `burn --by` partial periods** — `hist.period_days` returned the full calendar length
+  of a week/month even when the reporting window only covered part of it (the first/last period
+  of a `--since`/`--by` window), understating `usd_per_30d`/`maxing` at the edges. Added
+  `hist.period_bounds()` and `hist.period_window_days()`; `hist.group()` now attaches
+  `period_days` (actual days of the period inside `[min(days), max(days)]`, not the calendar
+  length) and `partial` to each group, and `burn_report`/`render_burn` normalise by that and mark
+  partial periods with a trailing `*` plus a one-line legend. Updated
+  `test_burn_report_by_week_periods` / `..._by_month_without_plan_has_no_maxing` /
+  `..._merges_history_rows` (they exercised the old, understated calendar-days denominator on a
+  partial window) and `docs/BURN.md`; added full-period and 3-of-7-day partial-week tests — 802
+  passed, 1 skipped — 2026-09-12
+
 - [x] Phase 0–3 of `docs/PLAN.md`, 9 adapters, runway engine, `status` renderer + cache, synth
   generator, 50 use cases, e2e matrix + robustness suite (704 tests) — 2026-09-05…09
 - [x] `burn` subcommand (maxing multiplier, weekly/monthly tables, history, efficiency, prepaid
@@ -147,3 +141,13 @@ Remote: `origin = https://github.com/tronicum/burn-token-burn.git` (branch `main
   Haiku sub-agents (one per tool, sequential edits to `docs/INSTALL.md`), each fact-checked
   afterward — one fabricated command caught and fixed (Kilo CLI has no Homebrew tap; the
   sub-agent invented `Kilo-Org/tap/kilo`) — 2026-09-12
+- [x] **T-06 Fraunhofer ISE LCOE citation** — `savings/energy.json` `solar-de-lcoe` updated to
+  0.104 EUR/kWh (10.4 ct/kWh, midpoint of the 6.3–14.4 ct/kWh small rooftop PV ≤30 kWp range),
+  cited to Fraunhofer ISE "Levelized Cost of Electricity – Renewable Energy Technologies" (July
+  2024, the current edition); `docs/sources.md` and `docs/guide/04-local-vs-cloud.md` updated to
+  match (old placeholder was 8–12 ct/kWh estimate, "primary Fraunhofer ISE figure still to be
+  cited") — 2026-09-12
+- [x] **T-01 ADR hardening notes** — added "Robustness" paragraphs to Consequences sections of ADRs
+  0001–0007, 0009, 0010 describing what each adapter tolerates (non-UTF-8 bytes, garbage in JSONL,
+  corrupt SQLite, drifted record shapes, missing columns, unparsable timestamps, unknown models);
+  ruff and pytest pass (787 passed, 1 skipped) — 2026-09-12

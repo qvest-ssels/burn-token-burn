@@ -48,6 +48,13 @@ TODO rather than a dependency, per the project's own research notes.
 attribution for cost reporting, without any network dependency for the
 core feature.
 
+**Robustness:** The adapter handles garbage appended to JSONL files (truncated
+JSON, whitespace-only lines, valid-but-wrong-shape JSON objects), keeps all
+intact message events when a file's tail is truncated, normalizes multiple
+timestamp formats (ISO 8601, epoch milliseconds, and future-dated values) to
+UTC, and gracefully processes unknown model IDs and extra/unexpected fields.
+Malformed files are skipped without raising.
+
 **Risks:**
 - Reset timezone is undocumented; our locally-computed "day boundary" may
   disagree with Google's actual reset instant near midnight, causing a

@@ -7,8 +7,8 @@
                           "source": "https://www.rechnerportal.net/news/bdew-haushaltsstrompreis-2026/"},
     "solar-de-feed-in": {"eur_per_kwh": 0.0771, "label": "Germany PV self-consumption, opportunity cost = feed-in tariff <=10 kWp (Aug 2026-Jan 2027)",
                          "source": "https://photovoltaik.org/kosten/einspeiseverguetung"},
-    "solar-de-lcoe": {"eur_per_kwh": 0.10, "label": "Germany residential PV LCOE, mid-range estimate (primary Fraunhofer ISE figure still to be cited)",
-                      "source": "estimate"},
+    "solar-de-lcoe": {"eur_per_kwh": 0.104, "label": "Germany small rooftop PV (<=30 kWp) LCOE, mid-range of 6.3-14.4 ct/kWh (Fraunhofer ISE, Jul 2024)",
+                      "source": "https://www.ise.fraunhofer.de/content/dam/ise/en/documents/publications/studies/EN2024_ISE_Study_Levelized_Cost_of_Electricity_Renewable_Energy_Technologies.pdf"},
     "grid-us-avg": {"eur_per_kwh": 0.16, "label": "US residential average (approx.)", "source": "estimate"}
   },
   "cloud_tiers_usd_per_mtok": {

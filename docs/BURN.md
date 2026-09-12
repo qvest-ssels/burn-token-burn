@@ -83,11 +83,18 @@ By month:
   2026-09       5    646    70.4M      69.18     69.18
 ```
 
-`days` is the number of days with at least one call in that period (not the calendar length —
-`period_days()` in `burn/history.py` supplies the calendar length separately, for the `/30d $`
-run-rate normalisation, so a partial month doesn't look artificially cheap). With `--plan` set, a
-`maxing` column is appended per period, so a monthly review can see which month actually maxed
-the plan rather than only the trailing window average.
+`days` is the number of days with at least one call in that period (not the calendar length).
+The `/30d $` run-rate normalises by the days of that period actually **inside the reporting
+window** — `min(period end, last observed day) - max(period start, first observed day) + 1`
+(`hist.group()`/`hist.period_window_days()`) — not always the full calendar length. Most periods
+are unclipped and this is just the calendar length (7 for a week, 28–31 for a month), but the
+*first* and *last* period of a window (e.g. the first week of a `--since 7d` report, or the
+current, still-incomplete month) are usually only partly covered by the data: a week with only
+3 of its 7 days observed normalises by 3, not 7, so the run-rate isn't understated by dividing
+over days you never had a chance to see. Such a period is marked with a trailing `*` in the
+table, with a one-line legend underneath explaining it. With `--plan` set, a `maxing` column is
+appended per period, so a monthly review can see which month actually maxed the plan rather than
+only the trailing window average.
 
 `day` and `week` use UTC calendar boundaries; `week` is ISO week (`YYYY-Www`), matching
 `datetime.isocalendar()`.

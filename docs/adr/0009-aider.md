@@ -36,6 +36,13 @@ through ADR-0006) given its regex dependency on a human-facing log format.
 requiring them to enable analytics logging, plus a stronger path when
 they do.
 
+**Robustness:** When analytics JSONL is present, the adapter handles garbage
+appended to the file (preserving all intact events) and truncated tails without
+raising. It normalizes various timestamp formats (epoch seconds, ISO 8601) to
+UTC. When the analytics log is absent, the adapter falls back to regex parsing
+of the Markdown history file, using file modification time when no chat header
+is present. Both paths skip unparsable records rather than raising.
+
 **Risks:**
 - Regex-based Markdown parsing is the most drift-prone approach in this
   project: formatting changes (locale-dependent number formatting,

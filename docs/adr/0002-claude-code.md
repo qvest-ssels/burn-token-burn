@@ -51,6 +51,14 @@ credible USD-equivalent, and — once the collector runs at least once — a
 real rolling-window runway sourced from Anthropic's own numbers instead of
 a guess.
 
+**Robustness:** The adapter handles garbage appended to JSONL files (truncated
+records, invalid JSON) by preserving all intact events, tolerates binary bytes
+in transcript content by replacing them rather than raising, and normalizes
+various timestamp formats (ISO 8601, with/without timezone) to UTC. Drifted
+quota file shapes (missing or unexpected fields) are handled defensively.
+Corrupt or unreadable transcript files are skipped silently, leaving intact
+sessions still queryable.
+
 **Risks:**
 - Schema drift: JSONL field names have already shifted across versions;
   alias lists and skip-on-parse-failure are required.

@@ -34,6 +34,11 @@ LiteLLM when `cost` is present and non-null). No runway: `Unit.USD`,
 agents via one shared parser, since their `ui_messages.json` shape is
 effectively identical.
 
+**Robustness:** The adapter handles unknown model IDs and extra payload keys in
+the `api_req_started` messages without raising, and gracefully processes tasks
+with missing `task_metadata.json` files (defaulting the model to "unknown").
+Directories present where task files are expected are skipped silently.
+
 **Risks:**
 - The `api_req_started` payload is an internal UI message format, not a
   documented telemetry schema — the most drift-prone source in this

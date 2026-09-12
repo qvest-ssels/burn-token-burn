@@ -18,7 +18,7 @@
 | gpt-oss-120b via OpenRouter pricing | $0.03 per MTok input / $0.17 per MTok output | https://openrouter.ai/openai/gpt-oss-120b | 2026-09-04 |
 | German household electricity rate | 37.0 ct/kWh | https://www.rechnerportal.net/news/bdew-haushaltsstrompreis-2026/ | 2026-09-04 |
 | German PV feed-in tariff (≤10 kWp) | 7.71 ct/kWh (Aug 2026–Jan 2027) | https://photovoltaik.org/kosten/einspeiseverguetung | 2026-09-04 |
-| Residential PV LCOE | 8–12 ct/kWh (estimate, Fraunhofer ISE) | Primary Fraunhofer ISE citation needed | 2026-09-04 |
+| Residential PV LCOE | 6.3–14.4 ct/kWh, small rooftop systems ≤30 kWp (mid-range used: 10.4 ct/kWh) | "Levelized Cost of Electricity – Renewable Energy Technologies", Fraunhofer ISE, July 2024: https://www.ise.fraunhofer.de/content/dam/ise/en/documents/publications/studies/EN2024_ISE_Study_Levelized_Cost_of_Electricity_Renewable_Energy_Technologies.pdf | 2026-09-12 |
 | Gemini CLI free quota | 1000 req/day | https://google-gemini.github.io/gemini-cli/docs/quota-and-pricing.html | 2026-09-04 |
 | Gemini CLI Standard quota | 1500 req/day | https://google-gemini.github.io/gemini-cli/docs/quota-and-pricing.html | 2026-09-04 |
 | Gemini CLI Enterprise quota | 2000 req/day | https://google-gemini.github.io/gemini-cli/docs/quota-and-pricing.html | 2026-09-04 |

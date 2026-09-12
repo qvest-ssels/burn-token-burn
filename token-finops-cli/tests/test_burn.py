@@ -3,7 +3,7 @@ prepaid rates, report assembly and rendering). No real telemetry, no network."""
 from __future__ import annotations
 
 import json
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -270,8 +270,14 @@ def test_burn_report_by_week_periods():
     # NOW = 2026-09-15 (Tuesday, ISO week 38); 10 days back reaches 2026-09-06 (Sunday, week 36)
     assert keys == ["2026-W36", "2026-W37", "2026-W38"]
     assert keys == sorted(keys)
+    by_period = {g["period"]: g for g in r["periods"]}
+    # W36 only contributes its last day (2026-09-06) to the window, W38 only its first two days
+    # (2026-09-14/15); only W37 (2026-09-07..13) is a full, unclipped calendar week.
+    assert by_period["2026-W36"]["period_days"] == 1 and by_period["2026-W36"]["partial"] is True
+    assert by_period["2026-W37"]["period_days"] == 7 and by_period["2026-W37"]["partial"] is False
+    assert by_period["2026-W38"]["period_days"] == 2 and by_period["2026-W38"]["partial"] is True
     for g in r["periods"]:
-        assert g["usd_per_30d"] == pytest.approx(g["usd"] * 30 / 7)
+        assert g["usd_per_30d"] == pytest.approx(g["usd"] * 30 / g["period_days"])
         assert g["maxing"] == pytest.approx(g["usd_per_30d"] / 200.0)
         assert g["tokens"] == g["calls"] * 1100
     assert sum(g["days"] for g in r["periods"]) == 10
@@ -279,6 +285,25 @@ def test_burn_report_by_week_periods():
     text = "\n".join(burn.render_burn(r, "2026-09-04"))
     assert "By ISO week:" in text and "2026-W37" in text and "maxing" in text
     assert "recorded history" not in text
+    # the two partial weeks are marked with a trailing `*`, the full week is not
+    assert "2026-W36*" in text and "2026-W38*" in text and "2026-W37 " in text and "2026-W37*" not in text
+    assert "* partial period (fewer days observed than the calendar period)" in text
+
+
+def test_burn_report_by_week_full_week_window_has_no_partial_marker():
+    """A window that IS exactly one full ISO week normalises by 7 as before, with no `*`."""
+    # 2026-09-07 (Mon) .. 2026-09-13 (Sun) is exactly ISO week 2026-W37.
+    events = [make_event(d, tool="claude_code", model="claude-sonnet-5", usd=30.0, inp=1000, out=100,
+                         now=NOW - timedelta(days=2))
+              for d in range(7)]
+    r = burn.burn_report("claude_code", "Claude Code", events, PLANS, my_plan="claude:max-20x", by="week")
+    assert [g["period"] for g in r["periods"]] == ["2026-W37"]
+    g = r["periods"][0]
+    assert g["partial"] is False and g["period_days"] == 7
+    assert g["usd_per_30d"] == pytest.approx(g["usd"] * 30 / 7)
+    text = "\n".join(burn.render_burn(r, "2026-09-04"))
+    assert "2026-W37*" not in text
+    assert "* partial period" not in text
 
 
 def test_burn_report_by_month_without_plan_has_no_maxing():
@@ -286,9 +311,28 @@ def test_burn_report_by_month_without_plan_has_no_maxing():
     assert [g["period"] for g in r["periods"]] == ["2026-09"]
     g = r["periods"][0]
     assert g["maxing"] is None
-    assert g["usd_per_30d"] == pytest.approx(300.0 * 30 / 30)
+    # the window (2026-09-06..2026-09-15) covers only 10 of September's 30 days, so run-rate
+    # normalises by the 10 days actually observed, not the full calendar month.
+    assert g["partial"] is True and g["period_days"] == 10
+    assert g["usd_per_30d"] == pytest.approx(300.0 * 30 / 10)
     head = next(ln for ln in burn.render_burn(r, "x") if ln.strip().startswith("period"))
     assert "maxing" not in head
+    text = "\n".join(burn.render_burn(r, "x"))
+    assert "2026-09*" in text and "* partial period" in text
+
+
+def test_burn_report_by_month_full_month_window_has_no_partial_marker():
+    """A window that spans an entire calendar month normalises by its calendar length, unchanged."""
+    events = [make_event(0, tool="claude_code", model="claude-sonnet-5", usd=10.0, inp=1000, out=100,
+                         now=datetime(2026, 9, d, 12, tzinfo=timezone.utc))
+              for d in range(1, 31)]  # every day of September 2026 (30 days)
+    r = burn.burn_report("claude_code", "Claude Code", events, PLANS, by="month")
+    assert [g["period"] for g in r["periods"]] == ["2026-09"]
+    g = r["periods"][0]
+    assert g["partial"] is False and g["period_days"] == 30
+    assert g["usd_per_30d"] == pytest.approx(300.0 * 30 / 30)
+    text = "\n".join(burn.render_burn(r, "x"))
+    assert "2026-09*" not in text and "* partial period" not in text
 
 
 def test_burn_report_merges_history_rows():
@@ -300,5 +344,7 @@ def test_burn_report_merges_history_rows():
     months = {g["period"]: g for g in r["periods"]}
     assert set(months) == {"2026-07", "2026-09"}
     assert months["2026-07"]["usd"] == pytest.approx(7.0) and months["2026-07"]["tokens"] == 100
-    assert months["2026-07"]["usd_per_30d"] == pytest.approx(7.0 * 30 / 31)
+    # window runs 2026-07-04..2026-09-15, so July only contributes 28 of its 31 days (partial)
+    assert months["2026-07"]["partial"] is True and months["2026-07"]["period_days"] == 28
+    assert months["2026-07"]["usd_per_30d"] == pytest.approx(7.0 * 30 / 28)
     assert "(live telemetry + recorded history)" in "\n".join(burn.render_burn(r, "x"))

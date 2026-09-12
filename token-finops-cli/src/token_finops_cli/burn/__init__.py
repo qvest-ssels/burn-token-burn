@@ -240,7 +240,7 @@ def burn_report(tool: str, display_name: str, events: list[UsageEvent], plans: l
         periods = []
         for key, g in hist.group(daily, by).items():
             g = dict(g)
-            g["usd_per_30d"] = g["usd"] * 30.0 / hist.period_days(key, by)
+            g["usd_per_30d"] = g["usd"] * 30.0 / g["period_days"]
             g["maxing"] = (g["usd_per_30d"] / price) if price else None
             periods.append(g)
 
@@ -269,12 +269,17 @@ def _render_periods(r: dict) -> list[str]:
     head = f"  {'period':<10} {'days':>4} {'calls':>6} {'tokens':>8} {'API-eq $':>10} {'/30d $':>9}"
     head += f" {'maxing':>7}" if r["my_plan"] else ""
     out.append(head)
+    any_partial = False
     for g in r["periods"]:
-        line = (f"  {g['period']:<10} {g['days']:>4} {g['calls']:>6} {fmt_tokens(g['tokens']):>8} "
+        label = g["period"] + ("*" if g.get("partial") else "")
+        any_partial = any_partial or g.get("partial", False)
+        line = (f"  {label:<10} {g['days']:>4} {g['calls']:>6} {fmt_tokens(g['tokens']):>8} "
                 f"{g['usd']:>10.2f} {g['usd_per_30d']:>9.2f}")
         if r["my_plan"] and g["maxing"] is not None:
             line += f" {g['maxing']:>6.1f}x"
         out.append(line)
+    if any_partial:
+        out.append("  * partial period (fewer days observed than the calendar period)")
     return out
 
 

@@ -52,6 +52,13 @@ endpoint dependency for the core feature — arguably the easiest "full
 adapter" win in the whole project, matching the plan's assessment that
 "Codex is the simplest offline win".
 
+**Robustness:** The adapter preserves all intact events when garbage is appended
+to JSONL (truncated JSON, invalid records), tolerates drifted payload shapes
+(arrays where objects expected, missing fields, non-numeric values in token
+fields), and gracefully handles out-of-range epoch values in rate-limit reset
+times without crashing. Unparsable records are skipped individually without
+disrupting the rest of the session.
+
 **Risks:**
 - Schema drift: the delta-emission logic depends on `total_token_usage`
   staying cumulative; a future Codex version could change this silently,

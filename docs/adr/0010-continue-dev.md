@@ -32,6 +32,12 @@ field's documented instability.
 at session granularity, feeding the cross-tool cost roll-up even if
 imprecisely.
 
+**Robustness:** When individual session files are corrupt or have unexpected
+JSON shapes, they are skipped silently, allowing the adapter to return events
+from other intact sessions. When the session index (`sessions.json`) is broken
+or missing, the adapter still parses individual session files directly. Empty
+session directories yield no events but never raise an error.
+
 **Risks:**
 - The `usage` field's instability means this adapter is likely to need
   more frequent maintenance than others, and may silently return zero

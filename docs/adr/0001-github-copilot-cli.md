@@ -45,6 +45,13 @@ attribution, and fix the cycle boundary to 1st-of-month 00:00 UTC.
 local-only, no auth, no RE endpoint required for the core runway feature,
 and sub-agent-level attribution once the optional columns are read.
 
+**Robustness:** The adapter tolerates missing columns (e.g. when the `model`,
+`cache_read_tokens`, or `cache_write_tokens` columns are absent from the
+database) and falls back to sensible defaults; it also handles rows with
+TEXT values in numeric columns and unparsable timestamps by skipping only
+the affected rows. Corrupt SQLite files are skipped silently rather than
+raising an error.
+
 **Risks:**
 - Schema drift: the optional columns are undocumented; if GitHub renames or
   drops them, we degrade gracefully to total-only accounting (already the

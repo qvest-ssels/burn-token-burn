@@ -98,19 +98,49 @@ def period_key(day: str, by: str) -> str:
     raise ValueError(by)
 
 
-def period_days(key: str, by: str) -> int:
-    """Calendar length of the period, for run-rate normalisation."""
+def period_bounds(key: str, by: str) -> tuple[date, date]:
+    """Calendar [start, end] (inclusive) of the period named `key`."""
     if by == "day":
-        return 1
+        d = date.fromisoformat(key)
+        return d, d
     if by == "week":
-        return 7
+        y_str, w_str = key.split("-W")
+        y, w = int(y_str), int(w_str)
+        return date.fromisocalendar(y, w, 1), date.fromisocalendar(y, w, 7)
     y, m = (int(x) for x in key.split("-"))
     first = date(y, m, 1)
     nxt = date(y + (m == 12), 1 if m == 12 else m + 1, 1)
-    return (nxt - first).days
+    return first, nxt - timedelta(days=1)
+
+
+def period_days(key: str, by: str) -> int:
+    """Calendar length of the period (full week/month), for reference — NOT what run-rate
+    normalisation should divide by when the reporting window only covers part of this period
+    (the first/last period of a `--since`/`--by` window); see `period_window_days` for that."""
+    start, end = period_bounds(key, by)
+    return (end - start).days + 1
+
+
+def period_window_days(key: str, by: str, first_day: str, last_day: str) -> tuple[int, bool]:
+    """Days of period `key` that actually fall inside [first_day, last_day] (inclusive) —
+    the real reporting window, not the full calendar period. Returns
+    (actual_days, is_partial) where is_partial is True when actual_days is fewer than the
+    period's full calendar length (the period is only partly covered by the window, typically
+    at its first or last edge)."""
+    start, end = period_bounds(key, by)
+    first = date.fromisoformat(first_day)
+    last = date.fromisoformat(last_day)
+    actual = (min(end, last) - max(start, first)).days + 1
+    cal_days = (end - start).days + 1
+    return actual, actual < cal_days
 
 
 def group(days: dict[str, dict], by: str) -> dict[str, dict]:
+    """Aggregate `days` (day -> record) into periods. Each group also carries `period_days`
+    (the days of the period actually inside the [min(days), max(days)] window — the real
+    reporting window, not the full calendar period) and `partial` (True when that's fewer than
+    the calendar length), so callers can normalise run-rates by what was actually observed
+    instead of overstating the denominator at the edges of the window."""
     out: dict[str, dict] = {}
     for day, rec in days.items():
         k = period_key(day, by)
@@ -122,9 +152,12 @@ def group(days: dict[str, dict], by: str) -> dict[str, dict]:
         g["usd"] += rec.get("usd", 0.0)
         for m, v in (rec.get("by_model") or {}).items():
             g["by_model"][m] += v
-    for g in out.values():
+    if days:
+        first_day, last_day = min(days), max(days)
+    for k, g in out.items():
         g["by_model"] = dict(g["by_model"])
         g["tokens"] = g["input"] + g["output"] + g["cache_read"] + g["cache_write"]
+        g["period_days"], g["partial"] = period_window_days(k, by, first_day, last_day)
     return dict(sorted(out.items()))
 
 
