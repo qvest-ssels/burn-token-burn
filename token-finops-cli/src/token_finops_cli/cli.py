@@ -10,6 +10,9 @@
     token-finops adapters                                        # what data sources were found
     token-finops synth --out DIR [--tools t1,t2] [--days N] [--scenario NAME] [--seed N] [--print-env]
                                                                   # write a synthetic fake-home tree
+    token-finops cost-per-token [--tool T] [--since 30d] [--json] # $/1M tokens by model; real list
+                                                                  # price, or a derived rate where a
+                                                                  # tool doesn't bill per token (Copilot)
 """
 from __future__ import annotations
 
@@ -387,6 +390,8 @@ def build_parser() -> argparse.ArgumentParser:
     add_status_parser(sub)
     from .burn import add_burn_parser
     add_burn_parser(sub)
+    from .cost_per_token import add_cost_per_token_parser
+    add_cost_per_token_parser(sub)
     return p
 
 
@@ -394,7 +399,7 @@ def _normalize_argv(argv):
     if not argv:
         return ["report"]
     known = {"report", "sessions", "self-audit", "collect-statusline", "adapters", "savings",
-             "break-even", "synth", "status", "burn", "-h", "--help"}
+             "break-even", "synth", "status", "burn", "cost-per-token", "-h", "--help"}
     return argv if argv[0] in known else ["report", *argv]
 
 
@@ -409,6 +414,10 @@ def main(argv=None):
     if args.command == "burn":
         from .burn import cmd_burn
         print(cmd_burn(args))
+        return
+    if args.command == "cost-per-token":
+        from .cost_per_token import cmd_cost_per_token
+        print(cmd_cost_per_token(args))
         return
     if args.command == "status":
         from .status import cmd_status

@@ -52,6 +52,13 @@ multi-assistant runway tracker plus a local-vs-cloud savings estimator.
   rescan telemetry; `contrib/` with a tmux plugin, systemd/launchd refresh timers and
   starship/waybar/SwiftBar recipes; `docs/TMUX.md`.
 - `docs/INTEGRATIONS.md` — design for editor, agent-native (`/runway`) and desktop surfaces.
+- **`token-finops cost-per-token`** — $ per 1M tokens by tool and model: the real
+  provider list price plus your realized blended rate for every pay-per-token tool
+  (Claude Code, Codex, Gemini CLI, Hermes, OpenCode, Cline/Roo/Kilo, Aider,
+  Continue.dev); for GitHub Copilot, which bills in AI credits with a per-model
+  request multiplier and has no official $/token rate at all, a clearly labelled
+  *derived* ratio (credits converted to USD at $0.01/credit, divided by observed
+  tokens) instead — never mixed in with a real price; see `docs/COST_PER_TOKEN.md`.
 - **`token-finops burn`** — the maxing multiplier (API-equivalent per 30 days / plan price,
   against a bundled, overridable plan catalogue), plan-months, a weekly/monthly token table
   (`--by day|week|month`), history recording and merging (`--record`/`--history`) so `--by` can
@@ -77,7 +84,7 @@ multi-assistant runway tracker plus a local-vs-cloud savings estimator.
   CLI as a subprocess (adapters, report text/json, sessions, status cache, self-audit dedup, break-even,
   determinism, regeneration). Robustness suite (`tests/test_robustness.py`): garbage/truncated JSONL,
   binary bytes, minimal SQLite schemas, unknown models/fields, odd timestamps, empty/unreadable paths,
-  1 MB lines, 200-seed fuzz. Total 787 tests.
+  1 MB lines, 200-seed fuzz. Total 812 tests.
 - **`docs/INSTALL.md`** — end-user install guide: installing `token-finops` itself (uv tool/pipx/pip,
   PyPI publish pending), plus a Tier 1 / Tier 2 / reference-only rollout for the coding-agent CLIs
   each adapter reads, with macOS (Homebrew-first) and Linux (npm/pip) install commands and auth notes

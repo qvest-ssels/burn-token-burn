@@ -122,6 +122,25 @@ Plan equivalents — maxing = API-equivalent per 30 days / plan price:
 See [`docs/BURN.md`](docs/BURN.md) for the maxing multiplier, plan-months, `--by day|week|month`,
 recorded history past a tool's own retention, and the full efficiency-metric reference.
 
+## What does a million tokens actually cost you?
+
+```
+$ token-finops cost-per-token --tool copilot --since 30d
+GitHub Copilot CLI (last 30d) -- $ per 1M tokens
+  model                        calls    tokens   list in/out   realized    derived
+  gpt-5                           28    471.5k     1.25/10.00        n/a    $587.73*
+  * derived from AI-credit billing (1 credit = $0.01) divided by observed tokens -- not
+    an official per-token price; it drifts with your model mix.
+```
+
+For every tool that actually bills per token (Claude Code, Codex, Gemini CLI, Hermes,
+OpenCode, Cline/Roo/Kilo, Aider, Continue.dev) this is a straight, real number: the
+provider's list price plus your realized blend. **GitHub Copilot does not bill per
+token at all** — it bills in AI credits with a per-model request multiplier — so there
+is no official $/token to report for it; `cost-per-token` shows a clearly labelled
+*derived* rate instead (credits spent, converted to USD, divided by tokens observed),
+never mixed in with a real price. See [`docs/COST_PER_TOKEN.md`](docs/COST_PER_TOKEN.md).
+
 ### Local vs cloud
 
 ```
@@ -158,7 +177,7 @@ remaining desktop surfaces are designed in [`docs/INTEGRATIONS.md`](docs/INTEGRA
 
 ## Tested against 50 real-world use cases
 
-787 tests back this tool, including [`docs/USECASES.md`](docs/USECASES.md)
+812 tests back this tool, including [`docs/USECASES.md`](docs/USECASES.md)
 — 50 executable use cases (`UC-01` … `UC-50`) covering every adapter, the
 runway engine's edge cases (year rollover, mid-cycle joins, stale
 snapshots), the savings/break-even estimator, and multi-tool reports.
@@ -175,6 +194,7 @@ Each row names the pytest id, so `pytest -k UC-13` runs exactly that case.
 - [`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md) — status line / tmux / waybar / editor / desktop integrations (design proposal)
 - [`docs/USECASES.md`](docs/USECASES.md) — all 50 executable use cases
 - [`docs/BURN.md`](docs/BURN.md) — `burn`: maxing multiplier, weekly/monthly tables, history, burn efficiency
+- [`docs/COST_PER_TOKEN.md`](docs/COST_PER_TOKEN.md) — `cost-per-token`: $/1M tokens by tool and model, real vs. derived (and why Copilot's AI-credit billing has no official $/token rate)
 - [`docs/INSTALL.md`](docs/INSTALL.md) — installing token-finops itself, and installing the coding-agent CLIs each adapter reads (macOS/Linux)
 - [`docs/README.md`](docs/README.md) — index of everything under `docs/`
 - [`AGENTS.md`](AGENTS.md) — rules for coding agents (Claude Code, Codex, Copilot) working in this repo

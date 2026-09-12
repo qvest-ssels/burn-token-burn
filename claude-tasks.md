@@ -11,18 +11,6 @@ Remote: `origin = https://github.com/tronicum/burn-token-burn.git` (branch `main
 
 ## Ready now
 
-- [ ] **T-20 Tier 2 CI install-smoke coverage** — branch `feat/cli-smoke-tier2` — model: Sonnet — S
-  `docs/INSTALL.md` Tier 2 (OpenCode, Kilo CLI, Aider, Continue.dev) is now install-documented
-  (2026-09-12, via Haiku sub-agents, cross-checked against real sources) but not yet in
-  `.github/workflows/cli-smoke.yml`'s matrix. Add: OpenCode (`brew install opencode` macOS,
-  `npm install -g opencode-ai@latest` Linux+macOS), Kilo CLI (`npm install -g @kilocode/cli`, no
-  brew formula — npm-only job like `copilot-cli`), Aider (`brew install aider` macOS,
-  `pipx install aider-chat` Linux — note Aider's own docs caution against package managers; this
-  job only proves the command runs, not that it's the maintainer-recommended path), Continue.dev
-  (extend the `vscode-extension` job with `Continue.continue`; JetBrains plugin 22707 has no CLI
-  install path, skip it in CI, note why). Extend `tests/test_cli_smoke_workflow.py`'s TIER1 dict
-  (or add a TIER2 one) to keep the doc/workflow drift guard covering these too.
-
 - [ ] **T-02 Copilot synth scale** — branch `synth/copilot-aiu-scale` — model: Sonnet — S
   `build_synthetic_db` bills ~900 AI units per request (≈ $9/req), so a 14-day "steady" home is
   EXHAUSTED against a Pro allowance (1500). Rescale `total_nano_aiu` so steady ≈ 40–60 % of 1500
@@ -113,6 +101,19 @@ Remote: `origin = https://github.com/tronicum/burn-token-burn.git` (branch `main
 - **Windsurf** — ADR-0011; no local data.
 
 ## Done (keep for history)
+
+- [x] **T-20 Tier 2 CI install-smoke coverage** — reconciled: this was already implemented
+  directly on main in the same batch as `docs/INSTALL.md` Tier 2 (not delegated to a branch/PR
+  as the task described) — `.github/workflows/cli-smoke.yml` has OpenCode/Kilo CLI (npm-cli),
+  OpenCode/Aider (brew-cli), Aider (pipx-cli), Continue.dev (vscode-extension: `Continue.continue`,
+  JetBrains 22707 skipped/documented) — confirmed present 2026-09-12, no further work needed.
+
+- [x] **`token-finops cost-per-token`** — new subcommand, $/1M tokens per tool/model:
+  real list price + realized blended rate for every pay-per-token adapter; for
+  Copilot (AI credits + per-model request multiplier, no official $/token rate)
+  a clearly labelled *derived* ratio instead, never conflated with a real price.
+  `docs/COST_PER_TOKEN.md` added, cross-referenced from `docs/README.md` and
+  `README.md`. 10 new tests (812 passed, 1 skipped), ruff clean — 2026-09-12
 
 - [x] **T-17 `burn --by` partial periods** — `hist.period_days` returned the full calendar length
   of a week/month even when the reporting window only covered part of it (the first/last period
