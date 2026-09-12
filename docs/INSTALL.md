@@ -63,8 +63,11 @@ automated CLI installation come later.
 | 2 (documented, not yet auto-tested) | OpenCode / Kilo CLI, Aider, Continue.dev |
 | Reference-only (no local telemetry to read) | Cursor, Windsurf, Ollama — see `docs/adr/0008`, `0011`, `0012` |
 
-\* Hermes Agent has no Homebrew formula and no pip package as of this writing — see its
-section below for why it's listed here but not yet install-scripted.
+\* Hermes Agent has no Homebrew formula and no pip/npm package as of this writing, so its
+section below documents the official `curl | bash` installer as the sole exception to
+this page's no-`curl | bash` rule. It's excluded from `cli-smoke.yml`'s CI matrix on
+purpose — installing that way, unattended, on shared runners is a different risk
+tradeoff than a person running it on their own machine.
 
 ---
 
@@ -180,18 +183,26 @@ marketplace page before scripting this.
 
 Sources: [Roo Code — Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=RooVeterinaryInc.roo-cline), [Kilo Code — Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=kilocode.Kilo-Code).
 
-### Hermes Agent (NousResearch) — install path not yet scripted here
+### Hermes Agent (NousResearch) — the one documented exception to "no curl\|bash"
 
 Reads: `~/.hermes/state.db` — see ADR-0005.
 
-Hermes Agent is a real, actively developed project, but as of this review it ships
-only a `curl … | bash` / `irm … | iex` installer — no Homebrew formula or tap, and no
-pip/npm package. That conflicts with this page's install policy, so we're not
-providing a copy-pasteable command here. If you already have Hermes Agent installed by
-whatever means you're comfortable with, the adapter works exactly the same — this
-note is only about what we're willing to script for you. Revisit once
-[NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent) ships a
-package-manager install.
+Checked again on 2026-09-12: no Homebrew formula/tap, no apt/deb, no AUR, no pip or npm
+package. [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent)
+ships only its own installer script, for every platform including Termux — there is
+currently no other way in. Given that, this is the one place on this page we document
+the official installer rather than withholding a command:
+
+**macOS and Linux:**
+```bash
+curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+```
+
+Read the script before piping it to a shell if that matters to you —
+[`scripts/install.sh`](https://github.com/NousResearch/hermes-agent/blob/main/scripts/install.sh)
+is the one this command fetches. It brings its own Python 3.11, Node.js, ripgrep,
+ffmpeg and Git. Revisit this exception once the project ships a package-manager
+install; every other tool on this page stays brew/npm/pip-only.
 
 ---
 
