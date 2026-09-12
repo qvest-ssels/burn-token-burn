@@ -1,0 +1,123 @@
+name: CLI install smoke test
+
+# Validates the exact commands documented in docs/INSTALL.md (Tier 1) actually install a
+# working binary on macOS and Linux. It does NOT authenticate any tool and does NOT
+# generate real usage telemetry — see docs/INSTALL.md "What 'auto-tested' means here".
+# A failure here means "the documented install command is broken", not "the adapter is
+# broken" — those are covered by the synthetic fixtures in the main `CI` workflow.
+#
+# Runs on a schedule (these are external package registries/casks we don't control, not
+# our own code) rather than on every push, plus manual dispatch and PRs that touch this
+# file or docs/INSTALL.md so a doc change is verified before merge.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * 1"  # weekly, Monday — catches upstream formula/package breakage
+  pull_request:
+    paths:
+      - ".github/workflows/cli-smoke.yml"
+      - "docs/INSTALL.md"
+
+jobs:
+  # --- npm-based CLIs: same package on both OSes, so one matrix covers macOS + Linux ---
+  npm-cli:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        include:
+          - tool: claude-code
+            package: "@anthropic-ai/claude-code"
+            bin: claude
+          - tool: copilot-cli
+            package: "@github/copilot"
+            bin: copilot
+          - tool: codex-cli
+            package: "@openai/codex"
+            bin: codex
+          - tool: gemini-cli
+            package: "@google/gemini-cli"
+            bin: gemini
+    runs-on: ${{ matrix.os }}
+    name: npm · ${{ matrix.tool }} · ${{ matrix.os }}
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: npm install -g ${{ matrix.package }}
+        run: npm install -g ${{ matrix.package }}
+
+      - name: ${{ matrix.bin }} --version
+        run: ${{ matrix.bin }} --version
+
+      - name: ${{ matrix.bin }} --help resolves
+        run: ${{ matrix.bin }} --help
+
+  # --- Homebrew casks/formulae: macOS only (Homebrew ships on GitHub's macos-latest runners) ---
+  brew-cli:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - tool: claude-code
+            formula: "--cask claude-code"
+            bin: claude
+          - tool: codex-cli
+            formula: "--cask codex"
+            bin: codex
+          - tool: gemini-cli
+            formula: "gemini-cli"
+            bin: gemini
+    runs-on: macos-latest
+    name: brew · ${{ matrix.tool }}
+    steps:
+      - name: brew install ${{ matrix.formula }}
+        run: brew install ${{ matrix.formula }}
+
+      - name: ${{ matrix.bin }} --version
+        run: ${{ matrix.bin }} --version
+
+  # --- gemini-cli's Homebrew formula is listed deprecated (disable date 2026-12-18,
+  #     replacement antigravity-cli). This job exists purely to fail loudly the day the
+  #     formula is actually removed, before docs/INSTALL.md goes stale — see T-18. ---
+  gemini-brew-deprecation-watch:
+    runs-on: macos-latest
+    steps:
+      - name: confirm gemini-cli still resolves via brew
+        run: |
+          if ! brew info gemini-cli >/tmp/info.txt 2>&1; then
+            echo "::error::brew formula 'gemini-cli' no longer resolves — update docs/INSTALL.md to npm-only and drop the brew-cli job for gemini-cli (see claude-tasks.md T-18)."
+            cat /tmp/info.txt
+            exit 1
+          fi
+          if grep -qi "disabled" /tmp/info.txt; then
+            echo "::warning::brew formula 'gemini-cli' now reports as disabled. docs/INSTALL.md documents 'brew install gemini-cli' as the macOS path — update it to npm / antigravity-cli (claude-tasks.md T-18)."
+          fi
+
+  # --- Cline / Roo / Kilo: VS Code extensions, not standalone CLIs. macOS only for now —
+  #     docs/INSTALL.md gives a brew cask path for the editor; a Linux VS Code install path
+  #     is not yet documented there (tracked alongside T-19). ---
+  vscode-extension:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - tool: cline
+            extension_id: saoudrizwan.claude-dev
+          - tool: roo-code
+            extension_id: RooVeterinaryInc.roo-cline
+          - tool: kilo-code
+            extension_id: kilocode.Kilo-Code
+    runs-on: macos-latest
+    name: vscode · ${{ matrix.tool }}
+    steps:
+      - name: brew install --cask visual-studio-code
+        run: brew install --cask visual-studio-code
+
+      - name: code --install-extension ${{ matrix.extension_id }}
+        run: code --install-extension ${{ matrix.extension_id }}
+
+      - name: extension is listed installed
+        run: code --list-extensions | grep -i "${{ matrix.extension_id }}"

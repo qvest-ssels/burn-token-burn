@@ -82,21 +82,11 @@ Remote: `origin = https://github.com/tronicum/burn-token-burn.git` (branch `main
   days actually inside the window (min(period end, last day) − max(period start, first day) + 1) and
   mark partial periods with `*`. Tests in `tests/test_burn_history.py`.
 
-- [ ] **T-18 CLI install-smoke CI job (Tier 1)** — branch `feat/cli-install-smoke` — model: Sonnet — M
-  New workflow `.github/workflows/cli-smoke.yml`, matrix `macos-latest` / `ubuntu-latest`, one job
-  per Tier-1 tool from `docs/INSTALL.md` (Claude Code, GitHub Copilot CLI, OpenAI Codex CLI,
-  Gemini CLI, Cline/Roo/Kilo via VS Code + `code --install-extension`). Each job runs exactly the
-  command documented on that page (brew on macOS, npm on Linux) and asserts the binary resolves on
-  `PATH` and answers `--version`/`--help` — no authentication, no real usage telemetry generated.
-  Skip Hermes Agent (no package-manager install exists yet, see INSTALL.md). Flag in the PR if the
-  `gemini-cli` Homebrew formula has actually been disabled (deprecation date 2026-12-18) — if so,
-  swap the macOS Gemini job to npm and update INSTALL.md. Acceptance: green on both OSes; a failure
-  clearly names which documented command broke, not a generic CI failure.
 - [ ] **T-19 Tier 2 install docs** — branch `docs/install-tier2` — model: Sonnet — S
   Same treatment as `docs/INSTALL.md` Tier 1 for OpenCode/Kilo CLI (`brew install opencode`, confirm
   Kilo's own path), Aider (pip/pipx — confirm whether a Homebrew formula has since appeared), and
-  Continue.dev (VS Code/JetBrains marketplace, like T-18's Cline/Roo/Kilo pattern). Add to T-18's
-  matrix once docs land.
+  Continue.dev (VS Code/JetBrains marketplace, like the `vscode-extension` job in
+  `.github/workflows/cli-smoke.yml`). Add each to that workflow's matrix once docs land.
 
 ## Next
 
@@ -138,3 +128,8 @@ Remote: `origin = https://github.com/tronicum/burn-token-burn.git` (branch `main
 
 - [x] Phase 0–3 of `docs/PLAN.md`, 9 adapters, runway engine, `status` renderer + cache, synth
   generator, 50 use cases, e2e matrix + robustness suite (704 tests) — 2026-09-05…09
+- [x] `burn` subcommand (maxing multiplier, weekly/monthly tables, history, efficiency, prepaid
+  rate/discount); CI fix (ruff rule pin, matrix python, PYTHONPATH); `docs/INSTALL.md` (Tier 1);
+  T-18 done directly on main (user-directed, not delegated) as `.github/workflows/cli-smoke.yml`
+  + `tests/test_cli_smoke_workflow.py` (doc/workflow drift guard, no live network) — 784 tests —
+  2026-09-11…12

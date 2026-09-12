@@ -77,7 +77,22 @@ multi-assistant runway tracker plus a local-vs-cloud savings estimator.
   CLI as a subprocess (adapters, report text/json, sessions, status cache, self-audit dedup, break-even,
   determinism, regeneration). Robustness suite (`tests/test_robustness.py`): garbage/truncated JSONL,
   binary bytes, minimal SQLite schemas, unknown models/fields, odd timestamps, empty/unreadable paths,
-  1 MB lines, 200-seed fuzz. Total 775 tests.
+  1 MB lines, 200-seed fuzz. Total 784 tests.
+- **`docs/INSTALL.md`** — end-user install guide: installing `token-finops` itself (uv tool/pipx/pip,
+  PyPI publish pending), plus a Tier 1 / Tier 2 / reference-only rollout for the coding-agent CLIs
+  each adapter reads, with macOS (Homebrew-first) and Linux (npm/pip) install commands and auth notes
+  for Tier 1 (Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, Gemini CLI, Hermes Agent, Cline/Roo/
+  Kilo). No `curl | bash` / `irm | iex` installer is documented anywhere, even where a project ships
+  one as its primary method — Hermes Agent is flagged as not yet installable under this policy.
+- **`.github/workflows/cli-smoke.yml`** — installs every Tier 1 tool with exactly the command
+  documented in `docs/INSTALL.md` (npm on macOS+Linux, Homebrew casks/formulae on macOS, VS Code
+  marketplace extensions for Cline/Roo/Kilo) and asserts the binary resolves and answers
+  `--version`/`--help`. No authentication, no real telemetry generated — that stays on synthetic
+  fixtures. Runs on a weekly schedule plus manual dispatch (external registries, not our own code),
+  and on any PR touching itself or `docs/INSTALL.md`. Includes a standing job that fails loudly if
+  the deprecated `gemini-cli` Homebrew formula (disable date 2026-12-18) is actually removed.
+  `tests/test_cli_smoke_workflow.py` guards the workflow and the doc from silently drifting apart
+  (string-level checks, no live network, no new dependency).
 - `claude-tasks.md`: work packages for coding agents on their own branches.
 - ruff rule set pinned explicitly in `pyproject.toml` — ruff 0.16 widened its default rule set,
   which broke CI on rules the project had never opted into.
