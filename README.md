@@ -175,6 +175,7 @@ Each row names the pytest id, so `pytest -k UC-13` runs exactly that case.
 - [`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md) — status line / tmux / waybar / editor / desktop integrations (design proposal)
 - [`docs/USECASES.md`](docs/USECASES.md) — all 50 executable use cases
 - [`docs/BURN.md`](docs/BURN.md) — `burn`: maxing multiplier, weekly/monthly tables, history, burn efficiency
+- [`docs/INSTALL.md`](docs/INSTALL.md) — installing token-finops itself, and installing the coding-agent CLIs each adapter reads (macOS/Linux)
 - [`docs/README.md`](docs/README.md) — index of everything under `docs/`
 - [`AGENTS.md`](AGENTS.md) — rules for coding agents (Claude Code, Codex, Copilot) working in this repo
 - [`docs/sources.md`](docs/sources.md) — every price, quota and endpoint with its source and review date
