@@ -3,7 +3,9 @@
 Read [`AGENTS.md`](AGENTS.md) first — it is the single set of rules for
 coding agents (and humans) working in this repository: read-only against
 tool data, standard library only, one ADR per assistant, fractions not
-dollars. This file adds the mechanics.
+dollars. This file adds the PR mechanics; [`DEVELOPING.md`](DEVELOPING.md)
+is the broader day-to-day workflow hub (test subsets, synthetic telemetry,
+debugging an adapter, releasing).
 
 ## Setup
 

@@ -17,6 +17,7 @@ humans) follow in this repo. Everything below lives under `docs/`.
 | [`landscape.md`](landscape.md) | The niche this project covers and the other local quota/runway trackers it happily points to instead of re-implementing. |
 | [`sources.md`](sources.md) | Every price, quota, and endpoint used anywhere in the tool, with its source and a review date. |
 | [`guide/`](guide/) | *The Qvest Digital Guide to Token Burning* — six chapters on what a token costs, where the money goes, right-sizing models, local vs. cloud, and governance. |
+| [`../DEVELOPING.md`](../DEVELOPING.md) | Day-to-day dev workflow hub: environment, test subsets, synthetic telemetry + env var reference, debugging one adapter, the branch-per-task workflow, releasing. |
 | [`../AUTOCODING.md`](../AUTOCODING.md) | Which CLI/model actually wrote this repo (cloud session vs. local Claude Code CLI fan-out), model-assignment rules, and the token accounting for each. |
 | [`../CHANGELOG.md`](../CHANGELOG.md) | Release history. |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Setup, tests/lint, how to add an adapter, commit style, PR checklist. |

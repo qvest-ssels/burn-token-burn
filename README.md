@@ -178,6 +178,7 @@ Each row names the pytest id, so `pytest -k UC-13` runs exactly that case.
 - [`docs/INSTALL.md`](docs/INSTALL.md) — installing token-finops itself, and installing the coding-agent CLIs each adapter reads (macOS/Linux)
 - [`docs/README.md`](docs/README.md) — index of everything under `docs/`
 - [`AGENTS.md`](AGENTS.md) — rules for coding agents (Claude Code, Codex, Copilot) working in this repo
+- [`DEVELOPING.md`](DEVELOPING.md) — day-to-day dev workflow: environment, test subsets, synthetic telemetry, debugging an adapter, the branch-per-task workflow, releasing
 - [`AUTOCODING.md`](AUTOCODING.md) — which CLI/model actually wrote this repo, model-assignment rules, and the token accounting for it (dogfooding, one level up)
 - [`docs/sources.md`](docs/sources.md) — every price, quota and endpoint with its source and review date
 - [`CHANGELOG.md`](CHANGELOG.md) — release history

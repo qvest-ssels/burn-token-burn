@@ -1,6 +1,9 @@
 # AGENTS.md — working in this repository with a coding agent
 
 This file is read by Claude Code, Codex, Copilot CLI and friends. Humans: see `README.md`.
+For the day-to-day mechanics of working on this repo — running test subsets, synthetic
+telemetry, debugging one adapter, the branch-per-task workflow, releasing — see
+[`DEVELOPING.md`](DEVELOPING.md); this file stays the short list of rules.
 
 ## What this repo is
 
