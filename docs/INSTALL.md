@@ -51,16 +51,15 @@ it right now — that is also the smoke test after installing any of the CLIs be
 
 ## Coding agents: what token-finops needs installed, and how to install it
 
-Two rollout tiers. **Tier 1** is documented in full below and is the current target for
-an automated install-smoke-test (a CI job that installs the real CLI on macOS and Linux
-and confirms it runs — tracked as [T-18](../claude-tasks.md)). **Tier 2** already has a
-working adapter and is documented in the README's tool table, but full install docs and
-automated CLI installation come later.
+Two rollout tiers, both documented in full below. **Tier 1** is covered by an automated
+install-smoke-test (a CI job that installs the real CLI on macOS and Linux and confirms
+it runs — `.github/workflows/cli-smoke.yml`, [T-18](../claude-tasks.md)). **Tier 2** has
+the same install instructions but isn't in that CI job yet ([T-19](../claude-tasks.md)).
 
 | Tier | Tool |
 |---|---|
-| 1 (this page, auto-tested) | Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, Gemini CLI, Hermes Agent*, Cline / Roo / Kilo (VS Code) |
-| 2 (documented, not yet auto-tested) | OpenCode / Kilo CLI, Aider, Continue.dev |
+| 1 (documented + auto-tested) | Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, Gemini CLI, Hermes Agent*, Cline / Roo / Kilo (VS Code) |
+| 2 (documented, CI coverage pending) | OpenCode / Kilo CLI, Aider, Continue.dev |
 | Reference-only (no local telemetry to read) | Cursor, Windsurf, Ollama — see `docs/adr/0008`, `0011`, `0012` |
 
 \* Hermes Agent has no Homebrew formula and no pip/npm package as of this writing, so its
@@ -208,11 +207,99 @@ install; every other tool on this page stays brew/npm/pip-only.
 
 ## Tier 2 (documented in the README, install docs pending)
 
+### OpenCode / Kilo CLI
+
+Reads: `~/.local/share/opencode/opencode.db` and `~/.local/share/kilo/kilo.db` (SQLite, `session_message` table) — see ADR-0006.
+
+**macOS (Homebrew):**
+```bash
+brew install opencode
+```
+
+**Linux (npm):**
+```bash
+npm install -g opencode-ai@latest
+```
+
+Authenticate with `opencode login` or set an API key for your preferred provider.
+
+Sources: [Homebrew formula: opencode](https://formulae.brew.sh/formula/opencode), [OpenCode installation guide](https://www.opencode.asia/installation/).
+
+### Kilo CLI
+
+Reads: `~/.local/share/kilo/kilo.db` (SQLite, `session_message` table, same schema as OpenCode) — see ADR-0006. A distinct product from the Kilo Code VS Code extension covered under Cline/Roo/Kilo above — same maintainer, separate terminal tool.
+
+No Homebrew formula exists for Kilo CLI as of this review; npm is the documented path on both macOS and Linux:
+
+```bash
+npm install -g @kilocode/cli
+```
+
+An older-CPU "baseline" build (no AVX) is available as a direct download from
+[GitHub Releases](https://github.com/Kilo-Org/kilocode/releases) if the npm build doesn't run on your machine.
+
+Authenticate on first run or set an API key for your preferred provider.
+
+Sources: [Kilo CLI documentation](https://kilo.ai/docs/code-with-ai/platforms/cli), [GitHub: Kilo-Org/kilocode](https://github.com/kilo-org/kilocode).
+
+### Aider
+
+Reads: `.aider.chat.history.md` (Markdown chat log, regex-parsed for tokens/cost) and optional `--analytics-log` JSONL (structured, preferred when available) — see ADR-0009.
+
+**macOS (Homebrew) — see caveat below:**
+```bash
+brew install aider
+```
+Aider's [official documentation](https://aider.chat/docs/install.html) cautions against relying on package managers due to "incorrect dependencies". The Homebrew formula exists but may not track dependency updates as reliably as the pip/pipx paths below.
+
+**Linux (pipx):**
+```bash
+pipx install aider-chat
+```
+
+Alternatively, install directly with pip (in a virtualenv):
+```bash
+python -m pip install aider-chat
+```
+
+Aider is bring-your-own-key: configure an API key for your chosen provider (OpenAI, Claude, Gemini, etc.) via environment variable or run `aider --help` for authentication options.
+
+Sources: [Aider installation docs](https://aider.chat/docs/install.html), [Homebrew formula: aider](https://formulae.brew.sh/formula/aider), [ADR-0009: Aider adapter](../adr/0009-aider.md).
+
+### Continue.dev
+
+Reads: `~/.continue/sessions/*.json` (session-level `usage` field — **instable across versions**, see ADR-0010).
+
+Continue is available as an extension for VS Code and JetBrains IDEs, not as a standalone CLI.
+
+**macOS (Homebrew, for the editor):**
+See the [Cline / Roo / Kilo section](#cline--roo--kilo-vs-code-extensions) above for VS Code installation via Homebrew cask. Once `code` is on your PATH:
+
+```bash
+code --install-extension Continue.continue
+```
+
+**Linux (for the editor):**
+Install VS Code via your package manager or [download directly](https://code.visualstudio.com/download), then:
+
+```bash
+code --install-extension Continue.continue
+```
+
+**JetBrains IDEs (macOS and Linux):**
+Continue is installed via the IDE's built-in plugin marketplace, not a CLI command. Open your JetBrains IDE (IntelliJ IDEA, PyCharm, WebStorm, etc.), navigate to Settings/Preferences → Plugins → Marketplace, search for "Continue", and click Install.
+
+Extension/plugin IDs occasionally change on republish — confirm against the marketplace pages before scripting.
+
+Sources: [Continue.dev — Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Continue.continue), [Continue — JetBrains Plugins](https://plugins.jetbrains.com/plugin/22707-continue), [ADR-0010: Continue.dev adapter](../adr/0010-continue-dev.md).
+
+---
+
 OpenCode / Kilo CLI, Aider, and Continue.dev already have working adapters (ADR-0006,
-0009, 0010) but don't yet have the same install-doc + auto-test treatment. OpenCode has
-a Homebrew formula (`brew install opencode`); Aider and Continue.dev are pip/marketplace
-installs respectively with no confirmed Homebrew path as of this review — both are
-candidates for the next round once Tier 1's CI job is in place.
+0009, 0010) and are now install-documented above. What's still pending for this tier is
+the CI install-smoke-test coverage T-18 gives Tier 1 (tracked as
+[T-19](../claude-tasks.md)) — not because the install commands are less trustworthy, but
+because nobody has wired them into `.github/workflows/cli-smoke.yml` yet.
 
 ## What "auto-tested" means here (T-18)
 

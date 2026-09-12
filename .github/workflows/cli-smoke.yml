@@ -1,7 +1,7 @@
 name: CLI install smoke test
 
-# Validates the exact commands documented in docs/INSTALL.md (Tier 1) actually install a
-# working binary on macOS and Linux. It does NOT authenticate any tool and does NOT
+# Validates the exact commands documented in docs/INSTALL.md (Tier 1 and Tier 2) actually
+# install a working binary on macOS and Linux. It does NOT authenticate any tool and does NOT
 # generate real usage telemetry — see docs/INSTALL.md "What 'auto-tested' means here".
 # A failure here means "the documented install command is broken", not "the adapter is
 # broken" — those are covered by the synthetic fixtures in the main `CI` workflow.
@@ -39,6 +39,12 @@ jobs:
           - tool: gemini-cli
             package: "@google/gemini-cli"
             bin: gemini
+          - tool: opencode
+            package: "opencode-ai@latest"
+            bin: opencode
+          - tool: kilo-cli
+            package: "@kilocode/cli"
+            bin: kilo
     runs-on: ${{ matrix.os }}
     name: npm · ${{ matrix.tool }} · ${{ matrix.os }}
     steps:
@@ -70,6 +76,12 @@ jobs:
           - tool: gemini-cli
             formula: "gemini-cli"
             bin: gemini
+          - tool: opencode
+            formula: "opencode"
+            bin: opencode
+          - tool: aider
+            formula: "aider"
+            bin: aider
     runs-on: macos-latest
     name: brew · ${{ matrix.tool }}
     steps:
@@ -96,9 +108,38 @@ jobs:
             echo "::warning::brew formula 'gemini-cli' now reports as disabled. docs/INSTALL.md documents 'brew install gemini-cli' as the macOS path — update it to npm / antigravity-cli (claude-tasks.md T-18)."
           fi
 
-  # --- Cline / Roo / Kilo: VS Code extensions, not standalone CLIs. macOS only for now —
-  #     docs/INSTALL.md gives a brew cask path for the editor; a Linux VS Code install path
-  #     is not yet documented there (tracked alongside T-19). ---
+  # --- Aider on Linux: pipx, per docs/INSTALL.md (macOS is covered by brew-cli above). ---
+  pipx-cli:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - tool: aider
+            package: "aider-chat"
+            bin: aider
+    runs-on: ubuntu-latest
+    name: pipx · ${{ matrix.tool }} · ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install pipx
+        run: python -m pip install --user pipx && python -m pipx ensurepath
+
+      - name: pipx install ${{ matrix.package }}
+        run: pipx install ${{ matrix.package }}
+
+      - name: ${{ matrix.bin }} --version
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          ${{ matrix.bin }} --version
+
+  # --- Cline / Roo / Kilo / Continue.dev: VS Code extensions, not standalone CLIs. macOS only
+  #     for now — docs/INSTALL.md gives a brew cask path for the editor; a Linux VS Code install
+  #     path is not yet documented there. Continue.dev's JetBrains plugin has no CLI-scriptable
+  #     install (marketplace-only in the IDE) so it's deliberately not in this matrix — see
+  #     docs/INSTALL.md's Continue.dev section. ---
   vscode-extension:
     strategy:
       fail-fast: false
@@ -110,6 +151,8 @@ jobs:
             extension_id: RooVeterinaryInc.roo-cline
           - tool: kilo-code
             extension_id: kilocode.Kilo-Code
+          - tool: continue-dev
+            extension_id: Continue.continue
     runs-on: macos-latest
     name: vscode · ${{ matrix.tool }}
     steps:

@@ -158,7 +158,7 @@ remaining desktop surfaces are designed in [`docs/INTEGRATIONS.md`](docs/INTEGRA
 
 ## Tested against 50 real-world use cases
 
-784 tests back this tool, including [`docs/USECASES.md`](docs/USECASES.md)
+787 tests back this tool, including [`docs/USECASES.md`](docs/USECASES.md)
 — 50 executable use cases (`UC-01` … `UC-50`) covering every adapter, the
 runway engine's edge cases (year rollover, mid-cycle joins, stale
 snapshots), the savings/break-even estimator, and multi-tool reports.

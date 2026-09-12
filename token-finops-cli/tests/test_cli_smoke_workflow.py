@@ -23,10 +23,17 @@ TIER1 = {
     "codex-cli": {"npm_package": "@openai/codex", "brew": "--cask codex", "bin": "codex"},
     "gemini-cli": {"npm_package": "@google/gemini-cli", "brew": "gemini-cli", "bin": "gemini"},
 }
+# Tier 2: same shape as TIER1, plus an optional pipx_package for tools with no npm path
+TIER2 = {
+    "opencode": {"npm_package": "opencode-ai@latest", "brew": "opencode", "bin": "opencode"},
+    "kilo-cli": {"npm_package": "@kilocode/cli", "brew": None, "bin": "kilo"},
+    "aider": {"npm_package": None, "brew": "aider", "bin": "aider", "pipx_package": "aider-chat"},
+}
 VSCODE_EXTENSIONS = {
     "cline": "saoudrizwan.claude-dev",
     "roo-code": "RooVeterinaryInc.roo-cline",
     "kilo-code": "kilocode.Kilo-Code",
+    "continue-dev": "Continue.continue",
 }
 
 
@@ -57,6 +64,19 @@ def test_workflow_covers_every_tier1_brew_formula():
         assert info["brew"] in wf, f"brew formula/cask for {tool} missing from cli-smoke.yml"
 
 
+def test_workflow_covers_every_tier2_tool():
+    wf = _read(WORKFLOW)
+    for tool, info in TIER2.items():
+        assert f"tool: {tool}" in wf, f"{tool} missing from cli-smoke.yml"
+        if info["npm_package"] is not None:
+            assert info["npm_package"] in wf, f"{info['npm_package']} missing from cli-smoke.yml"
+        if info["brew"] is not None:
+            assert info["brew"] in wf, f"brew formula for {tool} missing from cli-smoke.yml"
+        if "pipx_package" in info:
+            assert info["pipx_package"] in wf, f"pipx package for {tool} missing from cli-smoke.yml"
+        assert info["bin"] in wf, f"{info['bin']} --version step missing from cli-smoke.yml"
+
+
 def test_workflow_covers_vscode_extensions():
     wf = _read(WORKFLOW)
     for tool, ext_id in VSCODE_EXTENSIONS.items():
@@ -71,6 +91,13 @@ def test_install_doc_matches_workflow_commands():
         assert info["npm_package"] in doc, f"{info['npm_package']} missing from INSTALL.md ({tool})"
         if info["brew"] is not None:
             assert info["brew"] in doc, f"brew command for {tool} missing from INSTALL.md"
+    for tool, info in TIER2.items():
+        if info["npm_package"] is not None:
+            assert info["npm_package"] in doc, f"{info['npm_package']} missing from INSTALL.md ({tool})"
+        if info["brew"] is not None:
+            assert info["brew"] in doc, f"brew command for {tool} missing from INSTALL.md"
+        if "pipx_package" in info:
+            assert info["pipx_package"] in doc, f"pipx package for {tool} missing from INSTALL.md"
     for ext_id in VSCODE_EXTENSIONS.values():
         assert ext_id in doc, f"{ext_id} missing from INSTALL.md"
 
@@ -81,6 +108,24 @@ def test_install_doc_flags_copilot_has_no_brew_formula():
     # (and this test's TIER1 table) must be updated in the same PR.
     doc = _read(INSTALL_DOC)
     assert "No Homebrew formula exists yet for `@github/copilot`" in doc
+
+
+def test_workflow_does_not_invent_a_kilo_cli_brew_formula():
+    # Regression guard for a real bug: a doc-writing sub-agent once invented
+    # `brew install Kilo-Org/tap/kilo`, which does not exist — Kilo CLI is npm-only.
+    # If this ever needs to flip, verify the formula against formulae.brew.sh first.
+    wf = _read(WORKFLOW)
+    assert "Kilo-Org/tap" not in wf
+    assert TIER2["kilo-cli"]["brew"] is None
+
+
+def test_install_doc_flags_continue_jetbrains_has_no_cli_install():
+    # Continue.dev's JetBrains plugin is marketplace-only (no CLI installer) — cli-smoke.yml
+    # deliberately only covers the VS Code extension, not JetBrains. Guard against someone
+    # "fixing" that by inventing a JetBrains CLI command instead of leaving it documented as
+    # a manual step.
+    doc = _read(INSTALL_DOC)
+    assert "not a CLI command" in doc
 
 
 def test_workflow_does_not_use_curl_pipe_bash():

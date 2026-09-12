@@ -11,6 +11,18 @@ Remote: `origin = https://github.com/tronicum/burn-token-burn.git` (branch `main
 
 ## Ready now
 
+- [ ] **T-20 Tier 2 CI install-smoke coverage** — branch `feat/cli-smoke-tier2` — model: Sonnet — S
+  `docs/INSTALL.md` Tier 2 (OpenCode, Kilo CLI, Aider, Continue.dev) is now install-documented
+  (2026-09-12, via Haiku sub-agents, cross-checked against real sources) but not yet in
+  `.github/workflows/cli-smoke.yml`'s matrix. Add: OpenCode (`brew install opencode` macOS,
+  `npm install -g opencode-ai@latest` Linux+macOS), Kilo CLI (`npm install -g @kilocode/cli`, no
+  brew formula — npm-only job like `copilot-cli`), Aider (`brew install aider` macOS,
+  `pipx install aider-chat` Linux — note Aider's own docs caution against package managers; this
+  job only proves the command runs, not that it's the maintainer-recommended path), Continue.dev
+  (extend the `vscode-extension` job with `Continue.continue`; JetBrains plugin 22707 has no CLI
+  install path, skip it in CI, note why). Extend `tests/test_cli_smoke_workflow.py`'s TIER1 dict
+  (or add a TIER2 one) to keep the doc/workflow drift guard covering these too.
+
 - [ ] **T-01 ADR hardening notes** — branch `adr/robustness-notes` — model: Haiku/Sonnet — S
   `tests/test_robustness.py` hardened every adapter (non-UTF-8 bytes, directories where files are
   expected, corrupt SQLite, drifted record shapes, absurd epochs). Add a short "Robustness" line to
@@ -82,12 +94,6 @@ Remote: `origin = https://github.com/tronicum/burn-token-burn.git` (branch `main
   days actually inside the window (min(period end, last day) − max(period start, first day) + 1) and
   mark partial periods with `*`. Tests in `tests/test_burn_history.py`.
 
-- [ ] **T-19 Tier 2 install docs** — branch `docs/install-tier2` — model: Sonnet — S
-  Same treatment as `docs/INSTALL.md` Tier 1 for OpenCode/Kilo CLI (`brew install opencode`, confirm
-  Kilo's own path), Aider (pip/pipx — confirm whether a Homebrew formula has since appeared), and
-  Continue.dev (VS Code/JetBrains marketplace, like the `vscode-extension` job in
-  `.github/workflows/cli-smoke.yml`). Add each to that workflow's matrix once docs land.
-
 ## Next
 
 - [ ] **T-08 Neovim plugin `token-finops.nvim`** — branch `feat/nvim` — model: Sonnet — M
@@ -131,5 +137,13 @@ Remote: `origin = https://github.com/tronicum/burn-token-burn.git` (branch `main
 - [x] `burn` subcommand (maxing multiplier, weekly/monthly tables, history, efficiency, prepaid
   rate/discount); CI fix (ruff rule pin, matrix python, PYTHONPATH); `docs/INSTALL.md` (Tier 1);
   T-18 done directly on main (user-directed, not delegated) as `.github/workflows/cli-smoke.yml`
-  + `tests/test_cli_smoke_workflow.py` (doc/workflow drift guard, no live network) — 784 tests —
+  + `tests/test_cli_smoke_workflow.py` (doc/workflow drift guard, no live network) — 787 tests —
   2026-09-11…12
+- [x] `AUTOCODING.md` (which CLI/model wrote this repo, model assignment, local-CLI fan-out
+  accounting — local fan-out attempted but blocked: the device-bridge `claude` binary is disabled
+  in this environment, see AUTOCODING.md); Hermes Agent's `curl|bash` documented as the one
+  install-policy exception (no other packaging exists); `DEVELOPING.md` (day-to-day dev workflow
+  hub, cross-referenced from AGENTS.md/CONTRIBUTING.md); T-19 done directly on main via three
+  Haiku sub-agents (one per tool, sequential edits to `docs/INSTALL.md`), each fact-checked
+  afterward — one fabricated command caught and fixed (Kilo CLI has no Homebrew tap; the
+  sub-agent invented `Kilo-Org/tap/kilo`) — 2026-09-12

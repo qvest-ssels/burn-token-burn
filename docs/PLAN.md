@@ -1,6 +1,6 @@
 # Plan: from token-finops-cli (Copilot) to a modular multi-assistant runway tracker
 
-Status: **Phases 0–3 done, Phase 4 open** — last updated 2026-09-12. Test suite: 784 tests (incl. 50 use cases, e2e matrix, robustness, cli-smoke workflow/doc consistency); work packages for agents in `claude-tasks.md`. Decisions per assistant: `docs/adr/`. `token-finops burn` adds the maxing multiplier (plan vs. API-equivalent), weekly/monthly tables and burn efficiency — see `docs/BURN.md`. `docs/INSTALL.md` (Tier 1) plus `.github/workflows/cli-smoke.yml` validate the documented coding-agent install commands on a weekly schedule.
+Status: **Phases 0–3 done, Phase 4 open** — last updated 2026-09-12. Test suite: 787 tests (incl. 50 use cases, e2e matrix, robustness, cli-smoke workflow/doc consistency for Tier 1+2); work packages for agents in `claude-tasks.md`. Decisions per assistant: `docs/adr/`. `token-finops burn` adds the maxing multiplier (plan vs. API-equivalent), weekly/monthly tables and burn efficiency — see `docs/BURN.md`. `docs/INSTALL.md` (Tier 1 + Tier 2) plus `.github/workflows/cli-smoke.yml` validate the documented coding-agent install commands on a weekly schedule. `AUTOCODING.md`/`DEVELOPING.md` round out the doc set.
 
 ## Goal
 

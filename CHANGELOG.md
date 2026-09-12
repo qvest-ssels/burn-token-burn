@@ -77,7 +77,7 @@ multi-assistant runway tracker plus a local-vs-cloud savings estimator.
   CLI as a subprocess (adapters, report text/json, sessions, status cache, self-audit dedup, break-even,
   determinism, regeneration). Robustness suite (`tests/test_robustness.py`): garbage/truncated JSONL,
   binary bytes, minimal SQLite schemas, unknown models/fields, odd timestamps, empty/unreadable paths,
-  1 MB lines, 200-seed fuzz. Total 784 tests.
+  1 MB lines, 200-seed fuzz. Total 787 tests.
 - **`docs/INSTALL.md`** — end-user install guide: installing `token-finops` itself (uv tool/pipx/pip,
   PyPI publish pending), plus a Tier 1 / Tier 2 / reference-only rollout for the coding-agent CLIs
   each adapter reads, with macOS (Homebrew-first) and Linux (npm/pip) install commands and auth notes
@@ -92,7 +92,23 @@ multi-assistant runway tracker plus a local-vs-cloud savings estimator.
   and on any PR touching itself or `docs/INSTALL.md`. Includes a standing job that fails loudly if
   the deprecated `gemini-cli` Homebrew formula (disable date 2026-12-18) is actually removed.
   `tests/test_cli_smoke_workflow.py` guards the workflow and the doc from silently drifting apart
-  (string-level checks, no live network, no new dependency).
+  (string-level checks, no live network, no new dependency). Extended to Tier 2 (OpenCode, Kilo
+  CLI, Aider, Continue.dev): `docs/INSTALL.md` now documents all three (via Haiku sub-agents, each
+  claim fact-checked against real sources — one fabricated Kilo CLI Homebrew tap was caught and
+  removed before merge), and `cli-smoke.yml` gained a `pipx-cli` job (Aider on Linux) plus matrix
+  entries in `npm-cli`/`brew-cli`/`vscode-extension` for the rest.
+- **`AUTOCODING.md`** — which CLI/model actually wrote this repo (cloud session vs. local Claude
+  Code CLI fan-out), model-assignment rules, and token accounting for each; documents that the
+  local-CLI fan-out is currently blocked (the device-bridge `claude` binary is disabled in this
+  environment) pending the maintainer running doc tasks from their own terminal instead.
+- **`DEVELOPING.md`** — day-to-day dev workflow hub: environment, test subsets (`-k UC-13`, `burn`,
+  one adapter, `test_e2e_matrix`, `test_robustness`, `test_cli_smoke_workflow`), working against
+  synthetic vs. real telemetry with the full per-tool env-var override table, debugging one
+  adapter, the branch-per-task workflow, releasing. Cross-referenced from `AGENTS.md` and
+  `CONTRIBUTING.md` so the three docs don't overlap.
+- Hermes Agent's official `curl | bash` installer is now documented as the one exception to this
+  project's no-`curl | bash` policy (confirmed: no Homebrew tap, apt/deb, AUR, or pip/npm package
+  exists for it as of 2026-09-12).
 - `claude-tasks.md`: work packages for coding agents on their own branches.
 - ruff rule set pinned explicitly in `pyproject.toml` — ruff 0.16 widened its default rule set,
   which broke CI on rules the project had never opted into.
