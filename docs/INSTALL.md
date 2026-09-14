@@ -49,6 +49,54 @@ token-finops adapters
 `adapters` lists every tool token-finops knows how to read and whether it found data for
 it right now — that is also the smoke test after installing any of the CLIs below.
 
+## Shell tab-completion (optional)
+
+Ready-made completion scripts for bash, zsh and fish live in
+[`contrib/completions/`](../contrib/completions/). They complete subcommand names and
+each subcommand's flags (including the enumerated values of `--tool`, `--since`,
+`--format`, `--scenario`, …). They are static files with no third-party dependency —
+nothing to install besides the file itself, and no shell startup cost from importing
+Python.
+
+**bash** — source it from `~/.bashrc`:
+
+```bash
+echo 'source /path/to/burn-token-burn/contrib/completions/token-finops.bash' >> ~/.bashrc
+```
+
+or install it system-wide, where `bash-completion` picks it up automatically:
+
+```bash
+sudo cp contrib/completions/token-finops.bash /etc/bash_completion.d/token-finops
+```
+
+**zsh** — the file must be on your `$fpath` under the name `_token-finops`:
+
+```zsh
+mkdir -p ~/.zsh/completions
+cp contrib/completions/token-finops.zsh ~/.zsh/completions/_token-finops
+```
+
+and in `~/.zshrc`, *before* `compinit` runs:
+
+```zsh
+fpath=(~/.zsh/completions $fpath)
+autoload -Uz compinit && compinit
+```
+
+(On Homebrew zsh setups you can drop it into `$(brew --prefix)/share/zsh/site-functions/_token-finops`
+instead, which is already on `$fpath`.)
+
+**fish** — drop it into the per-user completions directory; fish loads it lazily, no
+config change needed:
+
+```fish
+mkdir -p ~/.config/fish/completions
+cp contrib/completions/token-finops.fish ~/.config/fish/completions/token-finops.fish
+```
+
+Start a new shell (or `exec $SHELL`) afterwards, then try `token-finops <TAB>`.
+
 ## Coding agents: what token-finops needs installed, and how to install it
 
 Two rollout tiers, both documented in full below. **Tier 1** is covered by an automated

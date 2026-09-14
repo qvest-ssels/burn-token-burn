@@ -12,6 +12,10 @@ delete old rows — move them to "Done" below instead, so the history stays legi
 
 ## In progress / open
 
+| Session | Branch | Task | Touches | Status |
+|---|---|---|---|---|
+| Claude Opus 5 (local) | `feature/agentic/shell-completions` | Static bash/zsh/fish tab-completion scripts for `token-finops` (subcommand + per-subcommand flag + enumerated-value completion, no argcomplete), plus a drift-guard test that introspects the real argparse subparsers | `contrib/completions/` (new), `token-finops-cli/tests/test_completions.py` (new), `docs/INSTALL.md`, `AGENTIC.md` | in progress |
+
 ## Done
 
 | Session | Branch | Task | Touches | Status |
