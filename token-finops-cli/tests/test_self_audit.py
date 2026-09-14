@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from conftest import NOW, build_claude_tree, transcript_line, write_transcript
@@ -51,7 +51,8 @@ def test_self_audit_latest_session_text(tree, run_cli):
     lines = out.splitlines()
     assert lines[0] == "Self-audit: Claude Code session sess-1"
     assert lines[1] == "  span: 2026-09-15 12:00 UTC -> 2026-09-15 19:00 UTC"
-    assert lines[2] == "  API calls (deduplicated): 11  = main loop 8 + sub-agents 3"
+    assert lines[2] == "  segments: 1"
+    assert lines[3] == "  API calls (deduplicated): 11  = main loop 8 + sub-agents 3"
 
     # by-model table: sonnet (main + 1 sub) and haiku (2 sub calls)
     header_idx = lines.index("By model (the thing that actually decides the bill):")
@@ -132,8 +133,9 @@ def test_self_audit_session_prefix_and_unknown(tree, run_cli, home):
 def test_self_audit_json(tree, run_cli):
     out = run_cli("self-audit", "--config-dir", str(tree["cfg"]), "--json")
     data = json.loads(out)
-    assert set(data) == {"session", "calls", "main", "subagents", "by_model"}
-    assert (data["session"], data["calls"], data["main"], data["subagents"]) == ("sess-1", 11, 8, 3)
+    assert set(data) == {"session", "segments", "calls", "main", "subagents", "by_model"}
+    assert (data["session"], data["segments"], data["calls"], data["main"], data["subagents"]) == (
+        "sess-1", 1, 11, 8, 3)
     assert set(data["by_model"]) == {"claude-sonnet-5", "claude-haiku-4-5"}
     sonnet = data["by_model"]["claude-sonnet-5"]
     assert set(sonnet) == {"calls", "input", "output", "cache_read", "cache_write", "reasoning", "usd", "usd_known"}
@@ -164,3 +166,80 @@ def test_self_audit_without_usd_still_renders(home, run_cli):
     out = run_cli("self-audit", "--config-dir", str(cfg))
     assert "  ollama/qwen3:latest" in out
     assert "File & shell ops" in out and "0%" in out
+
+
+# --------------------------------------------------------------------------- #
+# T-15: compaction starts a *new* transcript file for the same session id
+# (main line + its own `subagents/`). self-audit must stitch every segment
+# sharing that session id, dedup across them, and report how many segments
+# it found.
+# --------------------------------------------------------------------------- #
+def _build_compaction_segment(cfg, *, main_name: str, session: str, msg_prefix: str,
+                              n_main: int, agent: str, start: datetime) -> None:
+    proj = cfg / "projects" / "-home-x"
+    main_lines = [
+        transcript_line(start + timedelta(minutes=i), f"{msg_prefix}{i}", f"{msg_prefix}r{i}",
+                        tool="Bash", session=session, out=100 * (i + 1))
+        for i in range(n_main)
+    ]
+    write_transcript(proj / f"{main_name}.jsonl", main_lines)
+    write_transcript(proj / main_name / "subagents" / f"agent-{agent}.jsonl", [
+        transcript_line(start + timedelta(minutes=n_main, seconds=1), f"{msg_prefix}sub", f"{msg_prefix}subr",
+                        model="claude-haiku-4-5", agent=agent, session=session, out=250),
+    ])
+
+
+def test_self_audit_stitches_compaction_segments(home, run_cli):
+    """Two JSONL files (`pre-compact.jsonl`, `post-compact.jsonl`) sharing the
+    same `sessionId` -- simulating a Claude Code compaction split -- must be
+    combined into one self-audit report whose totals equal the sum of what
+    each segment alone would report, plus a `segments: 2` header line."""
+    from token_finops_cli.adapters.claude_code import ClaudeCodeAdapter
+    from token_finops_cli.report import summarize
+
+    session = "sess-compacted"
+    t0 = datetime(2026, 9, 15, 12, 0, tzinfo=timezone.utc)
+
+    cfg_pre = home / "pre" / ".claude"
+    _build_compaction_segment(cfg_pre, main_name="pre-compact", session=session,
+                              msg_prefix="a", n_main=2, agent="alpha", start=t0)
+    cfg_post = home / "post" / ".claude"
+    _build_compaction_segment(cfg_post, main_name="post-compact", session=session,
+                              msg_prefix="b", n_main=3, agent="beta", start=t0 + timedelta(hours=1))
+
+    pre_events = ClaudeCodeAdapter(str(cfg_pre / "projects")).events()
+    post_events = ClaudeCodeAdapter(str(cfg_post / "projects")).events()
+    pre_sum, post_sum = summarize(pre_events), summarize(post_events)
+
+    # Combined tree: both segments (different filenames) under the same project,
+    # sharing sessionId -- exactly what a compacted Claude Code session leaves on disk.
+    cfg_combined = home / ".claude"
+    _build_compaction_segment(cfg_combined, main_name="pre-compact", session=session,
+                              msg_prefix="a", n_main=2, agent="alpha", start=t0)
+    _build_compaction_segment(cfg_combined, main_name="post-compact", session=session,
+                              msg_prefix="b", n_main=3, agent="beta", start=t0 + timedelta(hours=1))
+
+    combined_events = ClaudeCodeAdapter(str(cfg_combined / "projects")).events()
+    combined_sum = summarize(combined_events)
+
+    # Acceptance: totals equal the sum of the parts.
+    assert combined_sum["calls"] == pre_sum["calls"] + post_sum["calls"]
+    for key in ("input", "output", "cache_read", "cache_write"):
+        assert combined_sum[key] == pre_sum[key] + post_sum[key]
+    assert combined_sum["usd"] == pytest.approx(pre_sum["usd"] + post_sum["usd"])
+
+    out = run_cli("self-audit", "--config-dir", str(cfg_combined), "--session", session)
+    lines = out.splitlines()
+    assert lines[0] == f"Self-audit: Claude Code session {session}"
+    assert lines[2] == "  segments: 2  (compaction split the main transcript into multiple files)"
+    assert f"API calls (deduplicated): {combined_sum['calls']}" in lines[3]
+    assert "main loop 5 + sub-agents 2" in lines[3]
+
+    d = json.loads(run_cli("self-audit", "--config-dir", str(cfg_combined), "--session", session, "--json"))
+    assert d["segments"] == 2
+    assert d["calls"] == combined_sum["calls"] == pre_sum["calls"] + post_sum["calls"]
+
+
+def test_self_audit_single_segment_reports_segments_one(tree, run_cli):
+    out = run_cli("self-audit", "--config-dir", str(tree["cfg"]))
+    assert "  segments: 1" in out.splitlines()
