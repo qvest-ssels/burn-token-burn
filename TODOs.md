@@ -3,20 +3,35 @@
 A short, human-facing "what's outstanding" list. For the detailed agent-ready work packages
 (branch names, acceptance criteria, model hints) see `claude-tasks.md`.
 
-## In flight / uncommitted
+## Done this session
 
-- [ ] **Commit the colorized statusline change** — `token-finops-cli/src/token_finops_cli/cli.py`
-  (`cmd_collect_statusline`) and `tests/test_statusline.py` have uncommitted changes: ANSI colour
-  (green/yellow/red at the 75%/90% thresholds) plus a bold model name. 813 tests pass locally.
-  Needs a commit + push to `origin` (qvest-ssels/burn-token-burn).
-- [ ] **Ascii-theater docs page** — background agent recording `docs/casts/06-install-pip.cast`
-  (real `pip install token-finops-cli` from PyPI) and building `docs/index.html` with an embedded
-  asciinema-player for all 6 casts, then enabling GitHub Pages on `qvest-ssels/burn-token-burn`
-  (source: `main` / `/docs`). Check the agent's final report for the Pages URL and commit hash.
-- [ ] **Homebrew cask/formula for `token-finops-cli`** — requested, not started. Likely a formula
-  (it's a Python CLI, not a GUI app — cask is for macOS apps) via `pip`/`pipx`-based install or a
-  PyOxidizer/pex-built binary; needs a tap (e.g. `qvest-ssels/homebrew-token-finops`) since this
-  isn't going into homebrew-core without history/notability.
+- [x] Colorized statusline (ANSI green/yellow/red at 75%/90%, bold model name) — committed `5b940f0`.
+- [x] `docs/casts/06-install-pip.cast` + `docs/index.html` GitHub Pages landing page, live at
+  https://qvest-ssels.github.io/burn-token-burn/ — committed `563b9f8`, fixed up in `4bfe0ec`
+  (starts on `pip install`, no leaked `/tmp` path, single-tool example scoped to whatever's
+  configured via the statusLine hook instead of an all-adapters comparison).
+- [x] Homebrew formula draft at `contrib/homebrew/token-finops-cli.rb` — committed `77bae41`,
+  installed/tested/uninstalled locally via a throwaway tap. Still needs a real tap repo to be
+  user-installable (see below).
+
+## Open
+
+- [ ] **New GitHub Pages subpage: Qwen Coder via Ollama, as a local sub-agent model** — write a
+  docs subpage (`docs/qwen-ollama.md` or `.html`, linked from `docs/index.html`) covering
+  installing Ollama on macOS and pulling a Qwen Coder model, then actually try it end-to-end in a
+  local session on this Mac: install Ollama, pull the model, and validate it can serve as a
+  sub-agent backend so future sessions can route menial/high-volume sub-agent work to a free local
+  model instead of burning Anthropic tokens. Needs a design answer before the doc can be honest:
+  Claude Code sub-agents run on Anthropic models within the same session — there's no built-in
+  "route this sub-agent to a local Ollama model" mechanism, so this would need either (a) an MCP
+  server that proxies tool calls to a local Ollama endpoint, or (b) a separate harness/CLI outside
+  Claude Code entirely that only *this* project's docs point people at. Don't write the page until
+  that's resolved, or it'll document something that doesn't work. Multi-GB model pull — do this as
+  its own scoped session, not opportunistically.
+- [ ] **Homebrew tap repo** — `contrib/homebrew/token-finops-cli.rb` only installs today via a
+  local throwaway tap; a real `qvest-ssels/homebrew-token-finops` tap repo (or homebrew-core
+  submission once the project has more history) is needed for `brew install token-finops-cli` to
+  work for anyone else.
 
 - [ ] **Statusline: optional sub-agent count + token summary** — `cmd_collect_statusline` currently
   only reads `model`/`rate_limits`/`cost` from the piped JSON; it ignores `session_id`/
