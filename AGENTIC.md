@@ -14,7 +14,7 @@ delete old rows — move them to "Done" below instead, so the history stays legi
 
 | Session | Branch | Task | Touches | Status |
 |---|---|---|---|---|
-| Claude Opus 5 (local) | `feature/agentic/doctor-subcommand` | `token-finops doctor`: per-adapter found/empty/missing diagnosis with probed paths and one actionable hint each, Python/package version header, synth footer | `token-finops-cli/src/token_finops_cli/doctor.py` (new), `token-finops-cli/src/token_finops_cli/cli.py`, `token-finops-cli/tests/test_doctor.py` (new), `token-finops-cli/README.md` | in progress |
+| Claude Opus 5 (local) | `feature/agentic/doctor-subcommand` | `token-finops doctor`: per-adapter found/empty/missing diagnosis with probed paths and one actionable hint each, Python/package version header, synth footer | `token-finops-cli/src/token_finops_cli/doctor.py` (new), `token-finops-cli/src/token_finops_cli/cli.py`, `token-finops-cli/tests/test_doctor.py` (new), `token-finops-cli/README.md` | [PR #12](https://github.com/qvest-ssels/burn-token-burn/pull/12) opened |
 | Claude Opus 5 (local) | `feature/agentic/claude-code-runway-skill` | T-04: `/runway` skill for Claude Code (+ Codex custom prompt if its format is verifiable) that checks token runway before fanning out sub-agents, per `docs/INTEGRATIONS.md` §3 | `contrib/claude-code/` (new), `contrib/codex/` (new), `token-finops-cli/tests/test_contrib_skills.py` (new), `docs/INTEGRATIONS.md` §3, `claude-tasks.md` | in progress |
 
 ## Done
