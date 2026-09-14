@@ -14,6 +14,7 @@ delete old rows — move them to "Done" below instead, so the history stays legi
 
 | Session | Branch | Task | Touches | Status |
 |---|---|---|---|---|
+| Claude Sonnet 5 (cloud) | `feature/agentic/awesome-lists-prep` | T-14 prep: research awesome-lists (QuesmaOrg/awesome-ai-tokenomics, pleasedodisturb/awesome-llm-token-optimization, plus awesome-claude-code/-codex/-gemini-cli style lists) and draft entries + submission-rule notes; no external PRs opened (release hasn't shipped yet) | `docs/AWESOME-LISTS.md` (new) | in progress |
 
 ## Done
 
