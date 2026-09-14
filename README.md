@@ -23,6 +23,7 @@ Everything is Python ≥ 3.10, **standard library only**, and never writes to an
 | Cline / Roo / Kilo (VS Code) | `…/globalStorage/<ext>/tasks/*/ui_messages.json` | BYO provider ($) | usage ✓ |
 | Aider | `.aider.chat.history.md`, opt-in analytics JSONL | BYO provider ($) | usage ✓ (timestamps approximate) |
 | Continue.dev | `~/.continue/sessions/*.json` | BYO provider ($) | usage ✓ (low confidence) |
+| Claude Desktop / Cowork (macOS) | chat: none · quota: `~/Library/Application Support/Claude/plan-usage-history.json` · on-computer Cowork: `…/local-agent-mode-sessions/**/audit.jsonl` | same account-wide 5 h / 7 d windows as Claude Code | chat reference-only, quota + on-computer Cowork proposed (`docs/adr/0013`) |
 | Cursor · Windsurf · Ollama | — | see `docs/adr/0008`, `0011`, `0012` | reference-only |
 
 Usage-only tools get a runway too when you pass `--allowance <USD per 30 days>`.

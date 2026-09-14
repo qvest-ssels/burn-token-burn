@@ -16,6 +16,7 @@ delete old rows — move them to "Done" below instead, so the history stays legi
 |---|---|---|---|---|
 | Claude Opus 5 (local) | `feature/agentic/doctor-subcommand` | `token-finops doctor`: per-adapter found/empty/missing diagnosis with probed paths and one actionable hint each, Python/package version header, synth footer | `token-finops-cli/src/token_finops_cli/doctor.py` (new), `token-finops-cli/src/token_finops_cli/cli.py`, `token-finops-cli/tests/test_doctor.py` (new), `token-finops-cli/README.md` | [PR #12](https://github.com/qvest-ssels/burn-token-burn/pull/12) opened |
 | Claude Opus 5 (local) | `feature/agentic/claude-code-runway-skill` | T-04: `/runway` skill for Claude Code (+ Codex custom prompt if its format is verifiable) that checks token runway before fanning out sub-agents, per `docs/INTEGRATIONS.md` §3 | `contrib/claude-code/` (new), `contrib/codex/` (new), `token-finops-cli/tests/test_contrib_skills.py` (new), `docs/INTEGRATIONS.md` §3, `claude-tasks.md` | in progress |
+| Claude Opus 5 (local) | `feature/agentic/adr-0013-claude-desktop` | T-16: investigate `~/Library/Application Support/Claude/` read-only and write ADR-0013 (Claude Desktop / Cowork macOS coverage) | `docs/adr/0013-claude-desktop-cowork.md` (new), `docs/adr/README.md`, `docs/landscape.md`, `README.md` (one row), `claude-tasks.md`, `AGENTIC.md` | [PR #14](https://github.com/qvest-ssels/burn-token-burn/pull/14) opened |
 
 ## Done
 

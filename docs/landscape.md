@@ -27,6 +27,24 @@ This page covers **one niche only**: per-developer, local, read-only tools that 
 | **Claude-Usage-Tracker** | [hamed-elfayome/Claude-Usage-Tracker](https://github.com/hamed-elfayome/Claude-Usage-Tracker) | Native macOS menu bar app (Swift/SwiftUI) for real-time usage limits. |
 | **claude-context-optimizer** | community | Context-budget heatmaps; flags instructions that rarely influence output. |
 
+## Claude Desktop & Cowork (macOS)
+
+The desktop chat app keeps **no** local usage telemetry — conversations are server-side, and the
+only token-shaped data on disk is inside the claude.ai webview's IndexedDB cache, which is
+undocumented, incomplete and interleaved with raw conversation text (see
+[ADR-0013](adr/0013-claude-desktop-cowork.md) for what is and is not in
+`~/Library/Application Support/Claude/`). Two things *are* usable: Desktop caches the
+account-wide 5 h / 7 d quota utilisation with ~30 days of history in `plan-usage-history.json`,
+and **on-computer** Cowork mirrors its transcripts — tokens, USD and window utilisation — onto
+the Mac in `local-agent-mode-sessions/**/audit.jsonl`. **Cloud** Cowork sessions leave nothing on
+the Mac; run `token-finops self-audit` inside the session and export the JSON into your repo.
+
+| Tool | Link | Notes |
+|---|---|---|
+| **claude-usage-tracker** | [658jjh/claude-usage-tracker](https://github.com/658jjh/claude-usage-tracker) | The only tracker we found advertising Claude Desktop coverage. Paths are heuristic — treat desktop-chat figures as indicative, not billed. |
+| **Claude-Usage-Tracker** (menu bar) | [hamed-elfayome/Claude-Usage-Tracker](https://github.com/hamed-elfayome/Claude-Usage-Tracker) | Native macOS menu bar app for the account-wide limits — the same number Desktop caches locally. |
+| **usage-monitor-for-claude** | [jens-duttke/usage-monitor-for-claude](https://github.com/jens-duttke/usage-monitor-for-claude) | Rate-limit windows in real time (Windows tray). |
+
 ## OpenAI Codex CLI
 
 | Tool | Link | Notes |
@@ -73,4 +91,4 @@ This page covers **one niche only**: per-developer, local, read-only tools that 
 
 Nobody else normalises *limits* across tools: existing trackers report spend in USD (via LiteLLM prices) and, where the provider offers one, a percentage. `token-finops` computes a **runway and pace ratio per tool in the unit that provider actually enforces** — Copilot credits, Claude/Codex window percentages, Gemini requests per day, OpenRouter dollars — and rolls them up as a **binding constraint** (whichever runs out first) instead of summing incompatible units. It also replays your real usage against a local box to answer "would a Mac Studio have paid off by now?" (`break-even`), pricing solar at the feed-in tariff you forgo rather than at zero.
 
-Last reviewed: 2026-09-04
+Last reviewed: 2026-09-14
