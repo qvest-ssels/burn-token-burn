@@ -869,32 +869,40 @@ def _copilot_runway(ctx: Ctx, scenario: str, allowance: float, *, days: int = 14
     return events, compute_runway(events, adapter.default_policy(allowance), now=SYNTH_NOW)
 
 
+# A real Copilot Pro allowance (see plans.json) -- since _copilot_runway always evaluates
+# at the fixed SYNTH_NOW (2026-09-25), the full 14 synthetic days land inside the current
+# cycle every time this runs, so this is not sensitive to the real wall-clock day-of-month
+# the way test_e2e_matrix.py's COPILOT_BUDGET is (T-02: the old 300_000/50_000 allowances
+# were a workaround for a per-event scale ~300x too hot -- see adapters/copilot.py).
+COPILOT_PRO_AIU = 1500.0
+
+
 def _y45(ctx: Ctx) -> None:
-    _events, r = _copilot_runway(ctx, "steady", 300_000.0)
+    _events, r = _copilot_runway(ctx, "steady", COPILOT_PRO_AIU)
     assert r.status is Status.OK
     assert r.runway_days > r.days_left
     assert 0.0 < r.used_fraction < 0.75
 
 
 def _y46(ctx: Ctx) -> None:
-    _events, r = _copilot_runway(ctx, "exhausted", 50_000.0)
+    _events, r = _copilot_runway(ctx, "exhausted", COPILOT_PRO_AIU)
     assert r.status in (Status.CRITICAL, Status.EXHAUSTED)
     assert r.used_fraction > 1.0
 
 
 def _y47(ctx: Ctx) -> None:
-    _events, r = _copilot_runway(ctx, "burst", 300_000.0, days=25)
+    _events, r = _copilot_runway(ctx, "burst", COPILOT_PRO_AIU, days=25)
     assert r.burn_per_day_ema > r.burn_per_day_avg
 
 
 def _y48(ctx: Ctx) -> None:
-    events, _r = _copilot_runway(ctx, "weekend", 300_000.0)
+    events, _r = _copilot_runway(ctx, "weekend", COPILOT_PRO_AIU)
     assert events
     assert not [e for e in events if e.ts_utc.weekday() >= 5]
 
 
 def _y49(ctx: Ctx) -> None:
-    events, r = _copilot_runway(ctx, "fresh", 300_000.0)
+    events, r = _copilot_runway(ctx, "fresh", COPILOT_PRO_AIU)
     assert events
     oldest = min(e.ts_utc for e in events)
     assert (SYNTH_NOW - oldest) <= timedelta(days=2, hours=1)
@@ -923,11 +931,11 @@ def _y50(ctx: Ctx) -> None:
 
 SYNTH_CASES = [
     uc(UseCase("UC-45", "Demo / bug reporter", "Steady scenario stays healthy",
-               "14 days of even usage against a generous 300k AI-unit enterprise pool",
+               "14 days of even usage against a real Copilot Pro allowance (1500 AIU)",
                "token-finops synth --out DIR --scenario steady",
-               "runway outlasts the reset -> OK, under 75 % of the pool used", _y45)),
+               "runway outlasts the reset -> OK, under 75 % of the plan used", _y45)),
     uc(UseCase("UC-46", "Demo / bug reporter", "Exhausted scenario blows the budget",
-               "per-event cost scaled 25x against the default 50,000 AIU allowance",
+               "per-event cost scaled 100x against a real Copilot Pro allowance (1500 AIU)",
                "token-finops synth --out DIR --scenario exhausted",
                "used > 100 % -> CRITICAL or EXHAUSTED", _y46)),
     uc(UseCase("UC-47", "Demo / bug reporter", "Burst scenario is visible in the EMA",

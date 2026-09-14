@@ -23,7 +23,11 @@ from typing import Iterable, Optional
 from ..core.model import BudgetPolicy, CycleKind, Unit, UsageEvent
 from .base import BaseAdapter, register, sqlite_readonly
 
-DEFAULT_BUDGET_AIU = 50_000.0  # the original's default; Pro=1500, Pro+=7000, Max=20000
+# The largest real individual plan (Max) when the caller doesn't say which plan they're on
+# (T-02: with a realistic per-event synth scale, the old 50,000 fallback was bigger than
+# every real plan -- Pro=1500, Pro+=7000, Business=1900, Enterprise=3900+flex, Max=20000 --
+# and so never flagged anything as tight even for "exhausted" usage).
+DEFAULT_BUDGET_AIU = 20_000.0
 
 OPTIONAL_COLUMNS = (
     "model", "cache_read_tokens", "cache_write_tokens", "agent_id",
@@ -187,7 +191,12 @@ def build_synthetic_db(path: str, days: int = 14, events_per_day: int = 8, seed:
             ts = adjust_for_weekend(scenario, ts)
             inp, out, reas = rng.randint(200, 4000), rng.randint(100, 2500), rng.randint(0, 800)
             dur = rng.uniform(800, 15000)
-            nano = int((inp + out) * rng.uniform(150_000_000, 400_000_000) * vol_mult)
+            # ~3 AI units/request on average (T-02): a real account (581 requests, 896.8 AIU
+            # over one cycle) averages ~1.5 AIU/request; this runs a bit hotter so "steady"
+            # lands at a legible 40-60% of a real Copilot Pro allowance (1500 AIU/month) over
+            # a full month of default-volume days, instead of the old ~900 AIU/request scale
+            # that blew past even Max's 20,000 AIU allowance inside two weeks.
+            nano = int((inp + out) * rng.uniform(600_000, 1_200_000) * vol_mult)
             base = (session_id, ts.isoformat(), inp, out, reas, dur, nano)
             if with_extra_columns:
                 sub = rng.random() < 0.25

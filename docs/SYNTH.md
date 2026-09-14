@@ -41,7 +41,7 @@ Pass `--scenario NAME` (default `steady`); see `synth/scenarios.py`:
 |---|---|
 | `steady` | even usage across the period (identical output to each generator's pre-scenario behaviour) |
 | `burst` | quiet, then the last 2 days run at ~5x normal volume |
-| `exhausted` | Copilot's per-event AI-unit cost is scaled ~25x so total usage blows past the default 50,000 AIU monthly allowance; Claude Code / Codex rolling-window `rate_limits` are pinned to 95-100% |
+| `exhausted` | Copilot's per-event AI-unit cost is scaled ~100x so total usage blows past even the largest real plan (Max, 20,000 AIU -- also the default allowance when none is given); Claude Code / Codex rolling-window `rate_limits` are pinned to 95-100% |
 | `weekend` | zero usage on Saturday/Sunday (UTC) |
 | `fresh` | first use was "yesterday" — usage before day-offset 2 is suppressed regardless of `--days` |
 | `quiet` | a handful of events with long gaps between them |

@@ -7,16 +7,11 @@ against `main`. Never commit to `main` directly. Rules: `AGENTS.md`. Model hint 
 suggestion — menial work on Sonnet/Haiku, judgement-heavy work on Opus. Tick the box in this file
 in the same PR.
 
-Remote: `origin = https://github.com/tronicum/burn-token-burn.git` (branch `main`).
+Remote: `origin = https://github.com/qvest-ssels/burn-token-burn.git` (leading fork, branch
+`main`); `upstream = https://github.com/tronicum/burn-token-burn.git` (original). Agentic work
+follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a task.
 
 ## Ready now
-
-- [ ] **T-02 Copilot synth scale** — branch `synth/copilot-aiu-scale` — model: Sonnet — S
-  `build_synthetic_db` bills ~900 AI units per request (≈ $9/req), so a 14-day "steady" home is
-  EXHAUSTED against a Pro allowance (1500). Rescale `total_nano_aiu` so steady ≈ 40–60 % of 1500
-  over a month, exhausted > 100 %, burst visible in the EMA. Update tests that hard-code the old
-  scale (`tests/test_e2e_matrix.py` passes `--budget 500000` as a workaround — remove that).
-  Acceptance: `token-finops synth --scenario steady` + `report --budget 1500` → OK; exhausted → EXHAUSTED.
 
 - [ ] **T-03 `--online` quota fetchers** — branch `feat/online-quota` — model: Opus for design, Sonnet for code — M
   Optional live quota, never on by default, each behind its ADR note, cached ≥ 180 s in
@@ -101,6 +96,21 @@ Remote: `origin = https://github.com/tronicum/burn-token-burn.git` (branch `main
 - **Windsurf** — ADR-0011; no local data.
 
 ## Done (keep for history)
+
+- [x] **T-02 Copilot synth scale** — `build_synthetic_db`'s per-event `total_nano_aiu` rescaled
+  from ~900 AIU/request (~300x too hot -- a real account averages ~1.5 AIU/request) to ~3
+  AIU/request, so `synth --scenario steady` now reads sensibly against real plan sizes: 22.5% of
+  a Copilot Pro allowance (1500) over the default 14-day window, `OK`; `--scenario exhausted`
+  (per-event multiplier raised 25x -> 100x, to comfortably clear even Max's 20,000 AIU allowance
+  regardless of how many synthetic days the real calendar-month window happens to cover) ->
+  `EXHAUSTED`. `DEFAULT_BUDGET_AIU` (used when `report`/`status` get no `--budget`) rescaled
+  50,000 -> 20,000 (Max, the largest real individual plan -- the old default was bigger than
+  every real plan and so never flagged tight usage). Removed the `--budget 500000`-style
+  workarounds from `tests/test_e2e_matrix.py` (now `--budget 1500`, verified empirically robust
+  across every day-of-month for the fixed seed, accounting for `compute_runway`'s pace-based
+  CRITICAL rule) and `tests/test_usecases.py`'s UC-45..49 (now `--budget 1500`, deterministic
+  since those fix `now`); regenerated `docs/USECASES.md`, updated `docs/SYNTH.md`. 817 passed, 1
+  skipped, ruff clean. Branch `feature/agentic/copilot-synth-scale`, see `AGENTIC.md` — 2026-09-15
 
 - [x] **T-20 Tier 2 CI install-smoke coverage** — reconciled: this was already implemented
   directly on main in the same batch as `docs/INSTALL.md` Tier 2 (not delegated to a branch/PR

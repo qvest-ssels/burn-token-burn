@@ -14,6 +14,25 @@ A short, human-facing "what's outstanding" list. For the detailed agent-ready wo
   installed/tested/uninstalled locally via a throwaway tap. Still needs a real tap repo to be
   user-installable (see below).
 
+## Done this session (Claude Sonnet 5, cloud session)
+
+- [x] **Statusline: bring back the `report --compact` hash progress bar** — `collect-statusline`
+  now renders `progress_bar()` per window (10-wide, narrower than `report`'s 30 since it shares a
+  line with other segments) instead of a bare percentage, e.g.
+  `claude-sonnet-5 | 5h [####------]  40.0% | 7d [#---------]  12.0%`, still colour-coded at the
+  same 75 %/90 % thresholds — `docs/TMUX.md` updated.
+- [x] **Statusline: optional sub-agent count + token summary** — opt-in via
+  `~/.token-finops/config.json` (`{"statusline": {"show_subagents": true}}`, off by default —
+  parses `subagents/agent-*.jsonl` on every refresh, extra disk I/O not everyone wants); reuses
+  `report.summarize()` over the sibling `<session>/subagents/` directory derived from Claude
+  Code's `transcript_path` payload field. Appends `2 agents · 8.4k tokens` to the line. 5 new
+  tests. Branch `feature/agentic/statusline-enhancements`, see `AGENTIC.md`.
+- [x] **T-02 Copilot synth scale rebalance** — `synth --scenario steady` + `report --budget 1500`
+  now reads 22.5% OK, `--scenario exhausted` reads 100% OUT, matching a real Copilot Pro
+  allowance instead of the old ~900 AIU/request scale that blew past even Max's 20,000 AIU
+  allowance in two weeks. See `claude-tasks.md`'s Done section for the full detail. Branch
+  `feature/agentic/copilot-synth-scale`, see `AGENTIC.md`.
+
 ## Open
 
 - [ ] **New GitHub Pages subpage: Qwen Coder via Ollama, as a local sub-agent model** — write a
@@ -74,7 +93,6 @@ A short, human-facing "what's outstanding" list. For the detailed agent-ready wo
 
 ## From the existing backlog (`claude-tasks.md`) — top picks
 
-- [ ] T-02 Copilot synth scale rebalance
 - [ ] T-03 `--online` live quota fetchers (Copilot/Anthropic/Gemini/OpenRouter)
 - [ ] T-04 Claude Code `/runway` skill
 - [ ] T-07 Quality-tier mapping from Artificial Analysis
