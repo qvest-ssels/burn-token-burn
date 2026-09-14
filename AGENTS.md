@@ -18,15 +18,17 @@ to `main` — the coordinating session then gives the human a PR link to preview
 changes landing on `main` unreviewed. Keep PRs scoped to what one agent actually touched; don't
 bundle unrelated agents' work into one PR just because they ran concurrently.
 
-## Don't touch the user's home directory
+## Never touch the user's home directory — no exceptions
 
-Keep all work — scratch state, tool installs, test fixtures, node_modules, caches — inside the
-repo working tree (use `./tmp/`, gitignored, for scratch state per the rule below). Do not write
-into or otherwise touch the real `$HOME` outside the repo. The only acceptable exception is
-one-time *local tool setup* strictly required to actually run/test something for this repo (e.g.
-installing a browser engine for Playwright, which unavoidably caches under `~/Library/Caches` or
-similar on some platforms) — never data, scratch files, or config beyond what that setup demands.
-When in doubt, ask before writing anywhere under `$HOME`.
+Keep all work — scratch state, tool installs, test fixtures, node_modules, caches, browser
+binaries — strictly inside the repo working tree, under `./tmp/` (gitignored) for anything
+scratch/throwaway. Never write into or otherwise touch the real `$HOME` outside the repo —
+including `~/Library` (macOS) and any other subdirectory of `$HOME`. There is no exception for
+"just tool setup": redirect every tool's default cache/install location into `./tmp/` via its env
+vars instead (e.g. `PLAYWRIGHT_BROWSERS_PATH=$(pwd)/tmp/playwright-browsers`,
+`NPM_CONFIG_CACHE=$(pwd)/tmp/npm-cache`, a project-local `node_modules` instead of a global
+install, etc.). If a tool truly cannot be redirected away from `$HOME`, stop and ask before running
+it — do not fall back to letting it write there.
 
 ## Ground rules
 
