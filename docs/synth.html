@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>synth — token-finops</title>
+<meta name="description" content="token-finops synth: generate synthetic coding-agent telemetry to try the CLI against reproducible data.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.17.0/dist/bundle/asciinema-player.css">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.17.0/dist/bundle/asciinema-player.min.js" defer></script>
+<script src="player.js" defer></script>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="wordmark" href="index.html"><span class="prompt">$ </span>token-finops</a>
+    <nav aria-label="Site">
+      <a href="index.html">overview</a>
+      <a href="report.html">report</a>
+      <a href="statusline.html">status line</a>
+      <a href="self-audit.html">self-audit</a>
+      <a href="savings.html">savings</a>
+      <a href="synth.html" aria-current="page">synth</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+
+<h1>synth</h1>
+<p><code>synth</code> generates a complete set of fake coding-agent telemetry, so you can try <code>report</code>, <code>status</code> and the rest before you have accumulated any usage of your own — and so the behaviour you are looking at is reproducible. Scenarios range from a quiet week to <code>burst</code> and <code>exhausted</code>.</p>
+
+<h2>Try it</h2>
+<pre><code>$ token-finops synth --out ~/demo-home --scenario exhausted --print-env</code></pre>
+
+<p class="cast-note">Generating a demo data set and the <code>--print-env</code> one-liner.</p>
+<div class="player" id="player-05" data-cast="casts/05-synth.cast"></div>
+<p class="cast-note">What to notice: <code>--print-env</code> prints the environment assignments that point the CLI at the generated data instead of your real one. Evaluate that line in a shell and every other command on this site works against the demo data set; open a new shell and you are back to your own. Nothing you already had is modified — <code>token-finops</code> never writes to a coding agent's data store.</p>
+
+<p class="cast-note">The recordings on the <a href="report.html">report</a>, <a href="statusline.html">status line</a>, <a href="self-audit.html">self-audit</a> and <a href="savings.html">savings</a> pages were all made this way: synthetic numbers, real commands.</p>
+
+<footer>
+  <p>Recordings are asciicast v2 files committed in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/docs/casts">docs/casts/</a> — play them locally with <code>asciinema play &lt;file&gt;</code>. This page ships no analytics and no tracking.</p>
+</footer>
+
+</div>
+
+</body>
+</html>

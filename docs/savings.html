@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>savings &amp; break-even — token-finops</title>
+<meta name="description" content="token-finops savings: local inference hardware and electricity vs. cloud API pricing, plus the break-even point.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.17.0/dist/bundle/asciinema-player.css">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.17.0/dist/bundle/asciinema-player.min.js" defer></script>
+<script src="player.js" defer></script>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="wordmark" href="index.html"><span class="prompt">$ </span>token-finops</a>
+    <nav aria-label="Site">
+      <a href="index.html">overview</a>
+      <a href="report.html">report</a>
+      <a href="statusline.html">status line</a>
+      <a href="self-audit.html">self-audit</a>
+      <a href="savings.html" aria-current="page">savings</a>
+      <a href="synth.html">synth</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+
+<h1>savings &amp; break-even</h1>
+<p>Running a model on your own hardware is not automatically cheaper. <code>savings</code> compares the cost of local inference — hardware amortisation plus the electricity it actually draws — against cloud API pricing for the same volume of tokens, and <code>break-even</code> replays it to find the point where the machine has paid for itself.</p>
+
+<h2>Try it</h2>
+<pre><code>$ token-finops savings --hardware mac-studio-m4-max-128gb --model qwen3-32b --utilization 0.2
+$ token-finops savings --power solar-de-feed-in --utilization 0.8
+$ token-finops break-even --hardware mac-studio-m4-max-128gb</code></pre>
+
+<p class="cast-note">A Mac Studio at 20 % vs. 80 % utilisation, the same machine on a solar feed-in tariff, and the break-even replay.</p>
+<div class="player" id="player-04" data-cast="casts/04-savings-break-even.cast"></div>
+<p class="cast-note">What to notice: utilisation dominates. The same hardware looks like a bad deal at 20 % and a good one at 80 %, because the purchase price is amortised over the tokens you actually generate. The electricity price matters too, which is why the tariff is a switch rather than a constant.</p>
+
+<h2>The numbers are editable and sourced</h2>
+<p>Hardware profiles and energy prices live in JSON files you can edit, and every figure carries a source and a review date in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/sources.md">docs/sources.md</a>. If a number could not be sourced, it is marked as an estimate rather than quietly presented as fact.</p>
+
+<footer>
+  <p>Recordings are asciicast v2 files committed in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/docs/casts">docs/casts/</a> — play them locally with <code>asciinema play &lt;file&gt;</code>. This page ships no analytics and no tracking.</p>
+</footer>
+
+</div>
+
+</body>
+</html>
