@@ -36,6 +36,12 @@ vars instead (e.g. `PLAYWRIGHT_BROWSERS_PATH=$(pwd)/tmp/playwright-browsers`,
 install, etc.). If a tool truly cannot be redirected away from `$HOME`, stop and ask before running
 it — do not fall back to letting it write there.
 
+This holds even for *cleanup*: if something ends up under `$HOME` anyway (a bug, a tool that
+ignored its redirect env var, a mistake made before this rule was read), do not run `rm`/`rm -rf`
+or otherwise modify anything under `$HOME` yourself, including `~/Library`, even to remove exactly
+what you or a sub-agent just wrote there. Report what exists and where, and leave it for the human
+to remove — this is an absolute rule with no self-cleanup exception.
+
 ## Ground rules
 
 1. **Read-only against tool data.** Never write to `~/.copilot`, `~/.claude`, `~/.codex`, `~/.gemini`, `~/.hermes` or any other assistant's store. SQLite is opened with `immutable=1` via `adapters.base.sqlite_readonly()`.

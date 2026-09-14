@@ -46,6 +46,7 @@ header { border-bottom: 1px solid var(--border); padding-bottom: 2rem; margin-bo
 h1 { font-family: var(--mono); font-size: 2rem; margin: 0 0 .25rem; }
 h1 .prompt { color: var(--accent); }
 .tagline { color: var(--muted); margin: 0 0 1.25rem; font-size: 1.05rem; }
+.subtitle { color: var(--muted); font-size: .95rem; margin: 0 0 1.5rem; font-style: italic; }
 h2 { font-size: 1.35rem; margin: 3rem 0 .75rem; border-left: 3px solid var(--accent); padding-left: .6rem; }
 h3 { font-size: 1rem; font-family: var(--mono); margin: 2rem 0 .4rem; color: var(--fg); }
 h3 .num { color: var(--accent); }
@@ -73,6 +74,25 @@ pre code { background: none; padding: 0; }
   border-radius: 6px; padding: 1.25rem 1.25rem .75rem; margin-bottom: 2rem;
 }
 .featured h2 { margin-top: 0; border: 0; padding-left: 0; }
+
+.trust-list, .planned ul { list-style: none; padding: 0; margin: 0 0 1.25rem; }
+.trust-list li {
+  font-family: var(--mono); font-size: .9rem; color: var(--fg);
+  padding: .2rem 0 .2rem 1.4rem; position: relative;
+}
+.trust-list li::before { content: "\2713"; color: var(--accent); position: absolute; left: 0; }
+
+.escape-hatch, .planned {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+  padding: 1.25rem 1.25rem .75rem; margin: 2rem 0;
+}
+.escape-hatch h2, .planned h2, .planned h3 { margin-top: 0; border: 0; padding-left: 0; }
+
+.adapter-table { width: 100%; border-collapse: collapse; margin: 0 0 1.5rem; font-size: .9rem; }
+.adapter-table th, .adapter-table td {
+  text-align: left; padding: .5rem .75rem; border-bottom: 1px solid var(--border);
+}
+.adapter-table th { color: var(--muted); font-weight: 600; font-family: var(--mono); font-size: .8rem; }
 .badges { font-family: var(--mono); font-size: .85rem; color: var(--muted); margin-bottom: 1.5rem; }
 .badges a { margin-right: 1rem; }
 .pagelist { list-style: none; padding: 0; margin: 0 0 1rem; }

@@ -19,9 +19,10 @@
       <a href="index.html">overview</a>
       <a href="report.html">report</a>
       <a href="statusline.html">status line</a>
-      <a href="self-audit.html" aria-current="page">self-audit</a>
+      <a href="self-audit.html" aria-current="page">self-audit (session cost)</a>
       <a href="savings.html">savings</a>
       <a href="synth.html">synth</a>
+      <a href="reference.html">reference</a>
     </nav>
   </div>
 </div>
@@ -29,15 +30,39 @@
 <div class="wrap">
 
 <h1>self-audit</h1>
-<p><code>self-audit</code> answers a narrower question than <code>report</code>: what did <em>this</em> Claude Code session cost? It reads the session transcript, splits the usage by model, and attributes sub-agent work to the sub-agents that did it — so a session that farmed cheap work out to Haiku looks different from one that ran everything on the expensive model.</p>
+<p class="subtitle">For: Claude Code users — what a session actually cost, by model and sub-agent. (Not a security audit, despite the name.)</p>
+
+<h2>Why the number you'd get by counting is wrong</h2>
+<p>Claude Code writes one line of usage per content block in a transcript, so counting naively over-reports total tokens by roughly <strong>1.9&times;</strong>. <code>self-audit</code> deduplicates on <code>(message.id, requestId)</code> before adding anything up, and includes sub-agent transcripts in the same pass — a session that farmed cheap work out to Haiku looks different from one that ran everything on the expensive model, and the by-model breakdown below is built to show exactly that. This dedup rationale, not the total, is why the number can be trusted.</p>
+
+<p><code>self-audit</code> answers a narrower question than <code>report</code>: what did <em>this</em> Claude Code session cost? It reads the session transcript and attributes usage by model and by main-loop-vs-sub-agent.</p>
 
 <h2>Try it</h2>
 <pre><code>$ token-finops self-audit                       # the current session
+$ token-finops self-audit --session &lt;id-prefix&gt;
 $ token-finops self-audit --config-dir ~/some-other/.claude</code></pre>
 
 <p class="cast-note"><code>self-audit</code> on a Claude Code session that used sub-agents on Sonnet and Haiku.</p>
 <div class="player" id="player-03" data-cast="casts/03-self-audit.cast"></div>
-<p class="cast-note">What to notice: the by-model table is the point. It shows where the tokens actually went, which is usually the difference between "the session was expensive" and "one model in the session was expensive". USD figures are labelled API-equivalent estimates, not a bill — they price the same work as if it had gone through the API.</p>
+<p class="cast-note">What to notice: the by-model table is the point. It shows where the tokens actually went — <em>the model, not the raw token count, is what decides the cost</em>. USD figures are labelled API-equivalent estimates, not a bill — they price the same work as if it had gone through the API.</p>
+
+<h2><code>--json</code>, for CI/PR checklists</h2>
+<p>This repo runs <code>self-audit</code> on itself at the end of every session (see <code>AGENTS.md</code>). The machine-readable form:</p>
+<pre><code>$ token-finops self-audit --json
+{
+  "session": "a1b2c3d4",
+  "calls": 214,
+  "main": 168,
+  "subagents": 46,
+  "by_model": {
+    "claude-sonnet-4-5": {
+      "calls": 190, "input": 812000, "output": 96500,
+      "cache_read": 5400000, "cache_write": 210000,
+      "reasoning": 0, "usd": 18.42, "usd_known": 190
+    }
+  }
+}</code></pre>
+<p class="cast-note">The "sub-agents = N% of API-equivalent cost" line shown by the plain text output is derived from <code>main</code>/<code>subagents</code> and the per-model <code>usd</code> figures above; it isn't a separate JSON field.</p>
 
 <footer>
   <p>Recordings are asciicast v2 files committed in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/docs/casts">docs/casts/</a> — play them locally with <code>asciinema play &lt;file&gt;</code>. This page ships no analytics and no tracking.</p>
