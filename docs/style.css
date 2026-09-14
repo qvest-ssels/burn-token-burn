@@ -78,6 +78,42 @@ pre code { background: none; padding: 0; }
 .pagelist { list-style: none; padding: 0; margin: 0 0 1rem; }
 .pagelist li { margin: 0 0 .6rem; }
 .pagelist a { font-family: var(--mono); }
+/* --- support table ------------------------------------------------------ */
+.table-wrap { overflow-x: auto; margin: 0 0 1.25rem; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; padding: .5rem .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+td:first-child { white-space: nowrap; }
+
+/* --- install wizard ---------------------------------------------------- */
+.os-tabs { font-family: var(--mono); font-size: .9rem; color: var(--muted); margin: 0 0 1.25rem; }
+.os-tab {
+  font-family: var(--mono); font-size: .9rem;
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  padding: 0 .1rem .15rem; border-bottom: 2px solid transparent;
+}
+.os-tab:hover { color: var(--fg); }
+.os-tab[aria-current="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.wizard-steps { list-style: none; counter-reset: none; padding: 0; margin: 0 0 1.25rem; }
+.wizard-steps > li { margin: 0 0 1.75rem; }
+.wizard-steps > li:last-child { margin-bottom: 0; }
+.wizard-steps h3 { margin: 0 0 .5rem; }
+.wizard-steps h3 .num {
+  display: inline-block; min-width: 1.4em; text-align: center;
+  border: 1px solid var(--border); border-radius: 3px; margin-right: .4em;
+  font-size: .8rem; color: var(--accent);
+}
+.cmd-block { position: relative; }
+.cmd-block pre { margin: 0 0 .35rem; padding-right: 4.5rem; }
+.copy-btn {
+  position: absolute; top: .6rem; right: .6rem;
+  font-family: var(--mono); font-size: .75rem;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--muted); cursor: pointer; padding: .2rem .5rem;
+}
+.copy-btn:hover { color: var(--fg); border-color: var(--accent); }
+.cast-note.expected { font-family: var(--mono); white-space: pre-wrap; opacity: .8; }
+.cast-note.os-note { margin-top: -.2rem; }
 footer { margin-top: 4rem; border-top: 1px solid var(--border); padding-top: 1.25rem; color: var(--muted); font-size: .875rem; }
 blockquote { margin: 0 0 1rem; padding-left: 1rem; border-left: 2px solid var(--border); color: var(--muted); font-style: italic; }
 @media (max-width: 600px) { .wrap { padding: 2rem 1rem 3rem; } h1 { font-size: 1.5rem; } }

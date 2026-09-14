@@ -14,6 +14,7 @@ delete old rows — move them to "Done" below instead, so the history stays legi
 
 | Session | Branch | Task | Touches | Status |
 |---|---|---|---|---|
+| Claude Sonnet 5 (cloud) | `feature/agentic/autoplay-and-wizard` | Scroll-triggered asciinema autoplay (`player.js`) + homepage install wizard (4-step, OS-aware, all steps visible) replacing the static install block | `docs/player.js`, `docs/index.html`, `docs/wizard.js` (new), `docs/style.css` | in progress |
 
 ## Done
 
