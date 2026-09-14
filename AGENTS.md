@@ -18,6 +18,12 @@ to `main` — the coordinating session then gives the human a PR link to preview
 changes landing on `main` unreviewed. Keep PRs scoped to what one agent actually touched; don't
 bundle unrelated agents' work into one PR just because they ran concurrently.
 
+More than one agentic session can be active on this repo at the same time (different tools,
+different machines, cloud and local). Before claiming a task, check
+[`AGENTIC.md`](AGENTIC.md) for an `in progress` row that overlaps the files or topic you're about
+to touch, and add your own row there when you start — branch, task, files, status. This is how
+concurrent sessions avoid duplicating or clobbering each other's work; it is not optional.
+
 ## Never touch the user's home directory — no exceptions
 
 Keep all work — scratch state, tool installs, test fixtures, node_modules, caches, browser
