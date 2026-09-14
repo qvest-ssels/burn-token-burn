@@ -9,6 +9,15 @@ telemetry, debugging one adapter, the branch-per-task workflow, releasing — se
 
 `burn-token-burn` extends Stefan's **token-finops-cli** (GitHub Copilot CLI budget runway, `token-finops-cli/`) into a modular, read-only tracker for every coding assistant that leaves telemetry on disk, plus a local-vs-cloud savings estimator and a guide. Decisions per assistant live in `docs/adr/`; the field tables in `docs/ADAPTERS.md` are the source of truth for parsers.
 
+## Agentic workflow: branch + PR, not direct-to-main
+
+Sub-agent / background-agent work should fan out whenever the task allows it (independent files
+or independent pieces of a larger task = independent agents). Each agent works on its own
+`feature/agentic/<topic-or-task>` branch and opens a PR back to `main` instead of pushing directly
+to `main` — the coordinating session then gives the human a PR link to preview/approve, rather than
+changes landing on `main` unreviewed. Keep PRs scoped to what one agent actually touched; don't
+bundle unrelated agents' work into one PR just because they ran concurrently.
+
 ## Ground rules
 
 1. **Read-only against tool data.** Never write to `~/.copilot`, `~/.claude`, `~/.codex`, `~/.gemini`, `~/.hermes` or any other assistant's store. SQLite is opened with `immutable=1` via `adapters.base.sqlite_readonly()`.
