@@ -29,3 +29,4 @@ for the tool links referenced as alternatives.
 | [0010](0010-continue-dev.md) | Continue.dev | Usage-only (low confidence) | Not available | Unstable local field |
 | [0011](0011-windsurf.md) | Windsurf | Not feasible / reference-only | No local data at all | Server-side only |
 | [0012](0012-ollama-and-local-models.md) | Ollama & local models | No budget; feeds savings estimator | N/A (no budget concept) | Captured via client logs or a proxy |
+| [0013](0013-claude-desktop-cowork.md) | Claude Desktop & Cowork (macOS) | Split: chat reference-only, quota source, on-computer Cowork full adapter | Yes on macOS (`plan-usage-history.json`); cloud Cowork not at all | RE (undocumented local JSON, verified on-machine) |

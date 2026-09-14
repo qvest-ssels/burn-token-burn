@@ -51,7 +51,7 @@ follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a ta
   (main + `subagents/`), dedup across them, and print "segments: N" in the header. Fixture: two
   JSONL files with the same `sessionId` in `tests/`. Acceptance: totals equal the sum of the parts.
 
-- [ ] **T-16 Claude Desktop / Cowork (macOS) coverage** — branch `docs/adr-0013-claude-desktop` — model: Opus — S
+- [x] **T-16 Claude Desktop / Cowork (macOS) coverage** — branch `feature/agentic/adr-0013-claude-desktop` — model: Opus — S — done: [ADR-0013](docs/adr/0013-claude-desktop-cowork.md). Findings differ from the premise in two ways: Desktop caches the account-wide 5 h/7 d utilisation offline in `plan-usage-history.json` (~30 days of history), and on-computer Cowork mirrors full token/USD/quota records to the Mac in `local-agent-mode-sessions/**/audit.jsonl`. Cloud Cowork confirmed metadata-only. Follow-ups: quota source + on-computer Cowork adapter.
   Question from the field: "can we measure Claude Desktop?" Investigate and write ADR-0013:
   the desktop chat app keeps no local usage telemetry (conversations are server-side; check
   `~/Library/Application Support/Claude/` for anything usable and document what is there);
