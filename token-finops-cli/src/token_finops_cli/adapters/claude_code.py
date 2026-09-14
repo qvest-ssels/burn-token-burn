@@ -9,6 +9,16 @@ one line per content block, so the same API response appears several times.
 Dedup key: `(message.id, requestId)` — on this repository's own session that
 collapses 371 lines to 197 real API calls (~1.9x over-count otherwise).
 
+Compaction: when Claude Code (or a Cowork cloud session) compacts context
+mid-session, it starts writing a *new* transcript file that carries the
+*same* `sessionId` as the one being compacted away. `scan()` globs every
+`*.jsonl` under `<config_dir>/projects/` recursively, so events from every
+such segment are already collected under one `session_id` key by whoever
+groups events (see `cli.cmd_self_audit`) — that grouping just needs a
+cross-file dedup pass (duplicate `event_id`s can appear if a segment
+boundary re-emits a message) and a "how many files/segments contributed"
+count, which is why every event also carries `tags["source_path"]`.
+
 Budget: Anthropic subscriptions expose only opaque percentages of a rolling
 5-hour window and a rolling 7-day window. Local transcripts therefore give
 you *what you did* (tokens, models, sub-agents, USD-equivalent), while the
@@ -110,7 +120,8 @@ def parse_transcript(path: str, since: Optional[datetime] = None) -> Iterable[Us
             out = _int(usage.get("output_tokens"))
             cr = _int(usage.get("cache_read_input_tokens"))
             events[key] = UsageEvent(
-                tags={"first_tool": tools[0] if tools else "", "tools": list(tools)},
+                tags={"first_tool": tools[0] if tools else "", "tools": list(tools),
+                      "source_path": path},
                 ts_utc=ts,
                 tool="claude_code",
                 model_raw=model,

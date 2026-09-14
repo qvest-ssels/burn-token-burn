@@ -41,7 +41,7 @@ follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a ta
   in the JSON, derive the tier from index bands, document the bands in `docs/guide/04`. Keep the
   "it's an assumption" caveat.
 
-- [ ] **T-15 self-audit across compaction** — branch `fix/self-audit-compaction` — model: Sonnet — S
+- [x] **T-15 self-audit across compaction** — branch `fix/self-audit-compaction` — model: Sonnet — S
   When Claude Code compacts context it starts a new transcript for the same session id (and Cowork
   cloud sessions do the same). `self-audit --session X` currently sees only the newest transcript;
   the dogfooding run split into $224.95 + $56.63. Stitch every transcript sharing the session id

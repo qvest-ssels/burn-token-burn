@@ -196,13 +196,29 @@ def cmd_self_audit(args) -> str:
         if not matches:
             return f"No session starting with {args.session!r}. Known: {', '.join(sorted(sessions))[:400]}"
         sid = matches[0]
-    evs = sorted(sessions[sid], key=lambda e: e.ts_utc)
+    # Compaction starts a *new* transcript file for the same session id (main
+    # line, plus its own `subagents/`); scan() already globs every *.jsonl
+    # recursively so all such segments land in `sessions[sid]` above -- but
+    # each segment ran its dedup independently, so a boundary event repeated
+    # across two segments would otherwise be double-counted. Dedup globally
+    # by event_id before doing anything else with the stitched set.
+    seen_event_ids: set[str] = set()
+    evs = []
+    for e in sorted(sessions[sid], key=lambda e: e.ts_utc):
+        if e.event_id and e.event_id in seen_event_ids:
+            continue
+        if e.event_id:
+            seen_event_ids.add(e.event_id)
+        evs.append(e)
     main = [e for e in evs if not e.agent_id]
     subs = [e for e in evs if e.agent_id]
+    segments = len({e.tags.get("source_path") for e in main if e.tags.get("source_path")}) or 1
 
     out: list[str] = []
     out.append(f"Self-audit: Claude Code session {sid}")
     out.append(f"  span: {fmt_dt(evs[0].ts_utc)} -> {fmt_dt(evs[-1].ts_utc)}")
+    out.append(f"  segments: {segments}"
+               + ("  (compaction split the main transcript into multiple files)" if segments > 1 else ""))
     out.append(f"  API calls (deduplicated): {len(evs)}  = main loop {len(main)} + sub-agents {len(subs)}")
     out.append("")
     out += render_summary("Totals (main + sub-agents)", evs)
@@ -250,7 +266,8 @@ def cmd_self_audit(args) -> str:
                "(see core/pricing.py, reviewed " + _pricing_date() + "). On a subscription the real "
                "constraint is the rolling 5h/7d window, not dollars.")
     if args.json:
-        return json.dumps({"session": sid, "calls": len(evs), "main": len(main), "subagents": len(subs),
+        return json.dumps({"session": sid, "segments": segments, "calls": len(evs), "main": len(main),
+                           "subagents": len(subs),
                            "by_model": {m: {k: v for k, v in s.items() if k not in ('sessions', 'agents')}
                                         for m, s in dict(_by_model_json(evs)).items()}},
                           indent=2, default=str)

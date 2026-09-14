@@ -44,6 +44,16 @@ sourcing the authoritative `QuotaSnapshot` from a status-line collector
 `~/.token-finops/quota.json`. The RE `oauth/usage` endpoint may be added
 later as a fallback for users without the collector wired up.
 
+**Compaction (T-15).** Mid-session compaction (main loop or a Cowork cloud
+session) starts writing a *new* transcript file that carries the *same*
+`sessionId` as the segment being compacted away. `scan()` already globs
+every `*.jsonl` recursively under `projects/`, so `self-audit` groups events
+from every such segment under one session id; it additionally dedups the
+combined set by `event_id` (a segment boundary could in principle re-emit an
+event) and reports how many distinct main-transcript files it stitched as
+`segments: N` in the header, so a dogfooding run split by compaction reads
+as one number instead of two unrelated `self-audit` runs.
+
 ## Consequences
 
 **What we get:** full token/model/sub-agent attribution locally, a
