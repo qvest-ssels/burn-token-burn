@@ -49,6 +49,14 @@ A short, human-facing "what's outstanding" list. For the detailed agent-ready wo
   `cmd_collect_statusline` so the live Claude Code statusline shows the same hash-bar summary
   (through to runway/status) instead of just the bare percentages.
 
+- [ ] **UX persona pass: `docs/USER-JOURNEYS.md`** — a Fable-model agent writes first-time-user vs.
+  power-user journey concepts (what to show/explain first, where each persona currently bounces or
+  gets confused, what "level 2" content power users go digging for). Feeds a follow-up Sonnet
+  implementation pass that applies whatever Fable recommends to the docs site (nav ordering,
+  content placement, homepage vs. sub-page split). Runs after the multi-page docs restructuring
+  (`feature/agentic/docs-multipage-nav`) lands, since the journey doc should describe the real
+  current structure, not the old single-page one.
+
 ## Remote / release housekeeping
 
 - [ ] **Reconfigure PyPI trusted publishing for the new repo.** `.github/workflows/release.yml`
