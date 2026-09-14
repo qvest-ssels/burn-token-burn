@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>reference — token-finops</title>
+<meta name="description" content="token-finops reference: JSON output shapes, environment-variable overrides, per-adapter caveats, and the roadmap.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="wordmark" href="index.html"><span class="prompt">$ </span>token-finops</a>
+    <nav aria-label="Site">
+      <a href="index.html">overview</a>
+      <a href="report.html">report</a>
+      <a href="statusline.html">status line</a>
+      <a href="self-audit.html">self-audit (session cost)</a>
+      <a href="savings.html">savings</a>
+      <a href="synth.html">synth</a>
+      <a href="reference.html" aria-current="page">reference</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+
+<h1>reference</h1>
+<p class="subtitle">For: power users with a specific question, whose answer today is scattered across the CLI README, root README, and a handful of design docs. This page signposts, it doesn't duplicate.</p>
+<p>Every answer here already lives in the repository; this page is the index. Where a command's <code>--json</code> shape is shown in full, it's on that command's own page — links below.</p>
+
+<h2>JSON output shapes</h2>
+<ul class="pagelist">
+  <li><a href="report.html#adapter-status">report <code>--json</code></a> — array of per-tool objects (<code>tool</code>, <code>used_fraction</code>, <code>runway_days</code>, <code>status</code>, …).</li>
+  <li><a href="self-audit.html">self-audit <code>--json</code></a> — session totals plus a <code>by_model</code> breakdown.</li>
+  <li><a href="statusline.html">status <code>--format json</code></a> — the <code>~/.token-finops/last.json</code> cache contents (<code>tools</code>, <code>binding</code>, <code>generated_at</code>) plus <code>stale_seconds</code>.</li>
+</ul>
+
+<h2 id="adapter-status">Adapter status and per-tool caveats</h2>
+<p>The compact table is on the <a href="report.html#adapter-status">report page</a>. Full detail, open questions, and the data-source contract for each tool live in its ADR:</p>
+<ul class="pagelist">
+  <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0001-github-copilot-cli.md">0001 GitHub Copilot CLI</a></li>
+  <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0002-claude-code.md">0002 Claude Code</a></li>
+  <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0003-openai-codex-cli.md">0003 OpenAI Codex CLI</a></li>
+  <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0004-gemini-cli.md">0004 Gemini CLI</a></li>
+  <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0005-hermes-agent.md">0005 Hermes Agent</a></li>
+  <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0006-opencode-kilo-cli.md">0006 OpenCode / Kilo CLI</a></li>
+  <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0007-cline-roo-kilo-vscode.md">0007 Cline / Roo / Kilo (VS Code)</a></li>
+  <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0008-cursor.md">0008 Cursor (reference-only)</a></li>
+  <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0009-aider.md">0009 Aider (timestamps approximate)</a></li>
+  <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0010-continue-dev.md">0010 Continue.dev (low confidence)</a></li>
+  <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0011-windsurf.md">0011 Windsurf (reference-only)</a></li>
+  <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0012-ollama-and-local-models.md">0012 Ollama and local models (reference-only)</a></li>
+</ul>
+
+<h2>Environment-variable overrides</h2>
+<p>Every adapter reads its data root from an override variable before falling back to the tool's real default location. None of these are required — they exist to point the CLI at a different install, a synthetic fixture tree (see <a href="synth.html">synth</a>), or a non-default <code>$HOME</code>.</p>
+<table class="adapter-table">
+<tr><th>Variable</th><th>Overrides</th><th>Default</th></tr>
+<tr><td><code>TOKEN_FINOPS_COPILOT_DB</code></td><td>Copilot session-store DB path</td><td><code>~/.copilot/session-store.db</code></td></tr>
+<tr><td><code>CLAUDE_CONFIG_DIR</code></td><td>Claude Code config root (<code>self-audit --config-dir</code> also sets this)</td><td><code>~/.claude</code></td></tr>
+<tr><td><code>CODEX_HOME</code></td><td>OpenAI Codex CLI home</td><td><code>~/.codex</code></td></tr>
+<tr><td><code>GEMINI_CLI_HOME</code></td><td>Gemini CLI home</td><td><code>~/.gemini</code></td></tr>
+<tr><td><code>HERMES_HOME</code></td><td>Hermes Agent home</td><td><code>~/.hermes</code></td></tr>
+<tr><td><code>CLINE_CLI_HOME</code></td><td>Cline CLI (non-VS Code) home</td><td><code>~/.cline</code></td></tr>
+<tr><td><code>TOKEN_FINOPS_CLINE_DIRS</code></td><td>Cline/Roo/Kilo VS Code <code>globalStorage</code> roots</td><td>per-OS VS Code data dir</td></tr>
+<tr><td><code>TOKEN_FINOPS_OPENCODE_DB</code></td><td>OpenCode/Kilo CLI sqlite DB path</td><td><code>$XDG_DATA_HOME/opencode/opencode.db</code></td></tr>
+<tr><td><code>TOKEN_FINOPS_AIDER_DIRS</code></td><td>Aider chat-history search roots</td><td><code>~</code></td></tr>
+<tr><td><code>TOKEN_FINOPS_AIDER_ANALYTICS</code></td><td>Aider opt-in analytics JSONL path</td><td><code>~/.aider/analytics.jsonl</code></td></tr>
+<tr><td><code>CONTINUE_GLOBAL_DIR</code></td><td>Continue.dev sessions root</td><td><code>~/.continue</code></td></tr>
+<tr><td><code>TOKEN_FINOPS_HARDWARE_JSON</code></td><td>Override the <code>savings</code> hardware-profiles JSON</td><td>packaged <code>hardware_profiles.json</code></td></tr>
+<tr><td><code>TOKEN_FINOPS_ENERGY_JSON</code></td><td>Override the <code>savings</code> energy/tariff JSON</td><td>packaged <code>energy.json</code></td></tr>
+</table>
+<p class="cast-note">Full table, including the legacy <code>TOKEN_FINOPS_DB</code> alias and <code>XDG_DATA_HOME</code>, is in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/token-finops-cli/README.md">token-finops-cli/README.md</a>.</p>
+
+<h2>Every runnable example</h2>
+<p><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/USECASES.md">docs/USECASES.md</a> lists every executable use case this CLI supports, as commands you can paste in directly.</p>
+
+<h2>Editor and agent-native integrations (design doc)</h2>
+<p><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/INTEGRATIONS.md">docs/INTEGRATIONS.md</a> is where the shape of not-yet-built integrations (editor plugins, agent-native hooks) is worked out before a task gets picked up — see the roadmap below for what's actually queued.</p>
+
+<div class="planned">
+  <h2>Roadmap</h2>
+  <p>Named backlog items, tracked in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/claude-tasks.md">claude-tasks.md</a> — none of these are shipped:</p>
+  <ul>
+    <li><strong>T-03</strong> <code>--online</code> quota fetchers</li>
+    <li><strong>T-08 / T-09 / T-10</strong> editor plugins: Neovim, VS Code status bar, Emacs</li>
+    <li><strong>T-11</strong> desktop notifications at WARN/CRITICAL</li>
+    <li><strong>T-12</strong> Prometheus textfile exporter</li>
+    <li><strong>T-05</strong> PyPI trusted publishing + the 0.3.0 release itself (see the <a href="index.html">homepage's install note</a>)</li>
+  </ul>
+</div>
+
+<footer>
+  <p>Recordings are asciicast v2 files committed in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/docs/casts">docs/casts/</a> — play them locally with <code>asciinema play &lt;file&gt;</code>. This page ships no analytics and no tracking.</p>
+</footer>
+
+</div>
+
+</body>
+</html>
