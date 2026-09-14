@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>self-audit — token-finops</title>
+<meta name="description" content="token-finops self-audit: what a Claude Code session cost, broken down by model and sub-agent.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.17.0/dist/bundle/asciinema-player.css">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.17.0/dist/bundle/asciinema-player.min.js" defer></script>
+<script src="player.js" defer></script>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="wordmark" href="index.html"><span class="prompt">$ </span>token-finops</a>
+    <nav aria-label="Site">
+      <a href="index.html">overview</a>
+      <a href="report.html">report</a>
+      <a href="statusline.html">status line</a>
+      <a href="self-audit.html" aria-current="page">self-audit</a>
+      <a href="savings.html">savings</a>
+      <a href="synth.html">synth</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+
+<h1>self-audit</h1>
+<p><code>self-audit</code> answers a narrower question than <code>report</code>: what did <em>this</em> Claude Code session cost? It reads the session transcript, splits the usage by model, and attributes sub-agent work to the sub-agents that did it — so a session that farmed cheap work out to Haiku looks different from one that ran everything on the expensive model.</p>
+
+<h2>Try it</h2>
+<pre><code>$ token-finops self-audit                       # the current session
+$ token-finops self-audit --config-dir ~/some-other/.claude</code></pre>
+
+<p class="cast-note"><code>self-audit</code> on a Claude Code session that used sub-agents on Sonnet and Haiku.</p>
+<div class="player" id="player-03" data-cast="casts/03-self-audit.cast"></div>
+<p class="cast-note">What to notice: the by-model table is the point. It shows where the tokens actually went, which is usually the difference between "the session was expensive" and "one model in the session was expensive". USD figures are labelled API-equivalent estimates, not a bill — they price the same work as if it had gone through the API.</p>
+
+<footer>
+  <p>Recordings are asciicast v2 files committed in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/docs/casts">docs/casts/</a> — play them locally with <code>asciinema play &lt;file&gt;</code>. This page ships no analytics and no tracking.</p>
+</footer>
+
+</div>
+
+</body>
+</html>

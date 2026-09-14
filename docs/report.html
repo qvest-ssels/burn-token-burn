@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>report — token-finops</title>
+<meta name="description" content="token-finops report: burn rate and budget runway per AI coding agent, with the binding constraint called out.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.17.0/dist/bundle/asciinema-player.css">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.17.0/dist/bundle/asciinema-player.min.js" defer></script>
+<script src="player.js" defer></script>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="wordmark" href="index.html"><span class="prompt">$ </span>token-finops</a>
+    <nav aria-label="Site">
+      <a href="index.html">overview</a>
+      <a href="report.html" aria-current="page">report</a>
+      <a href="statusline.html">status line</a>
+      <a href="self-audit.html">self-audit</a>
+      <a href="savings.html">savings</a>
+      <a href="synth.html">synth</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+
+<h1>report</h1>
+<p>The core command. <code>report</code> looks at the telemetry your coding agents already wrote to disk, works out a burn rate per tool, and tells you how long each budget lasts at that rate. Units are never mixed: Copilot premium requests, Claude Code tokens and Codex sessions each get their own runway, and the tool that runs out first is flagged as the <em>binding constraint</em>.</p>
+
+<h2>Try it</h2>
+<pre><code>$ token-finops adapters                             # which data sources exist on this machine
+$ token-finops report --compact --budget 20000      # one line per tool
+$ token-finops report --tool copilot --budget 20000 --since 7d</code></pre>
+
+<p class="cast-note"><code>adapters</code>, <code>report --compact</code>, then a full Copilot report with runway.</p>
+<div class="player" id="player-01" data-cast="casts/01-report.cast"></div>
+<p class="cast-note">What to notice: <code>--compact</code> is the version you can glance at — a bar, a percentage, a runway and a status word per tool. The full report adds the burn rate it derived and the assumptions behind it, so you can see <em>why</em> a runway is short rather than just being told it is. Numbers in this recording come from synthetic data; every command is real.</p>
+
+<h2>Scoping it to one tool</h2>
+<p>If you only care about one assistant, <code>--tool</code> keeps the output to a single line and skips scanning everything else:</p>
+<pre><code>$ token-finops report --tool claude_code --compact
+Claude Code        [############--------]  61.0%  runway   1.9h  WARN</code></pre>
+<p class="cast-note">That single line is exactly what the <a href="statusline.html">status line integrations</a> put in your prompt or status bar.</p>
+
+<footer>
+  <p>Recordings are asciicast v2 files committed in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/docs/casts">docs/casts/</a> — play them locally with <code>asciinema play &lt;file&gt;</code>. This page ships no analytics and no tracking.</p>
+</footer>
+
+</div>
+
+</body>
+</html>

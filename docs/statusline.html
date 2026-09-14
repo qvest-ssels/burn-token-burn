@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>status line — token-finops</title>
+<meta name="description" content="token-finops status: one-line budget runway for shell prompts, tmux, starship and waybar.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.17.0/dist/bundle/asciinema-player.css">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.17.0/dist/bundle/asciinema-player.min.js" defer></script>
+<script src="player.js" defer></script>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="wordmark" href="index.html"><span class="prompt">$ </span>token-finops</a>
+    <nav aria-label="Site">
+      <a href="index.html">overview</a>
+      <a href="report.html">report</a>
+      <a href="statusline.html" aria-current="page">status line</a>
+      <a href="self-audit.html">self-audit</a>
+      <a href="savings.html">savings</a>
+      <a href="synth.html">synth</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+
+<h1>status line</h1>
+<p><code>status</code> is <code>report</code> squeezed into one line, meant for a shell prompt, a tmux status bar, or a desktop bar — somewhere you will see it without asking. It prints the binding constraint: the tool closest to running out.</p>
+
+<h2>Try it</h2>
+<pre><code>$ token-finops status --fresh --budget 20000   # bypass the cache and re-read telemetry
+$ token-finops status --format tmux
+$ token-finops status --format starship
+$ token-finops status --format waybar</code></pre>
+
+<p class="cast-note"><code>status</code> in plain, tmux, starship and waybar formats — cached, and with <code>--fresh</code>.</p>
+<div class="player" id="player-02" data-cast="casts/02-status-formats.cast"></div>
+<p class="cast-note">What to notice: each format is the same data, escaped for a different consumer — tmux colour codes, a starship module, and a JSON object for waybar. The default run is served from a short-lived cache so putting it in a prompt costs nothing per keystroke; <code>--fresh</code> forces a real re-read.</p>
+
+<h2>Wiring it up</h2>
+<p>Drop the format your bar expects into its config — the full snippets for tmux, starship, waybar and the Claude Code status line are in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/INTEGRATIONS.md">docs/INTEGRATIONS.md</a> and <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/TMUX.md">docs/TMUX.md</a>.</p>
+
+<footer>
+  <p>Recordings are asciicast v2 files committed in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/docs/casts">docs/casts/</a> — play them locally with <code>asciinema play &lt;file&gt;</code>. This page ships no analytics and no tracking.</p>
+</footer>
+
+</div>
+
+</body>
+</html>
