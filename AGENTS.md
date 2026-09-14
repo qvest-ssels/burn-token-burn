@@ -78,3 +78,10 @@ Imperative subject, body explains *why*. When a coding agent authored the change
 - Do not vendor third-party parsers; reuse ideas, cite them in `docs/landscape.md`.
 - Do not "fix" numbers in `docs/guide` by hand — regenerate them with `self-audit` and state the snapshot date.
 - Do not commit `__pycache__`, `.venv`, bundles, or real telemetry files (there are anonymised fixtures for that).
+- Do not use the system `/tmp` for scratch state (synthetic homes, throwaway venvs, cast recording
+  scaffolding, etc.) — use the repo-local `./tmp/` instead (gitignored). When recording an
+  asciinema cast (`docs/casts/`), never let a real absolute path leak into the committed `.cast`
+  file — sanitize it to `~/...` afterward, as if it were a real user's home directory (see
+  `docs/casts/README.md` for the recipe). Public-facing docs (`docs/index.html`, `README.md`) must
+  read as a plain user journey — never mention `./tmp`, virtualenvs, or sanitization mechanics
+  there; that plumbing belongs only in `docs/casts/README.md`.
