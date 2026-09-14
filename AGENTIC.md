@@ -12,13 +12,11 @@ delete old rows — move them to "Done" below instead, so the history stays legi
 
 ## In progress / open
 
-| Session | Branch | Task | Touches | Status |
-|---|---|---|---|---|
-
 ## Done
 
 | Session | Branch | Task | Touches | Status |
 |---|---|---|---|---|
+| Claude Sonnet 5 (cloud) | `feature/agentic/awesome-lists-prep` | T-14 prep: researched QuesmaOrg/awesome-ai-tokenomics, pleasedodisturb/awesome-llm-token-optimization, plus awesome-claude-code/-codex-cli/-gemini-cli; drafted one-line entries + contribution-rule notes per list; no external PRs/issues/forks opened (release hasn't shipped) | `docs/AWESOME-LISTS.md` (new) | PR opened |
 | Claude Sonnet 5 (cloud) | `feature/agentic/autoplay-and-wizard` | Scroll-triggered asciinema autoplay (`player.js`) + homepage install wizard (4-step, OS-aware, all steps visible) replacing the static install block; also folded README's support table + origin story onto the homepage | `docs/player.js`, `docs/index.html`, `docs/wizard.js` (new), `docs/style.css` | merged (PR #8) |
 | Claude Sonnet 5 (cloud) | `feature/agentic/readme-docs-link` | Rebase a stray local README commit (GitHub Pages link) onto current `main` | `README.md` | superseded — same change landed via `feature/agentic/readme-and-home-rule` from a session with push access; this branch can be discarded |
 | Claude Sonnet 5 (cloud) | `feature/agentic/statusline-enhancements` | `collect-statusline`: hash progress bar per window + opt-in sub-agent count/token summary (`TODOs.md` "Open" picks) | `token-finops-cli/src/token_finops_cli/cli.py`, `tests/test_statusline.py`, `docs/TMUX.md` | merged (PR #4) |
