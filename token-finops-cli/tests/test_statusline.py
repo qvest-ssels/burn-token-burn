@@ -12,6 +12,15 @@ from conftest import transcript_line, write_transcript
 
 from token_finops_cli import cli
 from token_finops_cli.adapters.claude_code import ClaudeCodeAdapter
+from token_finops_cli.cli import _ANSI_MODEL, _ANSI_OK, _ANSI_RESET
+
+
+def _model(s):
+    return f"{_ANSI_MODEL}{s}{_ANSI_RESET}"
+
+
+def _win(label, pct):
+    return f"{_ANSI_OK}{label} {pct:.0f}%{_ANSI_RESET}"
 
 
 class _Clock:
@@ -54,7 +63,7 @@ def _payload(five=37.4, seven=12.0, resets=None, model="claude-opus-5"):
 
 def test_collect_writes_snapshot_and_history(home, run_cli, monkeypatch, clock):
     out = collect(monkeypatch, run_cli, _payload(resets="2026-09-15T15:00:00Z"))
-    assert out == "claude-opus-5 | 5h 37% | 7d 12%\n"
+    assert out == f"{_model('claude-opus-5')} | {_win('5h', 37)} | {_win('7d', 12)}\n"
 
     snap = json.loads((home / ".token-finops" / "quota.json").read_text())
     assert set(snap) == {"observed_at", "rate_limits", "model", "cost"}
@@ -68,7 +77,7 @@ def test_collect_writes_snapshot_and_history(home, run_cli, monkeypatch, clock):
     # second call: quota.json is replaced, history appended
     clock.t += timedelta(minutes=30)
     out = collect(monkeypatch, run_cli, _payload(five=41.0, seven=None, resets="2026-09-15T15:00:00Z"))
-    assert out == "claude-opus-5 | 5h 41%\n"
+    assert out == f"{_model('claude-opus-5')} | {_win('5h', 41)}\n"
     snap2 = json.loads((home / ".token-finops" / "quota.json").read_text())
     assert snap2["rate_limits"]["five_hour"]["used_percentage"] == 41.0
     hist = (home / ".token-finops" / "quota_history.jsonl").read_text().splitlines()
@@ -88,7 +97,7 @@ def test_collect_writes_snapshot_and_history(home, run_cli, monkeypatch, clock):
 
 def test_collect_without_rate_limits_writes_snapshot_but_no_history(home, run_cli, monkeypatch, clock):
     out = collect(monkeypatch, run_cli, {"model": {"id": "claude-sonnet-5"}})
-    assert out == "claude-sonnet-5\n"
+    assert out == f"{_model('claude-sonnet-5')}\n"
     assert (home / ".token-finops" / "quota.json").exists()
     assert not (home / ".token-finops" / "quota_history.jsonl").exists()
     snap = json.loads((home / ".token-finops" / "quota.json").read_text())

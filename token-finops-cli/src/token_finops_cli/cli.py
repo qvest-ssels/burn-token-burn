@@ -268,6 +268,22 @@ def _pricing_date() -> str:
 # --------------------------------------------------------------------------- #
 # collect-statusline (Claude Code hook)
 # --------------------------------------------------------------------------- #
+_ANSI_RESET = "\033[0m"
+_ANSI_MODEL = "\033[1;36m"   # bold cyan
+_ANSI_OK = "\033[32m"        # green
+_ANSI_WARN = "\033[33m"      # yellow
+_ANSI_CRITICAL = "\033[31m"  # red
+
+
+def _pct_colour(used_percentage: float) -> str:
+    # thresholds match core.model.BudgetPolicy defaults (warn_at=0.75, critical_at=0.90)
+    if used_percentage >= 90:
+        return _ANSI_CRITICAL
+    if used_percentage >= 75:
+        return _ANSI_WARN
+    return _ANSI_OK
+
+
 def cmd_collect_statusline(args) -> str:
     """Use as `statusLine.command` in ~/.claude/settings.json. Reads the JSON
     Claude Code pipes in, persists rate_limits to ~/.token-finops/quota.json,
@@ -291,10 +307,12 @@ def cmd_collect_statusline(args) -> str:
     parts = []
     for key, label in (("five_hour", "5h"), ("seven_day", "7d")):
         w = rl.get(key) or {}
-        if w.get("used_percentage") is not None:
-            parts.append(f"{label} {w['used_percentage']:.0f}%")
+        pct = w.get("used_percentage")
+        if pct is not None:
+            parts.append(f"{_pct_colour(pct)}{label} {pct:.0f}%{_ANSI_RESET}")
     model = snap.get("model") or ""
-    return " | ".join([p for p in [model, *parts] if p]) or "token-finops: no rate_limits in statusline payload"
+    model_part = f"{_ANSI_MODEL}{model}{_ANSI_RESET}" if model else ""
+    return " | ".join([p for p in [model_part, *parts] if p]) or "token-finops: no rate_limits in statusline payload"
 
 
 # --------------------------------------------------------------------------- #
