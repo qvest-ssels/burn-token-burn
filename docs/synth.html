@@ -19,9 +19,10 @@
       <a href="index.html">overview</a>
       <a href="report.html">report</a>
       <a href="statusline.html">status line</a>
-      <a href="self-audit.html">self-audit</a>
+      <a href="self-audit.html">self-audit (session cost)</a>
       <a href="savings.html">savings</a>
       <a href="synth.html" aria-current="page">synth</a>
+      <a href="reference.html">reference</a>
     </nav>
   </div>
 </div>
@@ -29,7 +30,14 @@
 <div class="wrap">
 
 <h1>synth</h1>
+<p class="subtitle">For two different visitors: first-timers with an empty <code>adapters</code> table, and contributors/demo-recorders who need reproducible data.</p>
 <p><code>synth</code> generates a complete set of fake coding-agent telemetry, so you can try <code>report</code>, <code>status</code> and the rest before you have accumulated any usage of your own — and so the behaviour you are looking at is reproducible. Scenarios range from a quiet week to <code>burst</code> and <code>exhausted</code>.</p>
+
+<h2>If <code>adapters</code> came back empty</h2>
+<p>You installed it, ran <code>token-finops adapters</code>, and nothing showed as found — maybe you run a tool that isn't supported yet, or your tool just hasn't written enough telemetry. This is the genuinely good use of this page for a first-timer: try the whole CLI on fake data in one command, without touching anything of yours. The scenario below (<code>exhausted</code>) is a good one to reach for, because it guarantees something interesting to look at in <code>report</code> and <code>status</code> right away.</p>
+
+<h2>Scenarios, for contributors and demo recordings</h2>
+<p>Full scenario list (<code>steady</code>, <code>burst</code>, <code>exhausted</code>, <code>weekend</code>, <code>fresh</code>, <code>quiet</code>, <code>subagent-heavy</code>) and what each one is meant to demonstrate is in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/SYNTH.md">docs/SYNTH.md</a> — this is also how every recording on this site was made.</p>
 
 <h2>Try it</h2>
 <pre><code>$ token-finops synth --out ~/demo-home --scenario exhausted --print-env</code></pre>
@@ -37,8 +45,6 @@
 <p class="cast-note">Generating a demo data set and the <code>--print-env</code> one-liner.</p>
 <div class="player" id="player-05" data-cast="casts/05-synth.cast"></div>
 <p class="cast-note">What to notice: <code>--print-env</code> prints the environment assignments that point the CLI at the generated data instead of your real one. Evaluate that line in a shell and every other command on this site works against the demo data set; open a new shell and you are back to your own. Nothing you already had is modified — <code>token-finops</code> never writes to a coding agent's data store.</p>
-
-<p class="cast-note">The recordings on the <a href="report.html">report</a>, <a href="statusline.html">status line</a>, <a href="self-audit.html">self-audit</a> and <a href="savings.html">savings</a> pages were all made this way: synthetic numbers, real commands.</p>
 
 <footer>
   <p>Recordings are asciicast v2 files committed in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/docs/casts">docs/casts/</a> — play them locally with <code>asciinema play &lt;file&gt;</code>. This page ships no analytics and no tracking.</p>

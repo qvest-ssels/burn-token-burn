@@ -13,6 +13,7 @@ from conftest import transcript_line, write_transcript
 from token_finops_cli import cli
 from token_finops_cli.adapters.claude_code import ClaudeCodeAdapter
 from token_finops_cli.cli import _ANSI_MODEL, _ANSI_OK, _ANSI_RESET
+from token_finops_cli.report import progress_bar
 
 
 def _model(s):
@@ -20,7 +21,7 @@ def _model(s):
 
 
 def _win(label, pct):
-    return f"{_ANSI_OK}{label} {pct:.0f}%{_ANSI_RESET}"
+    return f"{_ANSI_OK}{label} {progress_bar(pct / 100, width=10)}{_ANSI_RESET}"
 
 
 class _Clock:
@@ -63,7 +64,7 @@ def _payload(five=37.4, seven=12.0, resets=None, model="claude-opus-5"):
 
 def test_collect_writes_snapshot_and_history(home, run_cli, monkeypatch, clock):
     out = collect(monkeypatch, run_cli, _payload(resets="2026-09-15T15:00:00Z"))
-    assert out == f"{_model('claude-opus-5')} | {_win('5h', 37)} | {_win('7d', 12)}\n"
+    assert out == f"{_model('claude-opus-5')} | {_win('5h', 37.4)} | {_win('7d', 12.0)}\n"
 
     snap = json.loads((home / ".token-finops" / "quota.json").read_text())
     assert set(snap) == {"observed_at", "rate_limits", "model", "cost"}
@@ -196,3 +197,68 @@ def test_two_snapshots_yield_burn_and_runway_in_report(home, run_cli, monkeypatc
     collect(monkeypatch, run_cli, _payload(five=80.0, resets=resets))
     out = run_cli("report", "--tool", "claude_code", "--compact")
     assert out.count("\n") == 1 and out.rstrip().endswith("CRIT")
+
+
+# --------------------------------------------------------------------------- #
+# opt-in: sub-agent count + token summary (~/.token-finops/config.json)
+# --------------------------------------------------------------------------- #
+def _write_config(home, **statusline_flags):
+    (home / ".token-finops").mkdir(parents=True, exist_ok=True)
+    (home / ".token-finops" / "config.json").write_text(
+        json.dumps({"statusline": statusline_flags}), encoding="utf-8")
+
+
+def _build_session_with_subagents(home):
+    """A main transcript plus two sub-agent transcripts under <session>/subagents/,
+    exactly the layout adapters/claude_code.py expects (see build_synthetic_db)."""
+    proj = home / ".claude" / "projects" / "-home-x"
+    session = "sess-1"
+    ts = datetime(2026, 9, 15, 11, 0, tzinfo=timezone.utc)
+    main = proj / f"{session}.jsonl"
+    write_transcript(main, [transcript_line(ts, "m1", "r1", tool="Bash", session=session)])
+    write_transcript(proj / session / "subagents" / "agent-explore.jsonl", [
+        transcript_line(ts, "m2", "r2", model="claude-haiku-4-5", tool="Grep",
+                        agent="explore", session=session),
+    ])
+    write_transcript(proj / session / "subagents" / "agent-writer.jsonl", [
+        transcript_line(ts, "m3", "r3", model="claude-haiku-4-5", tool="Write",
+                        agent="writer", session=session, out=2000),
+    ])
+    return str(main)
+
+
+def test_subagent_summary_omitted_by_default(home, run_cli, monkeypatch, clock):
+    transcript_path = _build_session_with_subagents(home)
+    out = collect(monkeypatch, run_cli, {**_payload(), "transcript_path": transcript_path})
+    assert "agent" not in out  # no config.json at all -> feature stays off
+
+
+def test_subagent_summary_enabled_appends_count_and_tokens(home, run_cli, monkeypatch, clock):
+    _write_config(home, show_subagents=True)
+    transcript_path = _build_session_with_subagents(home)
+    out = collect(monkeypatch, run_cli, {**_payload(), "transcript_path": transcript_path})
+    assert "2 agents · " in out and "tokens" in out
+    assert out.rstrip().endswith("tokens")
+
+
+def test_subagent_summary_enabled_but_no_transcript_path(home, run_cli, monkeypatch, clock):
+    _write_config(home, show_subagents=True)
+    out = collect(monkeypatch, run_cli, _payload())  # no "transcript_path" key at all
+    assert "agent" not in out
+
+
+def test_subagent_summary_enabled_but_no_subagents_on_disk(home, run_cli, monkeypatch, clock):
+    _write_config(home, show_subagents=True)
+    proj = home / ".claude" / "projects" / "-home-x"
+    main = proj / "sess-1.jsonl"
+    write_transcript(main, [transcript_line(datetime(2026, 9, 15, tzinfo=timezone.utc), "m1", "r1")])
+    out = collect(monkeypatch, run_cli, {**_payload(), "transcript_path": str(main)})
+    assert "agent" not in out  # main loop only, no subagents/ directory at all
+
+
+def test_statusline_config_ignores_corrupt_or_non_dict_file(home, run_cli, monkeypatch, clock):
+    (home / ".token-finops").mkdir(parents=True)
+    (home / ".token-finops" / "config.json").write_text("not json {", encoding="utf-8")
+    transcript_path = _build_session_with_subagents(home)
+    out = collect(monkeypatch, run_cli, {**_payload(), "transcript_path": transcript_path})
+    assert "agent" not in out  # corrupt config == feature off, never a crash

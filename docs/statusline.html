@@ -19,9 +19,10 @@
       <a href="index.html">overview</a>
       <a href="report.html">report</a>
       <a href="statusline.html" aria-current="page">status line</a>
-      <a href="self-audit.html">self-audit</a>
+      <a href="self-audit.html">self-audit (session cost)</a>
       <a href="savings.html">savings</a>
       <a href="synth.html">synth</a>
+      <a href="reference.html">reference</a>
     </nav>
   </div>
 </div>
@@ -29,6 +30,7 @@
 <div class="wrap">
 
 <h1>status line</h1>
+<p class="subtitle">For: anyone who wants runway ambient in a prompt, tmux bar, or desktop widget instead of run on demand.</p>
 <p><code>status</code> is <code>report</code> squeezed into one line, meant for a shell prompt, a tmux status bar, or a desktop bar — somewhere you will see it without asking. It prints the binding constraint: the tool closest to running out.</p>
 
 <h2>Try it</h2>
@@ -43,6 +45,23 @@ $ token-finops status --format waybar</code></pre>
 
 <h2>Wiring it up</h2>
 <p>Drop the format your bar expects into its config — the full snippets for tmux, starship, waybar and the Claude Code status line are in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/INTEGRATIONS.md">docs/INTEGRATIONS.md</a> and <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/TMUX.md">docs/TMUX.md</a>.</p>
+
+<h2>One refresher, many widgets</h2>
+<p><code>status</code> reads a cache (<code>~/.token-finops/last.json</code>) and only rescans your telemetry with <code>--fresh</code>, or when the cache is older than <code>--max-age</code> seconds (default 300). A Claude Code project directory alone can hold hundreds of MB of JSONL — <code>report</code> rescanning that on every keystroke of a shell prompt would be unusable. Keep the cache warm with <strong>one</strong> timer and let every widget (prompt, tmux, waybar, whatever else you wire up) poll the cache as often as it likes, for free:</p>
+<pre><code>$ token-finops status                     # served from cache, plain, binding tools only
+$ token-finops status --max-age 0         # never rescans — always serve the cache as-is
+$ token-finops status --fresh             # force a real re-read right now</code></pre>
+<p>The refresher itself lives in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/contrib/refresh">contrib/refresh/</a> (a small timer that re-reads on an interval); the tmux plugin is <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/contrib/tmux/token-finops.tmux">contrib/tmux/token-finops.tmux</a>. Widgets can grey out stale data using <code>stale_seconds</code> from <code>status --format json</code>.</p>
+
+<h3>Claude Code status line</h3>
+<p>Different mechanism, same cache directory: <code>collect-statusline</code> stores the rate-limit percentages Claude Code itself pushes into its status line, which is what makes a <code>CC</code> segment possible at all.</p>
+<pre><code>// ~/.claude/settings.json
+{ "statusLine": { "type": "command", "command": "token-finops collect-statusline" } }</code></pre>
+
+<div class="planned">
+  <h3>Planned, not shipped</h3>
+  <p>These are named backlog items (<a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/claude-tasks.md">claude-tasks.md</a>), not current features: a Neovim plugin (T-08), a VS Code status-bar extension (T-09), an Emacs mode (T-10), desktop notifications at WARN/CRITICAL (T-11), and a Prometheus textfile exporter (T-12). If you need one of these today, the cache file and <code>status --format json</code> are stable enough to script against in the meantime.</p>
+</div>
 
 <footer>
   <p>Recordings are asciicast v2 files committed in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/docs/casts">docs/casts/</a> — play them locally with <code>asciinema play &lt;file&gt;</code>. This page ships no analytics and no tracking.</p>

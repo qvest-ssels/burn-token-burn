@@ -32,6 +32,8 @@ A short, human-facing "what's outstanding" list. For the detailed agent-ready wo
   allowance instead of the old ~900 AIU/request scale that blew past even Max's 20,000 AIU
   allowance in two weeks. See `claude-tasks.md`'s Done section for the full detail. Branch
   `feature/agentic/copilot-synth-scale`, see `AGENTIC.md`.
+- [x] Scroll-triggered asciinema autoplay + 4-step homepage install wizard (PR #8) -- see
+  `AGENTIC.md`.
 
 ## Open
 
@@ -51,22 +53,6 @@ A short, human-facing "what's outstanding" list. For the detailed agent-ready wo
   local throwaway tap; a real `qvest-ssels/homebrew-token-finops` tap repo (or homebrew-core
   submission once the project has more history) is needed for `brew install token-finops-cli` to
   work for anyone else.
-
-- [ ] **Statusline: optional sub-agent count + token summary** — `cmd_collect_statusline` currently
-  only reads `model`/`rate_limits`/`cost` from the piped JSON; it ignores `session_id`/
-  `transcript_path`, which Claude Code's real statusLine payload includes. Opt-in (new
-  `~/.token-finops/config.json`, doesn't exist yet) feature: parse the session's
-  `subagents/agent-*.jsonl` files and append something like `3 agents · 142.8k tokens` to the
-  line, reusing the existing `summarize()` per-agent token/cost totals already used by
-  `self-audit` (`cli.py:211-226`) — no new aggregation math needed, just wiring it into the
-  statusline hook and gating it behind the config flag since it adds disk I/O per refresh.
-
-- [ ] **Statusline: bring back the `report --compact` hash progress bar** — `report.py`'s
-  `progress_bar()`/`compact_line()` (`report.py:39,94`) render the `[####------] 92.0%  runway
-  3.5h  OK` style line already used by `report --compact` for Copilot etc., but `collect-statusline`
-  currently only prints `model | 5h 37% | 7d 12%` with no bar at all. Wire `progress_bar()` into
-  `cmd_collect_statusline` so the live Claude Code statusline shows the same hash-bar summary
-  (through to runway/status) instead of just the bare percentages.
 
 - [ ] **UX persona pass: `docs/USER-JOURNEYS.md`** — a Fable-model agent writes first-time-user vs.
   power-user journey concepts (what to show/explain first, where each persona currently bounces or

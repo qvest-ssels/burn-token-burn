@@ -19,9 +19,10 @@
       <a href="index.html">overview</a>
       <a href="report.html">report</a>
       <a href="statusline.html">status line</a>
-      <a href="self-audit.html">self-audit</a>
+      <a href="self-audit.html">self-audit (session cost)</a>
       <a href="savings.html" aria-current="page">savings</a>
       <a href="synth.html">synth</a>
+      <a href="reference.html">reference</a>
     </nav>
   </div>
 </div>
@@ -29,19 +30,35 @@
 <div class="wrap">
 
 <h1>savings &amp; break-even</h1>
-<p>Running a model on your own hardware is not automatically cheaper. <code>savings</code> compares the cost of local inference — hardware amortisation plus the electricity it actually draws — against cloud API pricing for the same volume of tokens, and <code>break-even</code> replays it to find the point where the machine has paid for itself.</p>
+<p class="subtitle">For: the question people ask once they trust the runway numbers &mdash; would a box in the corner be cheaper? Read the caveats before the price.</p>
+<p>Running a model on your own hardware is not automatically cheaper. <code>break-even</code> replays your actual usage history against a piece of hardware to find the point where it would have paid for itself; <code>savings</code> compares the cost of local inference — hardware amortisation plus the electricity it actually draws — against cloud API pricing for the same volume of tokens.</p>
 
-<h2>Try it</h2>
-<pre><code>$ token-finops savings --hardware mac-studio-m4-max-128gb --model qwen3-32b --utilization 0.2
-$ token-finops savings --power solar-de-feed-in --utilization 0.8
-$ token-finops break-even --hardware mac-studio-m4-max-128gb</code></pre>
-
+<h2>Break-even against your real history</h2>
+<pre><code>$ token-finops break-even --hardware mac-studio-m4-max-128gb --since 90d --replaceable-tiers haiku,sonnet</code></pre>
+<pre><code>replaceable cloud usage (haiku/sonnet-class): 35.5M tokens = $14.94 API-equivalent
+local alternative: energy $14.29 + capex $116.87 = $131.15
+-&gt; cloud still cheaper by $116.21; at the current pace the box never pays off</code></pre>
 <p class="cast-note">A Mac Studio at 20 % vs. 80 % utilisation, the same machine on a solar feed-in tariff, and the break-even replay.</p>
 <div class="player" id="player-04" data-cast="casts/04-savings-break-even.cast"></div>
+
+<h2>Per-token comparison</h2>
+<pre><code>$ token-finops savings --hardware mac-studio-m4-max-128gb --model qwen3-32b --utilization 0.2
+$ token-finops savings --power solar-de-feed-in --utilization 0.8</code></pre>
 <p class="cast-note">What to notice: utilisation dominates. The same hardware looks like a bad deal at 20 % and a good one at 80 %, because the purchase price is amortised over the tokens you actually generate. The electricity price matters too, which is why the tariff is a switch rather than a constant.</p>
 
-<h2>The numbers are editable and sourced</h2>
-<p>Hardware profiles and energy prices live in JSON files you can edit, and every figure carries a source and a review date in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/sources.md">docs/sources.md</a>. If a number could not be sourced, it is marked as an estimate rather than quietly presented as fact.</p>
+<h2>Three honesty caveats</h2>
+<ul>
+  <li><strong>Capex is amortised on actual inference</strong> — a box sitting idle 80% of the time does not get to spread its purchase price over hours it wasn't working.</li>
+  <li><strong>Solar is priced at the feed-in tariff you forgo</strong>, not at zero — running the box on your own panels has an opportunity cost, not a free lunch.</li>
+  <li><strong>Only Haiku/Sonnet-class work counts as replaceable</strong> by a local model — a 32B model on your desk does not do Opus/Fable-class work, so <code>break-even</code> only replays the tier of usage a local model could plausibly have done instead.</li>
+</ul>
+
+<h2>Measure your own box</h2>
+<p>Hardware profiles and energy prices live in editable JSON, and every figure carries a source and a review date in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/sources.md">docs/sources.md</a> — if a number could not be sourced, it is marked as an estimate rather than quietly presented as fact.</p>
+<pre><code>$ token-finops savings --list                              # available hardware/model/tariff keys</code></pre>
+<p>Editing your own wattmeter numbers into <code>savings/hardware_profiles.json</code> and <code>savings/energy.json</code> is an explicitly supported workflow, or point the CLI at your own copies without touching the packaged files:</p>
+<pre><code>export TOKEN_FINOPS_HARDWARE_JSON=~/my-hardware.json
+export TOKEN_FINOPS_ENERGY_JSON=~/my-energy.json</code></pre>
 
 <footer>
   <p>Recordings are asciicast v2 files committed in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/docs/casts">docs/casts/</a> — play them locally with <code>asciinema play &lt;file&gt;</code>. This page ships no analytics and no tracking.</p>

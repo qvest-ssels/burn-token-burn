@@ -19,9 +19,10 @@
       <a href="index.html">overview</a>
       <a href="report.html" aria-current="page">report</a>
       <a href="statusline.html">status line</a>
-      <a href="self-audit.html">self-audit</a>
+      <a href="self-audit.html">self-audit (session cost)</a>
       <a href="savings.html">savings</a>
       <a href="synth.html">synth</a>
+      <a href="reference.html">reference</a>
     </nav>
   </div>
 </div>
@@ -29,6 +30,7 @@
 <div class="wrap">
 
 <h1>report</h1>
+<p class="subtitle">For: anyone who wants a runway per tool, right now &mdash; the core command, and the natural next stop after the homepage's <code>--compact</code> teaser.</p>
 <p>The core command. <code>report</code> looks at the telemetry your coding agents already wrote to disk, works out a burn rate per tool, and tells you how long each budget lasts at that rate. Units are never mixed: Copilot premium requests, Claude Code tokens and Codex sessions each get their own runway, and the tool that runs out first is flagged as the <em>binding constraint</em>.</p>
 
 <h2>Try it</h2>
@@ -45,6 +47,59 @@ $ token-finops report --tool copilot --budget 20000 --since 7d</code></pre>
 <pre><code>$ token-finops report --tool claude_code --compact
 Claude Code        [############--------]  61.0%  runway   1.9h  WARN</code></pre>
 <p class="cast-note">That single line is exactly what the <a href="statusline.html">status line integrations</a> put in your prompt or status bar.</p>
+
+<h2>Reading the full report</h2>
+<p>Drop <code>--compact</code> to see the lines the summary is derived from:</p>
+<pre><code>Claude Code — window: 5h (resets 2026-09-05 12:29 UTC)
+  budget:   [############------------------]  40.0%
+  window:   [############------------------]  40.0% elapsed
+  pace:     1.00 (on pace)
+  burn:     20.0% per hour (from snapshots)
+  runway:   3.0h vs 3.0h left -&gt; OK</code></pre>
+<p><strong>budget</strong> is how much of the allowance is used. <strong>window</strong> is how much of the reset period has elapsed &mdash; comparing the two gives <strong>pace</strong> (1.00 means "burning exactly as fast as the window is passing"; above 1.00 means you'll run out before the reset). <strong>burn</strong> is the rate the tool derived from your recent usage, and <strong>runway</strong> is what's left at that rate versus what's left in the window. The <em>binding constraint</em> line at the bottom of a multi-tool report is just this same runway number, picked out across every tool at once, because heterogeneous units (percent, AI credits, requests/day, dollars) are never added together &mdash; only compared as "which one runs out first".</p>
+
+<h3>Claude Code needs two snapshots</h3>
+<p>Anthropic subscriptions only expose a percentage of the rolling 5h/7d window through the status line, not a running total. <code>collect-statusline</code> (see <a href="statusline.html">status line</a>) stores one snapshot per redraw; a burn rate needs at least two snapshots in the same window to derive a slope. Wire the hook, use Claude Code for a few minutes, then re-run <code>report --tool claude_code</code> &mdash; a report immediately after wiring the hook for the first time will show <code>?</code>/UNKNOWN rather than a runway, which is expected, not broken.</p>
+
+<h2><code>--json</code>, for scripts</h2>
+<p><code>report --json</code> emits an array with one object per tool, ready for a CI check or your own dashboard:</p>
+<pre><code>[
+  {
+    "tool": "claude_code",
+    "display_name": "Claude Code",
+    "window": "5h",
+    "unit": "percent",
+    "used": 61.0,
+    "allowance": 100.0,
+    "used_fraction": 0.61,
+    "time_fraction": 0.32,
+    "pace_ratio": 1.9,
+    "burn_per_day_avg": 12.4,
+    "burn_per_day_ema": 14.1,
+    "runway_days": 0.079,
+    "days_left": null,
+    "resets_at": "2026-09-14T18:00:00+00:00",
+    "status": "WARN",
+    "notes": []
+  }
+]</code></pre>
+<p class="cast-note"><code>runway_days</code> is <code>null</code> when the runway is effectively infinite (a tool with no allowance, or usage-only data). <code>status</code> is one of <code>OK</code>, <code>WARN</code>, <code>CRITICAL</code>, <code>EXHAUSTED</code>, <code>UNLIMITED</code>, <code>UNKNOWN</code>.</p>
+
+<h2 id="adapter-status">What to trust, per tool</h2>
+<p>Not every adapter is equally solid. Compact version of the root README's status column &mdash; full detail and open questions live in each tool's ADR:</p>
+<table class="adapter-table">
+<tr><th>Tool</th><th>Status</th></tr>
+<tr><td>GitHub Copilot CLI</td><td>port of the original tool, extended</td></tr>
+<tr><td>Claude Code</td><td>usage &#x2713;, quota via status-line hook (see above)</td></tr>
+<tr><td>OpenAI Codex CLI</td><td>usage &#x2713;, quota &#x2713; offline (Codex writes its own quota % to disk)</td></tr>
+<tr><td>Gemini CLI</td><td>usage &#x2713;, daily request runway</td></tr>
+<tr><td>Hermes Agent</td><td>usage &#x2713;, local models flagged (no cost)</td></tr>
+<tr><td>OpenCode / Kilo CLI</td><td>usage &#x2713;</td></tr>
+<tr><td>Cline / Roo / Kilo (VS Code)</td><td>usage &#x2713;</td></tr>
+<tr><td>Aider</td><td>usage &#x2713; &mdash; <strong>timestamps approximate</strong> (<a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0009-aider.md">ADR 0009</a>)</td></tr>
+<tr><td>Continue.dev</td><td>usage &#x2713; &mdash; <strong>low confidence</strong> (<a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0010-continue-dev.md">ADR 0010</a>)</td></tr>
+<tr><td>Cursor &middot; Windsurf &middot; Ollama</td><td><strong>reference-only</strong> &mdash; no local telemetry to read (<a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0008-cursor.md">0008</a>, <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0011-windsurf.md">0011</a>, <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0012-ollama-and-local-models.md">0012</a>)</td></tr>
+</table>
 
 <footer>
   <p>Recordings are asciicast v2 files committed in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/docs/casts">docs/casts/</a> — play them locally with <code>asciinema play &lt;file&gt;</code>. This page ships no analytics and no tracking.</p>
