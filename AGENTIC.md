@@ -25,6 +25,7 @@ delete old rows — move them to "Done" below instead, so the history stays legi
 
 | Session | Branch | Task | Touches | Status |
 |---|---|---|---|---|
+| Claude Opus 5 (local) | `feature/agentic/pypi-smoke-workflow` | Weekly PyPI wheel smoke test: install the published `token-finops-cli` from the real index on 3.10–3.13 and run `--help` / `adapters` / `synth` / `report` / `report --json` / `cost-per-token` / `sessions` against a synthetic home. Closes the honesty gap where CI only ever tested the source checkout | `.github/workflows/pypi-smoke.yml` (new) | PR opened |
 | Claude Sonnet 5 (cloud) | `feature/agentic/self-audit-compaction` | T-15: stitch every Claude Code transcript segment sharing a `sessionId` (compaction splits the main transcript into a new file) into one `self-audit` report, dedup across segments by `event_id`, print `segments: N` in the header | `token-finops-cli/src/token_finops_cli/adapters/claude_code.py`, `token-finops-cli/src/token_finops_cli/cli.py`, `token-finops-cli/tests/test_self_audit.py`, `docs/adr/0002-claude-code.md`, `claude-tasks.md` | [PR #10](https://github.com/qvest-ssels/burn-token-burn/pull/10) opened |
 
 | Session | Branch | Task | Touches | Status |
