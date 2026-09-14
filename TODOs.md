@@ -14,6 +14,20 @@ A short, human-facing "what's outstanding" list. For the detailed agent-ready wo
   installed/tested/uninstalled locally via a throwaway tap. Still needs a real tap repo to be
   user-installable (see below).
 
+## Done this session (Claude Sonnet 5, cloud session)
+
+- [x] **Statusline: bring back the `report --compact` hash progress bar** — `collect-statusline`
+  now renders `progress_bar()` per window (10-wide, narrower than `report`'s 30 since it shares a
+  line with other segments) instead of a bare percentage, e.g.
+  `claude-sonnet-5 | 5h [####------]  40.0% | 7d [#---------]  12.0%`, still colour-coded at the
+  same 75 %/90 % thresholds — `docs/TMUX.md` updated.
+- [x] **Statusline: optional sub-agent count + token summary** — opt-in via
+  `~/.token-finops/config.json` (`{"statusline": {"show_subagents": true}}`, off by default —
+  parses `subagents/agent-*.jsonl` on every refresh, extra disk I/O not everyone wants); reuses
+  `report.summarize()` over the sibling `<session>/subagents/` directory derived from Claude
+  Code's `transcript_path` payload field. Appends `2 agents · 8.4k tokens` to the line. 5 new
+  tests. Branch `feature/agentic/statusline-enhancements`, see `AGENTIC.md`.
+
 ## Open
 
 - [ ] **New GitHub Pages subpage: Qwen Coder via Ollama, as a local sub-agent model** — write a
@@ -32,22 +46,6 @@ A short, human-facing "what's outstanding" list. For the detailed agent-ready wo
   local throwaway tap; a real `qvest-ssels/homebrew-token-finops` tap repo (or homebrew-core
   submission once the project has more history) is needed for `brew install token-finops-cli` to
   work for anyone else.
-
-- [ ] **Statusline: optional sub-agent count + token summary** — `cmd_collect_statusline` currently
-  only reads `model`/`rate_limits`/`cost` from the piped JSON; it ignores `session_id`/
-  `transcript_path`, which Claude Code's real statusLine payload includes. Opt-in (new
-  `~/.token-finops/config.json`, doesn't exist yet) feature: parse the session's
-  `subagents/agent-*.jsonl` files and append something like `3 agents · 142.8k tokens` to the
-  line, reusing the existing `summarize()` per-agent token/cost totals already used by
-  `self-audit` (`cli.py:211-226`) — no new aggregation math needed, just wiring it into the
-  statusline hook and gating it behind the config flag since it adds disk I/O per refresh.
-
-- [ ] **Statusline: bring back the `report --compact` hash progress bar** — `report.py`'s
-  `progress_bar()`/`compact_line()` (`report.py:39,94`) render the `[####------] 92.0%  runway
-  3.5h  OK` style line already used by `report --compact` for Copilot etc., but `collect-statusline`
-  currently only prints `model | 5h 37% | 7d 12%` with no bar at all. Wire `progress_bar()` into
-  `cmd_collect_statusline` so the live Claude Code statusline shows the same hash-bar summary
-  (through to runway/status) instead of just the bare percentages.
 
 - [ ] **UX persona pass: `docs/USER-JOURNEYS.md`** — a Fable-model agent writes first-time-user vs.
   power-user journey concepts (what to show/explain first, where each persona currently bounces or

@@ -17,12 +17,14 @@
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import os
 import sys
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 from .adapters import all_adapters
 from .adapters.base import registry
@@ -284,6 +286,45 @@ def _pct_colour(used_percentage: float) -> str:
     return _ANSI_OK
 
 
+_STATUSLINE_BAR_WIDTH = 10  # narrower than report's default 30 -- this shares a line with other segments
+
+
+def _statusline_config() -> dict:
+    """Opt-in settings at ~/.token-finops/config.json (doesn't exist unless the user creates
+    it). Never raises: a missing/corrupt/non-dict file is silently treated as no settings."""
+    path = os.path.expanduser("~/.token-finops/config.json")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _subagent_summary(transcript_path: str) -> Optional[str]:
+    """"N agents · T tokens" for the sub-agents of *this* Claude Code session, or None if
+    there are none / the payload carried no transcript_path. Reuses the same per-agent
+    token/cost totals `self-audit` already computes (report.summarize), just over the
+    sibling `<session>/subagents/agent-*.jsonl` files instead of a whole project tree --
+    only invoked when explicitly enabled (see `_statusline_config`), since it adds disk I/O
+    on every statusline refresh."""
+    if not transcript_path or not transcript_path.endswith(".jsonl"):
+        return None
+    subagents_dir = os.path.join(transcript_path[:-len(".jsonl")], "subagents")
+    paths = sorted(glob.glob(os.path.join(subagents_dir, "agent-*.jsonl")))
+    if not paths:
+        return None
+    from .adapters.claude_code import parse_transcript
+    events = [e for p in paths for e in parse_transcript(p)]
+    if not events:
+        return None
+    agents = {e.agent_id for e in events if e.agent_id}
+    s = summarize(events)
+    total = s["input"] + s["output"] + s["cache_read"] + s["cache_write"]
+    n = len(agents) or len(paths)
+    return f"{n} agent{'s' if n != 1 else ''} · {fmt_tokens(total)} tokens"
+
+
 def cmd_collect_statusline(args) -> str:
     """Use as `statusLine.command` in ~/.claude/settings.json. Reads the JSON
     Claude Code pipes in, persists rate_limits to ~/.token-finops/quota.json,
@@ -309,10 +350,17 @@ def cmd_collect_statusline(args) -> str:
         w = rl.get(key) or {}
         pct = w.get("used_percentage")
         if pct is not None:
-            parts.append(f"{_pct_colour(pct)}{label} {pct:.0f}%{_ANSI_RESET}")
+            bar = progress_bar(pct / 100, width=_STATUSLINE_BAR_WIDTH)
+            parts.append(f"{_pct_colour(pct)}{label} {bar}{_ANSI_RESET}")
     model = snap.get("model") or ""
     model_part = f"{_ANSI_MODEL}{model}{_ANSI_RESET}" if model else ""
-    return " | ".join([p for p in [model_part, *parts] if p]) or "token-finops: no rate_limits in statusline payload"
+    extra = []
+    if _statusline_config().get("statusline", {}).get("show_subagents"):
+        sub = _subagent_summary(data.get("transcript_path") or "")
+        if sub:
+            extra.append(sub)
+    return (" | ".join([p for p in [model_part, *parts, *extra] if p])
+           or "token-finops: no rate_limits in statusline payload")
 
 
 # --------------------------------------------------------------------------- #
