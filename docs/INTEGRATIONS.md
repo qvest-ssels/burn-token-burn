@@ -119,13 +119,24 @@ This is exactly the lesson the self-audit in the README already teaches (three r
 sub-agents on the frontier model cost more than all the Sonnet work combined) — the integration
 makes the lesson operational instead of retrospective.
 
-- **Claude Code** — the status line already exists (`collect-statusline`, and it is also how we
-  obtain the provider percentage at all). Add a **skill / slash command `/runway`** that shells
-  out to the CLI and returns the compact report plus a right-sizing recommendation. The status
-  line is passive; `/runway` is the thing the model can call mid-task.
-- **Codex CLI** — supports user-defined custom prompts/commands (exact directory and file format
-  *to verify*), so `/runway` maps over directly. Codex is our best data source anyway: it writes
-  `rate_limits` to disk itself (ADR-0003), so the answer is available offline and instantly.
+- **Claude Code** — **shipped** (`contrib/claude-code/`). The status line already existed
+  (`collect-statusline`, and it is also how we obtain the provider percentage at all); the
+  skill `/runway` is the thing the model can call *mid-task*, where the status line is
+  passive. Verified format: a skill is a **directory** containing `SKILL.md` with YAML
+  frontmatter (`name`, `description`, `argument-hint`, `allowed-tools`), installed to
+  `.claude/skills/runway/` (project) or `~/.claude/skills/runway/` (personal) — a flat
+  `runway.md` is not loaded. The body injects the CLI output with `` !`…` `` and the
+  `description` is written so Claude invokes it *itself* before a fan-out, not only when a
+  human types `/runway`.
+- **Codex CLI** — **shipped** (`contrib/codex/`). Verified format: a **custom prompt**, a
+  single markdown file with `description`/`argument-hint` frontmatter at
+  `~/.codex/prompts/runway.md`, invoked as `/prompts:runway` (the `prompts:` prefix is
+  mandatory; it is not a bare slash command). Custom prompts are documented but marked
+  deprecated in favour of a newer skills mechanism whose file layout is not stable enough to
+  commit against yet — per the rule at the top of this page, we ship the verifiable form and
+  say so rather than guessing at the successor. Codex is our best data source anyway: it
+  writes `rate_limits` to disk itself (ADR-0003), so the answer is available offline and
+  instantly.
 - **Copilot CLI** — a `copilot-instructions`-style file describing when to consult the tracker
   is the low-effort version; whether Copilot CLI exposes a first-class custom-command or skill
   mechanism is *to verify*. Instructions alone are already useful: "before large refactors, run
