@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>token-finops — token usage &amp; budget runway for AI coding agents</title>
+<meta name="description" content="Read-only, local-first token usage and budget-runway tracker for AI coding agents, plus a local-vs-cloud savings estimator.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3/dist/bundle/asciinema-player.css">
+<style>
+  :root {
+    --bg: #12141a;
+    --panel: #181b23;
+    --border: #2a2f3b;
+    --fg: #d7dbe4;
+    --muted: #939bab;
+    --accent: #52d17c;
+    --link: #7fb6ff;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 2rem; margin-bottom: 2.5rem; }
+  h1 { font-family: var(--mono); font-size: 2rem; margin: 0 0 .25rem; }
+  h1 .prompt { color: var(--accent); }
+  .tagline { color: var(--muted); margin: 0 0 1.25rem; font-size: 1.05rem; }
+  h2 { font-size: 1.35rem; margin: 3rem 0 .75rem; border-left: 3px solid var(--accent); padding-left: .6rem; }
+  h3 { font-size: 1rem; font-family: var(--mono); margin: 2rem 0 .4rem; color: var(--fg); }
+  h3 .num { color: var(--accent); }
+  p { margin: 0 0 1rem; }
+  a { color: var(--link); }
+  code { font-family: var(--mono); font-size: .9em; background: #22262f; padding: .12em .35em; border-radius: 3px; }
+  pre {
+    font-family: var(--mono); font-size: .875rem; line-height: 1.5;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+    padding: 1rem; overflow-x: auto; margin: 0 0 1rem;
+  }
+  pre code { background: none; padding: 0; }
+  .cast-note { color: var(--muted); font-size: .9rem; margin: 0 0 .75rem; }
+  .player { margin: 0 0 .5rem; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .featured {
+    background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 6px; padding: 1.25rem 1.25rem .75rem; margin-bottom: 2rem;
+  }
+  .featured h2 { margin-top: 0; border: 0; padding-left: 0; }
+  .badges { font-family: var(--mono); font-size: .85rem; color: var(--muted); margin-bottom: 1.5rem; }
+  .badges a { margin-right: 1rem; }
+  footer { margin-top: 4rem; border-top: 1px solid var(--border); padding-top: 1.25rem; color: var(--muted); font-size: .875rem; }
+  blockquote { margin: 0 0 1rem; padding-left: 1rem; border-left: 2px solid var(--border); color: var(--muted); font-style: italic; }
+  @media (max-width: 600px) { .wrap { padding: 2rem 1rem 3rem; } h1 { font-size: 1.5rem; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1><span class="prompt">$ </span>token-finops</h1>
+  <p class="tagline">Read-only, local-first token usage and budget-runway tracker for AI coding agents — plus an honest local-vs-cloud savings estimator.</p>
+  <p>It reads the telemetry your coding agents already leave on disk and answers one question: <em>at my current burn rate, does my budget last until the reset?</em> Heterogeneous units are never summed — each tool gets its own runway, and the report tells you which one is the <em>binding constraint</em>, the one that runs out first. Everything is Python ≥ 3.10, standard library only, and it never writes to any tool's own data store.</p>
+  <p class="badges">
+    <a href="https://github.com/qvest-ssels/burn-token-burn">source on GitHub</a>
+    <a href="https://pypi.org/project/token-finops-cli/">token-finops-cli on PyPI</a>
+  </p>
+</header>
+
+<div class="featured">
+  <h2>Install it</h2>
+  <pre><code>uv tool install token-finops-cli          # recommended
+pipx install token-finops-cli
+pip install token-finops-cli</code></pre>
+  <p class="cast-note">The recording below is the real thing: an empty virtualenv, a live <code>pip install</code> from PyPI, and the <code>token-finops</code> entry point landing on <code>$PATH</code>. No synthetic data, no edits.</p>
+  <div class="player" id="player-06"></div>
+  <p class="cast-note">Note what it shows honestly: PyPI currently serves <strong>0.2.0</strong>, the original Copilot-only single-file tool. The 9-adapter CLI demonstrated in the recordings further down is 0.3.x and is not released yet — that is why this cast runs <code>sessions --help</code> rather than <code>adapters</code>.</p>
+</div>
+
+<h2>What it looks like</h2>
+<pre><code>$ token-finops report --compact
+GitHub Copilot CLI [######--------------]  29.4%  runway  41.2d  OK
+Claude Code        [############--------]  61.0%  runway   1.9h  WARN
+OpenAI Codex CLI   [###-----------------]  17.0%  runway   3.4h  OK
+Gemini CLI         [#-------------------]   6.1%  runway    inf  OK
+
+binding constraint: Claude Code (5h) — runway 1.9h -&gt; WARN</code></pre>
+
+<h2>More recordings</h2>
+<p class="cast-note">These five are recorded against <code>token-finops synth --scenario burst</code> data — the numbers are synthetic, but every command is real.</p>
+
+<h3><span class="num">01</span> report</h3>
+<p class="cast-note"><code>adapters</code>, <code>report --compact</code>, full Copilot report with runway</p>
+<div class="player" id="player-01"></div>
+
+<h3><span class="num">02</span> status formats</h3>
+<p class="cast-note"><code>status</code> in plain, tmux, starship and waybar formats (cache + <code>--fresh</code>)</p>
+<div class="player" id="player-02"></div>
+
+<h3><span class="num">03</span> self-audit</h3>
+<p class="cast-note"><code>self-audit</code> on a Claude Code session with sub-agents on Sonnet and Haiku</p>
+<div class="player" id="player-03"></div>
+
+<h3><span class="num">04</span> savings &amp; break-even</h3>
+<p class="cast-note">Mac Studio at 20 % vs 80 % utilisation, solar tariff, break-even replay</p>
+<div class="player" id="player-04"></div>
+
+<h3><span class="num">05</span> synth</h3>
+<p class="cast-note">generating a fake home and the <code>--print-env</code> one-liner</p>
+<div class="player" id="player-05"></div>
+
+<footer>
+  <p>Recordings are asciicast v2 files committed in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/docs/casts">docs/casts/</a> — play them locally with <code>asciinema play &lt;file&gt;</code>. This page ships no analytics and no tracking.</p>
+</footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/asciinema-player@3/dist/bundle/asciinema-player.min.js"></script>
+<script>
+  var casts = [
+    ["player-06", "casts/06-install-pip.cast"],
+    ["player-01", "casts/01-report.cast"],
+    ["player-02", "casts/02-status-formats.cast"],
+    ["player-03", "casts/03-self-audit.cast"],
+    ["player-04", "casts/04-savings-break-even.cast"],
+    ["player-05", "casts/05-synth.cast"]
+  ];
+  casts.forEach(function (c) {
+    AsciinemaPlayer.create(c[1], document.getElementById(c[0]), {
+      fit: "width",
+      idleTimeLimit: 2,
+      theme: "asciinema"
+    });
+  });
+</script>
+
+</body>
+</html>
