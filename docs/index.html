@@ -73,19 +73,16 @@
   <pre><code>uv tool install token-finops-cli          # recommended
 pipx install token-finops-cli
 pip install token-finops-cli</code></pre>
-  <p class="cast-note">The recording below is the real thing: an empty virtualenv, a live <code>pip install</code> from PyPI, and the <code>token-finops</code> entry point landing on <code>$PATH</code>. No synthetic data, no edits.</p>
+  <p class="cast-note">The recording below is the real thing: a live <code>pip install</code> from PyPI into a throwaway virtualenv, and the <code>token-finops</code> entry point landing on <code>$PATH</code>. Every command and its output is real; the venv's path is the only thing sanitized, swapped for the generic <code>/home/demo/…</code> placeholder used elsewhere in this repo's fixtures instead of a real machine path.</p>
   <div class="player" id="player-06"></div>
   <p class="cast-note">Note what it shows honestly: PyPI currently serves <strong>0.2.0</strong>, the original Copilot-only single-file tool. The 9-adapter CLI demonstrated in the recordings further down is 0.3.x and is not released yet — that is why this cast runs <code>sessions --help</code> rather than <code>adapters</code>.</p>
 </div>
 
 <h2>What it looks like</h2>
-<pre><code>$ token-finops report --compact
-GitHub Copilot CLI [######--------------]  29.4%  runway  41.2d  OK
-Claude Code        [############--------]  61.0%  runway   1.9h  WARN
-OpenAI Codex CLI   [###-----------------]  17.0%  runway   3.4h  OK
-Gemini CLI         [#-------------------]   6.1%  runway    inf  OK
-
-binding constraint: Claude Code (5h) — runway 1.9h -&gt; WARN</code></pre>
+<p>Once you've wired the <code>collect-statusline</code> hook into <code>~/.claude/settings.json</code> (see <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/INTEGRATIONS.md">docs/INTEGRATIONS.md</a>), <code>report</code> scoped to just that one tool is the fast path — no need to wade through every adapter the CLI happens to detect on your machine:</p>
+<pre><code>$ token-finops report --tool claude_code --compact
+Claude Code        [############--------]  61.0%  runway   1.9h  WARN</code></pre>
+<p class="cast-note">Drop <code>--tool</code> to see every detected tool at once (Copilot, Codex, Gemini, …) with the binding constraint — the one that runs out first — called out; that's what the recordings below show.</p>
 
 <h2>More recordings</h2>
 <p class="cast-note">These five are recorded against <code>token-finops synth --scenario burst</code> data — the numbers are synthetic, but every command is real.</p>
