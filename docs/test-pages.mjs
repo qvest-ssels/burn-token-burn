@@ -182,7 +182,7 @@ async function run() {
         hrefs: links.map((a) => a.getAttribute("href")),
       };
     });
-    check(`${spec.path}: nav has 6 links`, nav.count === 6, `got ${nav.count}`);
+    check(`${spec.path}: nav has 7 links`, nav.count === 7, `got ${nav.count}`);
     check(`${spec.path}: nav marks this page as current`,
       nav.current.length === 1 && nav.current[0] === spec.path,
       JSON.stringify(nav.current));

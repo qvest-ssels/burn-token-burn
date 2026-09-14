@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.17.0/dist/bundle/asciinema-player.min.js" defer></script>
 <script src="player.js" defer></script>
+<script src="wizard.js" defer></script>
 </head>
 <body>
 
@@ -31,6 +32,11 @@
 
 <header>
   <h1><span class="prompt">$ </span>token-finops</h1>
+  <p class="tagline">Read-only, local-first token usage and budget-runway tracker for AI coding agents — plus an honest local-vs-cloud savings estimator.</p>
+  <blockquote>"Somebody burned the whole team's Copilot budget. Nobody could send a request for the rest of the month. (It wasn't me — but I couldn't have proven it.)"</blockquote>
+  <p><code>token-finops</code> grew out of <a href="https://github.com/oh-my-agent-code/token-finops-cli"><code>token-finops-cli</code></a>, a 600-line stdlib script that reads GitHub Copilot CLI's local telemetry and answers one question: <em>at my current burn rate, does my monthly budget last until the reset?</em> This repository generalises that "runway" idea to every coding agent that leaves telemetry on your disk, and adds the question people ask next: <em>would a Mac Studio in the corner be cheaper?</em></p>
+  <p>Everything is Python &ge; 3.10, <strong>standard library only</strong>, and never writes to any tool's own data store.</p>
+
   <p class="tagline">It reads the telemetry your coding agents already leave on disk and tells you how long your budget lasts at your current burn rate.</p>
 
   <ul class="trust-list">
@@ -48,45 +54,111 @@
   </p>
 </header>
 
-<h2>Three commands, your own usage</h2>
-<p>No configuration. <code>adapters</code> tells you which of your coding agents it found; <code>report --compact</code> shows a runway per tool it found data for. Real output, from the CLI's own README:</p>
-<pre><code>$ token-finops adapters
-  tool         found  root
-  copilot      yes    ~/.copilot
-  claude_code  yes    ~/.claude
-  codex        no     ~/.codex
-  gemini_cli   no     ~/.gemini
-  hermes       no     ~/.hermes
-  opencode     no     ~/.local/share/opencode
-  cline        no     ~/.config/Code/User/globalStorage
-  aider        no     ~
-  continue     no     ~/.continue
-
-$ token-finops report --compact
+<h2>What it does</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Tool</th><th>Local data source</th><th>Budget unit the provider actually enforces</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>GitHub Copilot CLI</td><td><code>~/.copilot/session-store.db</code></td><td>AI credits / month (resets 00:00 UTC on the 1st)</td><td>port of the original, extended</td></tr>
+<tr><td>Claude Code</td><td><code>~/.claude/projects/**.jsonl</code> incl. sub-agent transcripts</td><td>opaque % of a rolling 5 h and 7 d window</td><td>usage &#10003;, quota via status-line hook</td></tr>
+<tr><td>OpenAI Codex CLI</td><td><code>~/.codex/sessions/**/rollout-*.jsonl</code></td><td>% of rolling 5 h / 7 d window — <strong>written to disk by Codex itself</strong></td><td>usage &#10003;, quota &#10003; offline</td></tr>
+<tr><td>Gemini CLI</td><td><code>~/.gemini/tmp/*/chats/*.jsonl</code></td><td>requests / day (1000 free, 1500/2000 paid)</td><td>usage &#10003;, daily request runway</td></tr>
+<tr><td>Hermes Agent</td><td><code>~/.hermes/state.db</code></td><td>provider-dependent (OpenRouter $, local = none)</td><td>usage &#10003;, local models flagged</td></tr>
+<tr><td>OpenCode / Kilo CLI</td><td><code>~/.local/share/{opencode,kilo}/*.db</code></td><td>BYO provider ($)</td><td>usage &#10003;</td></tr>
+<tr><td>Cline / Roo / Kilo (VS Code)</td><td><code>&hellip;/globalStorage/&lt;ext&gt;/tasks/*/ui_messages.json</code></td><td>BYO provider ($)</td><td>usage &#10003;</td></tr>
+<tr><td>Aider</td><td><code>.aider.chat.history.md</code>, opt-in analytics JSONL</td><td>BYO provider ($)</td><td>usage &#10003; (timestamps approximate)</td></tr>
+<tr><td>Continue.dev</td><td><code>~/.continue/sessions/*.json</code></td><td>BYO provider ($)</td><td>usage &#10003; (low confidence)</td></tr>
+<tr><td>Cursor &middot; Windsurf &middot; Ollama</td><td>&mdash;</td><td>see <code>docs/adr/0008</code>, <code>0011</code>, <code>0012</code></td><td>reference-only</td></tr>
+</tbody>
+</table>
+</div>
+<p>Usage-only tools get a runway too when you pass <code>--allowance &lt;USD per 30 days&gt;</code>.</p>
+<p>Heterogeneous units are <strong>never summed</strong>. Each tool gets its own runway; the report tells you which one is the <em>binding constraint</em> &mdash; the one that runs out first.</p>
+<pre><code>$ token-finops report --compact
 GitHub Copilot CLI [######--------------]  29.4%  runway  41.2d  OK
 Claude Code        [############--------]  61.0%  runway   1.9h  WARN
+OpenAI Codex CLI   [###-----------------]  17.0%  runway   3.4h  OK
+Gemini CLI         [#-------------------]   6.1%  runway    inf  OK
 
-binding constraint: Claude Code (5h) &rarr; runway 1.9h -&gt; WARN</code></pre>
-<p>Two terms worth knowing before anything else: <strong>runway</strong> is how long until you hit the limit, at today's pace. <strong>Binding constraint</strong> is the one tool, of everything it tracks, that will stop you first &mdash; because units are never summed, this is the closest thing to a single number the report gives you.</p>
+binding constraint: Claude Code (5h) &mdash; runway 1.9h -&gt; WARN</code></pre>
+
+<div class="featured" id="install-wizard">
+  <h2>Install it</h2>
+  <p>PyPI currently serves <strong>0.2.0</strong>, the original Copilot-only single-file tool. The 9-adapter CLI below is 0.3.x and not tagged yet, so for now it installs from a checkout — once it's released, <code>uv tool install token-finops-cli</code> / <code>pipx install token-finops-cli</code> / <code>pip install token-finops-cli</code> will work directly against the package name. Four steps, install through your first report:</p>
+
+  <p class="os-tabs" role="group" aria-label="Operating system">
+    <button type="button" class="os-tab" data-os="macos" aria-current="false">macOS</button>
+    <span aria-hidden="true">&middot;</span>
+    <button type="button" class="os-tab" data-os="linux" aria-current="true">Linux</button>
+    <span aria-hidden="true">&middot;</span>
+    <button type="button" class="os-tab" data-os="windows" aria-current="false">Windows</button>
+  </p>
+
+  <ol class="wizard-steps">
+    <li>
+      <h3><span class="num">1</span> Install</h3>
+      <div class="cmd-block">
+        <pre id="cmd-install-macos" data-os-block="macos" hidden><code>git clone https://github.com/qvest-ssels/burn-token-burn.git
+cd burn-token-burn/token-finops-cli
+uv tool install .                 # or: pipx install .   /   pip install .</code></pre>
+        <pre id="cmd-install-linux" data-os-block="linux"><code>git clone https://github.com/qvest-ssels/burn-token-burn.git
+cd burn-token-burn/token-finops-cli
+uv tool install .                 # or: pipx install .   /   pip install .</code></pre>
+        <pre id="cmd-install-windows" data-os-block="windows" hidden><code>wsl --install                     # one-time, if WSL isn't set up yet
+# then, inside your WSL Linux shell:
+git clone https://github.com/qvest-ssels/burn-token-burn.git
+cd burn-token-burn/token-finops-cli
+uv tool install .                 # or: pipx install .   /   pip install .</code></pre>
+        <button type="button" class="copy-btn" data-copy-target="cmd-install-macos" data-os-block="macos" hidden>copy</button>
+        <button type="button" class="copy-btn" data-copy-target="cmd-install-linux" data-os-block="linux">copy</button>
+        <button type="button" class="copy-btn" data-copy-target="cmd-install-windows" data-os-block="windows" hidden>copy</button>
+      </div>
+      <p class="cast-note expected"># installs the <code>token-finops</code> command</p>
+    </li>
+
+    <li>
+      <h3><span class="num">2</span> Verify it's on <code>PATH</code></h3>
+      <div class="cmd-block">
+        <pre id="cmd-verify"><code>token-finops --help</code></pre>
+        <button type="button" class="copy-btn" data-copy-target="cmd-verify">copy</button>
+      </div>
+      <p class="cast-note expected"># usage: token-finops [-h] {report,sessions,adapters,synth,self-audit,...}</p>
+      <p class="cast-note os-note" data-os-block="macos" hidden><code>uv tool install</code> and <code>pipx install</code> both put the command on <code>PATH</code> automatically; if a brand-new shell still can't find it, open a new terminal tab or run <code>uv tool update-shell</code> once.</p>
+      <p class="cast-note os-note" data-os-block="linux">Same as macOS: <code>uv tool update-shell</code> (or a fresh shell) if <code>command not found</code> shows up right after install.</p>
+      <p class="cast-note os-note" data-os-block="windows" hidden>Run this — and every step below — inside the WSL shell you installed from, not a native Windows terminal: PATH setup and the <code>~/.claude</code>-style paths the adapters read both assume a Unix-style home directory.</p>
+    </li>
+
+    <li>
+      <h3><span class="num">3</span> See what it found</h3>
+      <div class="cmd-block">
+        <pre id="cmd-adapters"><code>token-finops adapters</code></pre>
+        <button type="button" class="copy-btn" data-copy-target="cmd-adapters">copy</button>
+      </div>
+      <p class="cast-note expected"># tool         found  root
+# copilot      yes    ~/.copilot
+# claude_code  yes    ~/.claude
+# codex        no     ~/.codex</p>
+    </li>
+
+    <li>
+      <h3><span class="num">4</span> Run your first report</h3>
+      <div class="cmd-block">
+        <pre id="cmd-report"><code>token-finops report --compact</code></pre>
+        <button type="button" class="copy-btn" data-copy-target="cmd-report">copy</button>
+      </div>
+      <p class="cast-note expected"># Claude Code   [############--------]  61.0%  runway   1.9h  WARN</p>
+      <p class="cast-note">One line per tool it found data for: a usage bar, a percentage, a runway (how long until you hit the limit at today's pace), and a status word. If more than one tool shows up, the <em>binding constraint</em> is whichever one runs out first.</p>
+    </li>
+  </ol>
+
+  <p class="cast-note">The recording below is the real thing: a live <code>pip install token-finops-cli</code> from PyPI, and the <code>token-finops</code> entry point landing on <code>$PATH</code> right after.</p>
+  <div class="player" id="player-06" data-cast="casts/06-install-pip.cast"></div>
+  <p class="cast-note">Note what it shows honestly: PyPI currently serves <strong>0.2.0</strong>, the original Copilot-only single-file tool, so this cast runs <code>sessions --help</code> rather than <code>adapters</code>.</p>
+</div>
 
 <p class="cast-note"><code>adapters</code>, <code>report --compact</code>, then a full Copilot report with runway &mdash; the same commands as above, running for real.</p>
 <div class="player" id="player-01" data-cast="casts/01-report.cast"></div>
 <p class="cast-note">Numbers in this recording are synthetic (see <a href="synth.html">synth</a>); every command is real. The full walkthrough, with the vocabulary explained line by line, is on the <a href="report.html">report page</a>.</p>
-
-<div class="featured">
-  <h2>Install it</h2>
-  <p><code>token-finops-cli</code> is not yet published to PyPI as the CLI shown above &mdash; PyPI currently serves <strong>0.2.0</strong>, the original Copilot-only single-file tool. The 9-adapter 0.3.x CLI in this recording is install-from-checkout until it is tagged and released (tracked as T-05 in the repo's task list). Install from a checkout:</p>
-  <pre><code>git clone https://github.com/tronicum/burn-token-burn.git
-cd burn-token-burn/token-finops-cli
-
-uv tool install .          # recommended — no separate venv to manage
-pipx install .
-python3 -m venv .venv && source .venv/bin/activate && pip install .</code></pre>
-  <p>Once 0.3.0 is tagged, the same three tools will work directly against the package name (<code>uv tool install token-finops-cli</code>, <code>pipx install token-finops-cli</code>, <code>pip install token-finops-cli</code>) &mdash; full details, plus which coding-agent CLI each adapter needs installed, in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/INSTALL.md">docs/INSTALL.md</a>.</p>
-  <p class="cast-note">The recording below is the real thing today: a live <code>pip install token-finops-cli</code> from PyPI, landing on 0.2.0.</p>
-  <div class="player" id="player-06" data-cast="casts/06-install-pip.cast"></div>
-  <p class="cast-note">Note what it shows honestly: this is why the cast runs <code>sessions --help</code> rather than <code>adapters</code> &mdash; 0.2.0 is the Copilot-only tool, not the 9-adapter CLI documented on this site.</p>
-</div>
 
 <div class="escape-hatch">
   <h2>Nothing found?</h2>
