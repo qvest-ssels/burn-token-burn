@@ -12,11 +12,11 @@ delete old rows — move them to "Done" below instead, so the history stays legi
 
 ## In progress / open
 
+## Done
+
 | Session | Branch | Task | Touches | Status |
 |---|---|---|---|---|
-| Claude Sonnet 5 (cloud) | `feature/agentic/self-audit-compaction` | T-15: stitch every Claude Code transcript segment sharing a `sessionId` (compaction splits the main transcript into a new file) into one `self-audit` report, dedup across segments by `event_id`, print `segments: N` in the header | `token-finops-cli/src/token_finops_cli/adapters/claude_code.py`, `token-finops-cli/src/token_finops_cli/cli.py`, `token-finops-cli/tests/test_self_audit.py`, `docs/adr/0002-claude-code.md`, `claude-tasks.md` | in progress |
-
-## Done
+| Claude Sonnet 5 (cloud) | `feature/agentic/self-audit-compaction` | T-15: stitch every Claude Code transcript segment sharing a `sessionId` (compaction splits the main transcript into a new file) into one `self-audit` report, dedup across segments by `event_id`, print `segments: N` in the header | `token-finops-cli/src/token_finops_cli/adapters/claude_code.py`, `token-finops-cli/src/token_finops_cli/cli.py`, `token-finops-cli/tests/test_self_audit.py`, `docs/adr/0002-claude-code.md`, `claude-tasks.md` | [PR #10](https://github.com/qvest-ssels/burn-token-burn/pull/10) opened |
 
 | Session | Branch | Task | Touches | Status |
 |---|---|---|---|---|
