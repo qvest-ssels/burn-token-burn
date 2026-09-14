@@ -19,8 +19,9 @@ delete old rows — move them to "Done" below instead, so the history stays legi
 
 | Session | Branch | Task | Touches | Status |
 |---|---|---|---|---|
-| Claude Sonnet 5 (cloud) | `feature/agentic/readme-docs-link` | Rebase a stray local README commit (GitHub Pages link) onto current `main` | `README.md` | rebased, unpushed — needs a push target decision (`tronicum` has no write access to `qvest-ssels/burn-token-burn`, see `TODOs.md`) |
-| Claude Sonnet 5 (cloud) | `feature/agentic/statusline-enhancements` | `collect-statusline`: hash progress bar per window + opt-in sub-agent count/token summary (`TODOs.md` "Open" picks) | `token-finops-cli/src/token_finops_cli/cli.py`, `tests/test_statusline.py`, `docs/TMUX.md` | ready for PR |
+| Claude Sonnet 5 (cloud) | `feature/agentic/readme-docs-link` | Rebase a stray local README commit (GitHub Pages link) onto current `main` | `README.md` | superseded — same change landed via `feature/agentic/readme-and-home-rule` from a session with push access; this branch can be discarded |
+| Claude Sonnet 5 (cloud) | `feature/agentic/statusline-enhancements` | `collect-statusline`: hash progress bar per window + opt-in sub-agent count/token summary (`TODOs.md` "Open" picks) | `token-finops-cli/src/token_finops_cli/cli.py`, `tests/test_statusline.py`, `docs/TMUX.md` | merged (PR #4) |
+| Claude Sonnet 5 (local, push access) | `feature/agentic/readme-and-home-rule` | README GitHub Pages link + strengthen the home-directory rule with a no-self-cleanup clause | `README.md`, `AGENTS.md`, `AGENTIC.md` | PR opened |
 
 ## Notes for whoever picks this up next
 
