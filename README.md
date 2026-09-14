@@ -8,6 +8,8 @@
 
 Everything is Python ≥ 3.10, **standard library only**, and never writes to any tool's own data store.
 
+**📖 [Docs & terminal recordings](https://qvest-ssels.github.io/burn-token-burn/)** — install instructions, a walkthrough of every command with a real asciinema recording, and the savings estimator, all in one place.
+
 ## What it does
 
 | Tool | Local data source | Budget unit the provider actually enforces | Status |
