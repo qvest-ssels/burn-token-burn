@@ -19,9 +19,10 @@
       <a href="index.html" aria-current="page">overview</a>
       <a href="report.html">report</a>
       <a href="statusline.html">status line</a>
-      <a href="self-audit.html">self-audit</a>
+      <a href="self-audit.html">self-audit (session cost)</a>
       <a href="savings.html">savings</a>
       <a href="synth.html">synth</a>
+      <a href="reference.html">reference</a>
     </nav>
   </div>
 </div>
@@ -30,38 +31,77 @@
 
 <header>
   <h1><span class="prompt">$ </span>token-finops</h1>
-  <p class="tagline">Read-only, local-first token usage and budget-runway tracker for AI coding agents — plus an honest local-vs-cloud savings estimator.</p>
-  <p>It reads the telemetry your coding agents already leave on disk and answers one question: <em>at my current burn rate, does my budget last until the reset?</em> Heterogeneous units are never summed — each tool gets its own runway, and the report tells you which one is the <em>binding constraint</em>, the one that runs out first. Everything is Python &ge; 3.10, standard library only, and it never writes to any tool's own data store.</p>
+  <p class="tagline">It reads the telemetry your coding agents already leave on disk and tells you how long your budget lasts at your current burn rate.</p>
+
+  <ul class="trust-list">
+    <li>Read-only — never writes to any tool's own data store</li>
+    <li>Offline by default — no network calls, no accounts, no API keys</li>
+    <li>Standard library only — Python &ge; 3.10, no runtime dependencies</li>
+    <li>Heterogeneous units are never summed — each tool gets its own runway, called out by its own name</li>
+  </ul>
+
+  <p>Supported today: GitHub Copilot CLI, Claude Code, OpenAI Codex CLI, Gemini CLI, Hermes Agent, OpenCode/Kilo CLI, Cline/Roo/Kilo, Aider, Continue.dev &mdash; nine adapters, one per row in <a href="reference.html#adapter-status">the adapter status table</a>. Cursor, Windsurf and Ollama are reference-only for now (no local telemetry to read).</p>
+
   <p class="badges">
     <a href="https://github.com/qvest-ssels/burn-token-burn">source on GitHub</a>
     <a href="https://pypi.org/project/token-finops-cli/">token-finops-cli on PyPI</a>
   </p>
 </header>
 
+<h2>Three commands, your own usage</h2>
+<p>No configuration. <code>adapters</code> tells you which of your coding agents it found; <code>report --compact</code> shows a runway per tool it found data for. Real output, from the CLI's own README:</p>
+<pre><code>$ token-finops adapters
+  tool         found  root
+  copilot      yes    ~/.copilot
+  claude_code  yes    ~/.claude
+  codex        no     ~/.codex
+  gemini_cli   no     ~/.gemini
+  hermes       no     ~/.hermes
+  opencode     no     ~/.local/share/opencode
+  cline        no     ~/.config/Code/User/globalStorage
+  aider        no     ~
+  continue     no     ~/.continue
+
+$ token-finops report --compact
+GitHub Copilot CLI [######--------------]  29.4%  runway  41.2d  OK
+Claude Code        [############--------]  61.0%  runway   1.9h  WARN
+
+binding constraint: Claude Code (5h) &rarr; runway 1.9h -&gt; WARN</code></pre>
+<p>Two terms worth knowing before anything else: <strong>runway</strong> is how long until you hit the limit, at today's pace. <strong>Binding constraint</strong> is the one tool, of everything it tracks, that will stop you first &mdash; because units are never summed, this is the closest thing to a single number the report gives you.</p>
+
+<p class="cast-note"><code>adapters</code>, <code>report --compact</code>, then a full Copilot report with runway &mdash; the same commands as above, running for real.</p>
+<div class="player" id="player-01" data-cast="casts/01-report.cast"></div>
+<p class="cast-note">Numbers in this recording are synthetic (see <a href="synth.html">synth</a>); every command is real. The full walkthrough, with the vocabulary explained line by line, is on the <a href="report.html">report page</a>.</p>
+
 <div class="featured">
   <h2>Install it</h2>
-  <pre><code>uv tool install token-finops-cli          # recommended
-pipx install token-finops-cli
-pip install token-finops-cli</code></pre>
-  <p class="cast-note">The recording below is the real thing: a live <code>pip install token-finops-cli</code> from PyPI, and the <code>token-finops</code> entry point landing on <code>$PATH</code> right after.</p>
+  <p><code>token-finops-cli</code> is not yet published to PyPI as the CLI shown above &mdash; PyPI currently serves <strong>0.2.0</strong>, the original Copilot-only single-file tool. The 9-adapter 0.3.x CLI in this recording is install-from-checkout until it is tagged and released (tracked as T-05 in the repo's task list). Install from a checkout:</p>
+  <pre><code>git clone https://github.com/tronicum/burn-token-burn.git
+cd burn-token-burn/token-finops-cli
+
+uv tool install .          # recommended — no separate venv to manage
+pipx install .
+python3 -m venv .venv && source .venv/bin/activate && pip install .</code></pre>
+  <p>Once 0.3.0 is tagged, the same three tools will work directly against the package name (<code>uv tool install token-finops-cli</code>, <code>pipx install token-finops-cli</code>, <code>pip install token-finops-cli</code>) &mdash; full details, plus which coding-agent CLI each adapter needs installed, in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/INSTALL.md">docs/INSTALL.md</a>.</p>
+  <p class="cast-note">The recording below is the real thing today: a live <code>pip install token-finops-cli</code> from PyPI, landing on 0.2.0.</p>
   <div class="player" id="player-06" data-cast="casts/06-install-pip.cast"></div>
-  <p class="cast-note">Note what it shows honestly: PyPI currently serves <strong>0.2.0</strong>, the original Copilot-only single-file tool. The 9-adapter CLI demonstrated in the other recordings is 0.3.x and is not released yet — that is why this cast runs <code>sessions --help</code> rather than <code>adapters</code>.</p>
+  <p class="cast-note">Note what it shows honestly: this is why the cast runs <code>sessions --help</code> rather than <code>adapters</code> &mdash; 0.2.0 is the Copilot-only tool, not the 9-adapter CLI documented on this site.</p>
 </div>
 
-<h2>What it looks like</h2>
-<p>Once you've wired the <code>collect-statusline</code> hook into <code>~/.claude/settings.json</code> (see <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/INTEGRATIONS.md">docs/INTEGRATIONS.md</a>), <code>report</code> scoped to just that one tool is the fast path — no need to wade through every adapter the CLI happens to detect on your machine:</p>
-<pre><code>$ token-finops report --tool claude_code --compact
-Claude Code        [############--------]  61.0%  runway   1.9h  WARN</code></pre>
-<p class="cast-note">Drop <code>--tool</code> to see every detected tool at once (Copilot, Codex, Gemini, …) with the binding constraint called out.</p>
+<div class="escape-hatch">
+  <h2>Nothing found?</h2>
+  <p>If <code>token-finops adapters</code> shows no data for any of your tools &mdash; you run something not on the supported list yet, or your tool simply hasn't written enough telemetry yet &mdash; you can still try the whole CLI on fake data in one command. See <a href="synth.html">synth</a>: it generates a complete, throwaway set of coding-agent telemetry so <code>report</code>, <code>status</code> and the rest have something real to read, without touching anything of yours.</p>
+</div>
 
 <h2>See it run</h2>
 <p>One page per command, each with a real terminal recording:</p>
 <ul class="pagelist">
-  <li><a href="report.html">report</a> — which tools were found, the compact one-line-per-tool view, and a full report with runway.</li>
-  <li><a href="statusline.html">status line</a> — one-line status in plain, tmux, starship and waybar formats.</li>
-  <li><a href="self-audit.html">self-audit</a> — what a Claude Code session cost, broken down by model and by sub-agent.</li>
-  <li><a href="savings.html">savings</a> — local hardware vs. cloud API pricing, and the break-even point.</li>
-  <li><a href="synth.html">synth</a> — synthetic telemetry to try all of the above without touching your own data.</li>
+  <li><a href="report.html">report</a> &mdash; which tools were found, the compact one-line-per-tool view, and a full report with runway.</li>
+  <li><a href="statusline.html">status line</a> &mdash; one-line status in plain, tmux, starship and waybar formats.</li>
+  <li><a href="self-audit.html">self-audit (session cost)</a> &mdash; what a Claude Code session cost, broken down by model and by sub-agent.</li>
+  <li><a href="savings.html">savings</a> &mdash; local hardware vs. cloud API pricing, and the break-even point.</li>
+  <li><a href="synth.html">synth</a> &mdash; synthetic telemetry to try all of the above without touching your own data.</li>
+  <li><a href="reference.html">reference</a> &mdash; JSON output shapes, environment-variable overrides, adapter caveats, and the roadmap.</li>
 </ul>
 
 <footer>
