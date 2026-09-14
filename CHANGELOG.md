@@ -65,6 +65,18 @@ multi-assistant runway tracker plus a local-vs-cloud savings estimator.
   reach past a tool's own retention, a burn-efficiency block (`--efficiency`/`--nerdy`: cache hit
   ratio, frontier/sub-agent share, routing dividend, ...), a prepaid/committed-spend rate
   (`--rate IN/OUT[/CR[/CW]]`), and a flat promo discount (`--discount`); see `docs/BURN.md`.
+- **Colourised `collect-statusline`** — the Claude Code status-line hook now renders a
+  hash-progress-bar per window (ANSI green/yellow/red at the 75 %/90 % warn/critical thresholds)
+  with a bold model name, plus an opt-in sub-agent count/token summary
+  (`~/.token-finops/config.json`, `{"statusline": {"show_subagents": true}}`).
+- **`self-audit` across context-compaction** — stitches every transcript segment sharing a
+  session id (main + `subagents/`), deduplicates globally instead of per-file, and reports
+  `segments: N` in the header so a compacted session's cost is one number, not a silent split.
+- **A GitHub Pages docs site** (`docs/`) — a small multi-page site (nav bar, one page per command)
+  embedding real asciinema terminal recordings for every workflow, plus a step-by-step,
+  OS-aware install wizard on the homepage.
+- **`contrib/homebrew/token-finops-cli.rb`** — a drafted Homebrew formula (installs via a local
+  tap today; a published tap is tracked separately).
 
 ### Changed
 
