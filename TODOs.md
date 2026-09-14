@@ -27,6 +27,13 @@ A short, human-facing "what's outstanding" list. For the detailed agent-ready wo
   `report.summarize()` over the sibling `<session>/subagents/` directory derived from Claude
   Code's `transcript_path` payload field. Appends `2 agents · 8.4k tokens` to the line. 5 new
   tests. Branch `feature/agentic/statusline-enhancements`, see `AGENTIC.md`.
+- [x] **T-02 Copilot synth scale rebalance** — `synth --scenario steady` + `report --budget 1500`
+  now reads 22.5% OK, `--scenario exhausted` reads 100% OUT, matching a real Copilot Pro
+  allowance instead of the old ~900 AIU/request scale that blew past even Max's 20,000 AIU
+  allowance in two weeks. See `claude-tasks.md`'s Done section for the full detail. Branch
+  `feature/agentic/copilot-synth-scale`, see `AGENTIC.md`.
+- [x] Scroll-triggered asciinema autoplay + 4-step homepage install wizard (PR #8) -- see
+  `AGENTIC.md`.
 
 ## Open
 
@@ -72,7 +79,6 @@ A short, human-facing "what's outstanding" list. For the detailed agent-ready wo
 
 ## From the existing backlog (`claude-tasks.md`) — top picks
 
-- [ ] T-02 Copilot synth scale rebalance
 - [ ] T-03 `--online` live quota fetchers (Copilot/Anthropic/Gemini/OpenRouter)
 - [ ] T-04 Claude Code `/runway` skill
 - [ ] T-07 Quality-tier mapping from Artificial Analysis

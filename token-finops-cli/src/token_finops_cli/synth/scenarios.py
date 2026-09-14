@@ -63,11 +63,13 @@ def rate_limit_pct(scenario: str, day_offset: int, days: int,
 
 
 def copilot_volume_multiplier(scenario: str) -> float:
-    """Scale factor on Copilot's per-event AI-unit cost, so a normal-length
-    run lands where the scenario wants relative to the default 50,000 AIU
-    monthly allowance."""
+    """Scale factor on Copilot's per-event AI-unit cost, so "exhausted" blows past even the
+    largest real individual plan (Max, 20,000 AIU -- also the default allowance when none is
+    given, see adapters/copilot.py) well before a full month's worth of days has accumulated
+    -- robust to however many of the synthetic days the calendar-month window actually
+    covers, which depends on the real day of the month a test happens to run on (T-02)."""
     if scenario == "exhausted":
-        return 25.0
+        return 100.0
     return 1.0
 
 

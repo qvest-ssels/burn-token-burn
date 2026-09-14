@@ -100,7 +100,7 @@ def test_copilot_default_policy_and_root(monkeypatch, tmp_path):
     assert ad.root == str(tmp_path / "x.db") and not ad.available()
     p = ad.default_policy()
     assert (p.unit, p.cycle, p.allowance, p.cycle_day, p.source_of_truth) == \
-        (Unit.AIU, CycleKind.CALENDAR_MONTH_UTC, 50_000.0, 1, "local_sum")
+        (Unit.AIU, CycleKind.CALENDAR_MONTH_UTC, 20_000.0, 1, "local_sum")
     p2 = ad.default_policy(1500.0, cycle_day=20)
     assert p2.allowance == 1500.0 and p2.cycle_day == 20
     monkeypatch.delenv("TOKEN_FINOPS_COPILOT_DB")

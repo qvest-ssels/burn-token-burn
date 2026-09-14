@@ -122,7 +122,7 @@ def test_report_json_shape_on_synthetic_copilot(copilot_db, run_cli):
 
 def test_report_default_budget_and_cycle_day(copilot_db, run_cli):
     d = json.loads(run_cli("report", "--json"))[0]
-    assert d["allowance"] == 50_000.0
+    assert d["allowance"] == 20_000.0  # DEFAULT_BUDGET_AIU: the largest real individual plan (Max)
     d15 = json.loads(run_cli("report", "--json", "--cycle-day", "15"))[0]
     assert d15["resets_at"].endswith("-15 00:00:00+00:00")
 

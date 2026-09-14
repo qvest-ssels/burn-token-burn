@@ -44,11 +44,16 @@ RUNWAY_TOOLS = ("copilot", "codex")
 # Tools that carry an allowance out of the box and therefore show up in
 # `status` without `--all` (the rest are BYO-key, hence UNLIMITED).
 ALLOWANCE_TOOLS = ("copilot", "claude_code", "codex", "gemini_cli")
-# The synthetic Copilot generator bills ~900 AI units per request, so 14 days
-# of "steady" already exceeds the 50,000 AIU default allowance. Give the matrix
-# an allowance the fixture's own scale can sit under, so "steady" vs
-# "exhausted" (25x the per-event cost) is a real difference and not a floor.
-COPILOT_BUDGET = "500000"
+# The synthetic Copilot generator bills ~3 AI units/request on average (T-02: realistic
+# enough that `synth --scenario steady` + `report --budget 1500` -- a real Copilot Pro
+# allowance -- reads sensibly for a human trying it, unlike the old ~900/request scale that
+# blew past even Max's 20,000 AIU allowance inside two weeks). This is robust to which real
+# day of the month the suite happens to run on (verified for SEED=4242 across day-of-month
+# 1..30): compute_runway's pace rule ("projected to run out before reset -> CRITICAL
+# regardless of level", core/runway.py) catches "exhausted" from day 1 even before its
+# used_fraction climbs, while "steady"'s burn rate stays comfortably on pace to land around
+# 23% of 1500 for the month, nowhere near the 75%/90% thresholds.
+COPILOT_BUDGET = "1500"
 
 # Environment overrides that must not leak in from the developer's shell and
 # point an adapter back at real telemetry.
