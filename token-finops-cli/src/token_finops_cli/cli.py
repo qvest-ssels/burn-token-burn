@@ -8,6 +8,8 @@
     token-finops break-even ...
     token-finops collect-statusline                              # Claude Code statusLine.command hook
     token-finops adapters                                        # what data sources were found
+    token-finops doctor   [--tool T]                             # why is `report` empty: per-tool
+                                                                  # found/empty/missing + what to do
     token-finops synth --out DIR [--tools t1,t2] [--days N] [--scenario NAME] [--seed N] [--print-env]
                                                                   # write a synthetic fake-home tree
     token-finops cost-per-token [--tool T] [--since 30d] [--json] # $/1M tokens by model; real list
@@ -454,6 +456,11 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("collect-statusline", help="Claude Code statusLine hook: persist rate_limits")
     sub.add_parser("adapters", help="list detected data sources")
 
+    doc = sub.add_parser("doctor",
+                         help="diagnose empty reports: per tool found/empty/missing + what to do next")
+    doc.add_argument("--tool", action="append", choices=sorted(registry) or None,
+                     help="restrict the diagnosis to tool(s)")
+
     from .synth.scenarios import KNOWN as SYNTH_SCENARIOS
     from .synth import ALL_TOOLS as SYNTH_TOOLS
     sy = sub.add_parser("synth", help="write a synthetic fake-home tree for offline demos/tests")
@@ -481,7 +488,7 @@ def build_parser() -> argparse.ArgumentParser:
 def _normalize_argv(argv):
     if not argv:
         return ["report"]
-    known = {"report", "sessions", "self-audit", "collect-statusline", "adapters", "savings",
+    known = {"report", "sessions", "self-audit", "collect-statusline", "adapters", "doctor", "savings",
              "break-even", "synth", "status", "burn", "cost-per-token", "-h", "--help"}
     return argv if argv[0] in known else ["report", *argv]
 
@@ -501,6 +508,10 @@ def main(argv=None):
     if args.command == "cost-per-token":
         from .cost_per_token import cmd_cost_per_token
         print(cmd_cost_per_token(args))
+        return
+    if args.command == "doctor":
+        from .doctor import cmd_doctor
+        print(cmd_doctor(args))
         return
     if args.command == "status":
         from .status import cmd_status
