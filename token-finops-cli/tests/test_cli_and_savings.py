@@ -424,6 +424,9 @@ def test_profile_files_are_consistent(home):
         assert m["quality_tier"] in en["cloud_tiers_usd_per_mtok"]
         assert set(m["tok_s"]) <= set(hw["hardware"])
     assert set(en["co2_g_per_kwh"]) <= set(en["tariffs"])
+    # AGENTS.md rule 6: every number carries a source. That includes the grid-mix ones.
+    assert set(en["co2_g_per_kwh_sources"]) == set(en["co2_g_per_kwh"])
+    assert all(s.strip() for s in en["co2_g_per_kwh_sources"].values())
     assert hw["_review_date"] and en["_review_date"]
 
 
@@ -456,22 +459,25 @@ def test_cloud_co2_estimate_arithmetic(home):
     assert est.region == "us-avg"
     assert est.kwh_per_mtok == pytest.approx(est.wh_per_mtok_it * est.pue / 1000.0)
     assert est.g_co2_per_mtok == pytest.approx(est.kwh_per_mtok * est.g_co2_per_kwh)
-    dirty = cloud_co2_estimate("us-gas-heavy")
-    assert dirty.g_co2_per_mtok > est.g_co2_per_mtok  # gas-heavy grid must be worse
+    # The headline finding this data encodes: the big US AI-datacentre regions are
+    # CLEANER than the national average, not dirtier. Guard it so nobody "fixes" it back.
+    assert cloud_co2_estimate("us-virginia").g_co2_per_kwh < est.g_co2_per_kwh
+    assert cloud_co2_estimate("us-ercot").g_co2_per_kwh < est.g_co2_per_kwh
+    assert "not supported by the published grid data" in energy()["cloud_inference_co2_estimate"]["_regions_comment"]
     with pytest.raises(KeyError, match="unknown --cloud-region"):
         cloud_co2_estimate("mars")
     # the estimate must advertise itself as one, in the data, not just in a docstring
     blk = energy()["cloud_inference_co2_estimate"]
     assert "ESTIMATE" in blk["_comment"].upper() and "LOW" in blk["confidence"].upper()
-    assert set(blk["regions"]) >= {"us-avg", "us-gas-heavy", "de-grid"}
+    assert set(blk["regions"]) >= {"us-avg", "us-virginia", "us-ercot", "de-grid"}
     for r in blk["regions"].values():
         assert r["source"] and r["label"]
 
 
 def test_local_co2_properties(home):
     lc = local_cost("mac-studio-m4-max-128gb", "qwen3-32b", "grid-de-household")
-    assert lc.co2_g_per_kwh == 380
-    assert lc.co2_g_per_mtok == pytest.approx(lc.kwh_per_mtok * 380)
+    assert lc.co2_g_per_kwh == 344
+    assert lc.co2_g_per_mtok == pytest.approx(lc.kwh_per_mtok * 344)
     solar = local_cost("mac-studio-m4-max-128gb", "qwen3-32b", "solar-de-feed-in")
     assert solar.co2_g_per_mtok < lc.co2_g_per_mtok
 
@@ -483,21 +489,20 @@ def test_cmd_savings_co2_block_shows_both_sides(home, run_cli):
     local_ln = next(ln for ln in lines if ln.startswith("  local:"))
     cloud_ln = next(ln for ln in lines if ln.startswith("  cloud:"))
     # the provenance tags are the whole point: they must never be swapped or dropped
-    assert "[computed]" in local_ln and "~   380 g" in local_ln
-    assert "[ESTIMATE]" in cloud_ln and "PUE 1.15" in cloud_ln
-    assert "~   224 g" in cloud_ln  # 500 Wh x 1.15 x 390 g/kWh
-    assert "  -> local emits ~1.7x the cloud estimate per token" in lines
+    assert "[computed]" in local_ln and "~   344 g" in local_ln
+    assert "[ESTIMATE]" in cloud_ln and "PUE 1.13" in cloud_ln
+    assert "~   237 g" in cloud_ln  # 600 Wh x 1.13 x 350 g/kWh
+    assert "  -> local emits ~1.4x the cloud estimate per token" in lines
     assert any("ORDER-OF-MAGNITUDE ESTIMATE, not a measurement" in ln for ln in lines)
     assert any(ln.strip().startswith("Confidence: LOW") for ln in lines)
     assert any("docs/CO2_ESTIMATE.md" in ln for ln in lines)
     # opt-in: the one-line local figure is replaced, not duplicated
-    assert "  CO2: ~380 g per 1M tok on this tariff" not in lines
+    assert "  CO2: ~344 g per 1M tok on this tariff" not in lines
 
 
-def test_cmd_savings_co2_solar_beats_gas_heavy_cloud(home, run_cli):
-    out = run_cli("savings", "--co2", "--power", "solar-de-feed-in", "--cloud-region", "us-gas-heavy")
-    assert "gas-dominated mix" in out
-    assert "x 450 g/kWh" in out
+def test_cmd_savings_co2_solar_beats_any_cloud_region(home, run_cli):
+    out = run_cli("savings", "--co2", "--power", "solar-de-feed-in", "--cloud-region", "us-ercot")
+    assert "Texas / ERCOT" in out and "x 334 g/kWh" in out
     assert "(local is cleaner)" in out
 
 
@@ -525,7 +530,7 @@ def test_cmd_savings_own_hardware_drops_capex(home, run_cli):
 def test_cmd_savings_list_includes_cloud_regions(home, run_cli):
     out = run_cli("savings", "--list")
     assert "cloud regions (--cloud-region, CO2 estimate only):" in out
-    assert any(ln.startswith("  us-gas-heavy") and "450 gCO2/kWh" in ln for ln in out.splitlines())
+    assert any(ln.startswith("  us-virginia") and "270 gCO2/kWh" in ln for ln in out.splitlines())
     assert any(ln.startswith("  macbook-pro-16-m4-max-48gb") for ln in out.splitlines())
 
 
@@ -560,7 +565,7 @@ def test_cmd_savings_cloud_cheaper_at_low_utilisation(home, run_cli):
     assert "Cloud comparison (sonnet-class, 15% output tokens): $3.20 / 1M tok  (Claude Sonnet 5)" in lines
     assert "  -> local is 2.77x the cloud price: CLOUD CHEAPER" in lines
     assert any(ln.startswith("  -> break-even utilisation: 6") and "h/day of inference)" in ln for ln in lines)
-    assert "  CO2: ~380 g per 1M tok on this tariff  (--co2 adds the cloud comparison)" in lines
+    assert "  CO2: ~344 g per 1M tok on this tariff  (--co2 adds the cloud comparison)" in lines
     assert "Green IT:" not in out  # the cloud comparison is opt-in
     assert lines[-1].startswith("Caveats:") and "sonnet-class local" in lines[-1]
 

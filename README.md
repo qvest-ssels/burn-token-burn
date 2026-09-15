@@ -170,10 +170,10 @@ Solar is priced at the feed-in tariff you forgo (7.7 ct/kWh in Germany), not at 
 ### Green IT: CO2 per 1M tokens, local vs cloud
 
 ```
-$ token-finops savings --co2 --power solar-de-feed-in --cloud-region us-gas-heavy
+$ token-finops savings --co2 --power solar-de-feed-in --cloud-region us-ercot
   local:  ~    40 g   [computed]  1.00 kWh/1M tok x 40 g/kWh
-  cloud:  ~   259 g   [ESTIMATE]  500 Wh/1M tok accelerator-side x PUE 1.15 x 450 g/kWh
-  -> local emits ~0.15x the cloud estimate per token (local is cleaner)
+  cloud:  ~   226 g   [ESTIMATE]  600 Wh/1M tok accelerator-side x PUE 1.13 x 334 g/kWh
+  -> local emits ~0.18x the cloud estimate per token (local is cleaner)
   !! The cloud figure is an ORDER-OF-MAGNITUDE ESTIMATE, not a measurement.
 ```
 

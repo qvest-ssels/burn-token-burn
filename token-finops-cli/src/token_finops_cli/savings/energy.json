@@ -17,25 +17,35 @@
     "opus":   {"input": 5.0,  "output": 25.0, "label": "Claude Opus 5"},
     "fable":  {"input": 10.0, "output": 50.0, "label": "Claude Fable 5.1"}
   },
-  "co2_g_per_kwh": {"grid-de-household": 380, "grid-us-avg": 390, "solar-de-feed-in": 40, "solar-de-lcoe": 40},
+  "_co2_comment": "gCO2/kWh per tariff. Grid figures use the DIRECT-COMBUSTION convention (what the official national inventories publish); the PV figures are LIFECYCLE (there is no combustion to measure). Mixing the two conventions understates the grid slightly -- the lifecycle-consistent German figure is 406 gCO2eq/kWh, not 344. See docs/CO2_ESTIMATE.md.",
+  "co2_g_per_kwh": {"grid-de-household": 344, "grid-us-avg": 350, "solar-de-feed-in": 40, "solar-de-lcoe": 40},
+  "co2_g_per_kwh_sources": {
+    "grid-de-household": "344 g/kWh, German grid mix 2025 (estimate vintage), Umweltbundesamt CC 16/2026, published Mar 2026: https://www.umweltbundesamt.de/system/files/medien/11850/publikationen/2026-03/16_2026_CC.pdf -- series: 2023 final 379, 2024 preliminary 353, 2025 estimate 344. Preliminary vintages get revised by up to ~10 g. Lifecycle equivalent: 406 gCO2eq/kWh.",
+    "grid-us-avg": "350 g/kWh, US national average: EPA eGRID2023 rev2 (published 12 Jun 2025, data year 2023) CO2e total output rate 770.884 lb/MWh = 349.7 g/kWh -- https://www.epa.gov/system/files/documents/2025-06/summary_tables_rev2.pdf . EIA Electricity Profile (data year 2024) gives 785 lb/MWh = 356 g/kWh. eGRID2024 not released as of Sep 2026.",
+    "solar-de-feed-in": "40 g/kWh lifecycle emissions for rooftop PV (Fraunhofer ISE class figure) -- see docs/sources.md.",
+    "solar-de-lcoe": "40 g/kWh lifecycle emissions for rooftop PV (Fraunhofer ISE class figure) -- see docs/sources.md."
+  },
   "cloud_inference_co2_estimate": {
     "_comment": "*** ORDER-OF-MAGNITUDE ESTIMATE, NOT A MEASUREMENT. *** No cloud AI provider publishes energy per token, so unlike every other number in this file this one cannot be sourced to a vendor figure -- it is reconstructed from published per-query estimates divided by an assumed response length. Treat it as accurate to within roughly a factor of 3, and do not quote it as a fact about any specific provider. Full derivation, sources and error bars: docs/CO2_ESTIMATE.md.",
     "_review_date": "2026-09-15",
-    "wh_per_mtok_it": 500,
-    "wh_per_mtok_it_source": "ESTIMATE: ~0.25-0.3 Wh per typical LLM chat query (Google, 'Measuring the environmental impact of delivering AI products', 2025, median Gemini text prompt 0.24 Wh; Epoch AI 2025 GPT-4o-class estimate ~0.3 Wh/query) divided by an assumed ~500 output tokens per query => ~0.5 Wh per 1k tokens => 500 Wh per 1M tokens. Older widely-cited figures (de Vries, Joule 2023, ~2.9 Wh/query) would put this ~6x higher; see docs/CO2_ESTIMATE.md.",
-    "pue": 1.15,
-    "pue_label": "PUE 1.15 (hyperscale fleet average; Google reports ~1.09, Microsoft ~1.18, AWS ~1.15)",
-    "pue_source": "ESTIMATE: midpoint of the fleet-wide PUE figures the three largest cloud providers publish in their annual sustainability reports.",
-    "confidence": "LOW -- good to roughly a factor of 3 either way. It is a magnitude, not a measurement.",
-    "basis": "~0.25-0.3 Wh per published LLM query / ~500 output tokens per query, x datacentre PUE, x grid carbon intensity.",
+    "wh_per_mtok_it": 600,
+    "wh_per_mtok_it_source": "ESTIMATE, derived not measured: Epoch AI (7 Feb 2025) estimates a typical GPT-4o ChatGPT query at ~0.3 Wh and states its assumption of 500 output tokens per query -- https://epoch.ai/gradient-updates/how-much-energy-does-chatgpt-use -- which gives 0.3 Wh / 500 tok = 600 Wh per 1M OUTPUT tokens. This is a bottom-up model (200B-param MoE, H100s, 10% utilisation), not a measurement. Jegham et al., 'How Hungry is AI?' (arXiv:2505.09598) measures GPT-4o short prompts at 0.423 Wh / 300 output tok = ~1410 Wh/1M, i.e. 2.4x higher. Google's production-measured median Gemini text prompt of 0.24 Wh (arXiv:2508.15734) is the only in-production figure but publishes NO token counts, so it cannot be converted per-token. Defensible range: 600-1500 Wh per 1M output tokens; 600 is the low end of it.",
+    "pue": 1.13,
+    "pue_label": "PUE 1.13 (hyperscale fleet average; Google 1.09, AWS 1.14, Microsoft 1.17)",
+    "pue_source": "Midpoint of the three fleet-wide figures the largest cloud providers publish: Google 1.09 CY2025 TTM (https://datacenters.google/efficiency/), AWS 1.14 global CY2025 (https://sustainability.aboutamazon.com/products-services/aws-cloud), Microsoft 1.17 FY25 (https://datacenters.microsoft.com/sustainability/efficiency/ -- note the widely-quoted 1.18 is Microsoft's stale 2022 first disclosure). All three exclude or obscure leased colo capacity, and the reporting periods are not like-for-like. The industry-wide Uptime Institute 2026 average is far worse at 1.52, but hyperscale AI serving does not run in an average facility.",
+    "confidence": "LOW -- the grid and PUE inputs are solid, but the energy-per-token input is a derived estimate good to roughly a factor of 2-3 upward. It is a magnitude, not a measurement.",
+    "basis": "Epoch AI's ~0.3 Wh/query at its own stated 500 output tokens/query, x datacentre PUE, x published grid carbon intensity.",
     "default_region": "us-avg",
+    "_regions_comment": "NOTE, against the common assumption: the big US AI-datacentre regions are NOT dirtier than the US average. Northern Virginia ('Data Center Alley') is ~20-30% CLEANER thanks to ~28-40% nuclear and almost no coal, and gas-heavy ERCOT still lands slightly below the national average because wind+solar supply ~28% of it. A 'US AI industry runs on gas, therefore dirty' framing is not supported by the published grid data.",
     "regions": {
-      "us-avg": {"g_co2_per_kwh": 390, "label": "US national average grid mix (approx.)",
-                 "source": "ESTIMATE: ~0.85 lb CO2/kWh, the commonly-cited EPA eGRID-class US national average; not re-verified against the latest eGRID release."},
-      "us-gas-heavy": {"g_co2_per_kwh": 450, "label": "US datacentre region with a gas-dominated mix (ERCOT/PJM-class, approx.)",
-                       "source": "ESTIMATE: a modern combined-cycle gas plant emits roughly 350-400 gCO2/kWh at the plant; a grid where gas sets most of the marginal generation lands somewhat above that. Representative of the 'AI industry runs on gas' framing, not a figure published for any named balancing authority."},
-      "de-grid": {"g_co2_per_kwh": 380, "label": "German grid mix -- the same-grid comparison (approx.)",
-                  "source": "Same figure as the grid-de-household tariff above; use it to compare cloud vs. local hardware on the SAME grid, isolating the efficiency difference from the grid-mix difference."}
+      "us-avg": {"g_co2_per_kwh": 350, "label": "US national average grid mix (EPA eGRID2023)",
+                 "source": "EPA eGRID2023 rev2 (published 12 Jun 2025, data year 2023): CO2e total output rate 770.884 lb/MWh = 349.7 g/kWh -- https://www.epa.gov/system/files/documents/2025-06/summary_tables_rev2.pdf"},
+      "us-virginia": {"g_co2_per_kwh": 270, "label": "Northern Virginia 'Data Center Alley' (eGRID SRVC) -- CLEANER than the US average",
+                      "source": "EPA eGRID2023 subregion SRVC ~270 g/kWh; EIA state profile for Virginia (data year 2024) gives 286 g/kWh -- https://www.eia.gov/electricity/state/virginia/ . Driven by ~28-40% nuclear and only ~1.9% coal. CAVEAT: Virginia imports ~30% of the electricity it consumes from the dirtier western PJM pool (eGRID RFCW, ~416 g/kWh), so a consumption-based figure would be materially higher than this generation-based one."},
+      "us-ercot": {"g_co2_per_kwh": 334, "label": "Texas / ERCOT (eGRID ERCT) -- gas-heavy but near the US average",
+                   "source": "EPA eGRID2023 subregion ERCT ~334 g/kWh; EIA state profile for Texas (data year 2024) gives 373 g/kWh -- https://www.eia.gov/electricity/state/texas/ . Gas supplies ~50% of generation, but wind+solar supply ~28.5%, which is why a 'gas-heavy' grid still lands at or below the national average."},
+      "de-grid": {"g_co2_per_kwh": 344, "label": "German grid mix (UBA 2025) -- the same-grid comparison",
+                  "source": "Umweltbundesamt CC 16/2026, published Mar 2026: 344 gCO2/kWh for 2025 (estimate vintage) -- https://www.umweltbundesamt.de/system/files/medien/11850/publikationen/2026-03/16_2026_CC.pdf . Same figure as the grid-de-household tariff; use it to compare cloud vs. local hardware on the SAME grid, isolating the hardware-efficiency difference from the grid-mix difference."}
     }
   }
 }
