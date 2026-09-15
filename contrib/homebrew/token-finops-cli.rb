@@ -17,11 +17,14 @@ class TokenFinopsCli < Formula
   end
 
   test do
+    # Assertions are pinned to subcommands actually present in the 0.3.0 sdist above.
+    # `doctor` landed in the source repo's main branch AFTER this PyPI release was tagged
+    # (it was merged post-release) -- it will be in a future release's pin, not this one.
+    # Bump this list when url/sha256 above are bumped to a release that includes it.
     help_text = shell_output("#{bin}/token-finops --help")
     assert_match "usage: token-finops", help_text
     assert_match "report", help_text
     assert_match "sessions", help_text
     assert_match "adapters", help_text
-    assert_match "doctor", help_text
   end
 end

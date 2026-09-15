@@ -52,12 +52,16 @@ jobs:
       - name: brew test (the formula's own test do block)
         run: brew test local/tfops/token-finops-cli
 
-      - name: installed binary resolves and advertises the 0.3.x subcommand surface
+      - name: installed binary resolves and advertises the pinned release's subcommand surface
         run: |
           set -euo pipefail
+          # Pinned to what the CURRENTLY-PINNED sdist (url/sha256 in the formula) actually
+          # has, not the source repo's HEAD. `doctor` merged into main after 0.3.0 was
+          # tagged, so it is deliberately excluded here -- bump this list only alongside a
+          # url/sha256 bump to a release that includes it.
           command -v token-finops
           token-finops --help | tee help.txt
-          for sub in report adapters synth sessions self-audit doctor; do
+          for sub in report adapters synth sessions self-audit; do
             grep -q -- "${sub}" help.txt \
               || { echo "::error::'${sub}' missing from --help -- did the formula pin an old sdist?"; exit 1; }
           done
