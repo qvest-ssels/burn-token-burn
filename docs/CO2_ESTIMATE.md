@@ -1,14 +1,14 @@
 # `token-finops savings --co2` — gCO2e per 1M tokens, local vs. cloud
 
 ```
-$ token-finops savings --co2 --hardware macbook-pro-16-m4-max-48gb --power solar-de-feed-in --cloud-region us-gas-heavy
+$ token-finops savings --co2 --hardware macbook-pro-16-m4-max-48gb --power solar-de-feed-in --cloud-region us-ercot
 
 Green IT: gCO2e per 1M tokens (energy only -- capex/embodied emissions are NOT in either figure)
   local:  ~    38 g   [computed]  0.95 kWh/1M tok x 40 g/kWh
                       Germany PV self-consumption, opportunity cost = feed-in tariff <=10 kWp
-  cloud:  ~   259 g   [ESTIMATE]  500 Wh/1M tok accelerator-side x PUE 1.15 x 450 g/kWh
-                      US datacentre region with a gas-dominated mix (ERCOT/PJM-class, approx.)
-  -> local emits ~0.15x the cloud estimate per token (local is cleaner)
+  cloud:  ~   226 g   [ESTIMATE]  600 Wh/1M tok accelerator-side x PUE 1.13 x 334 g/kWh
+                      Texas / ERCOT (eGRID ERCT) -- gas-heavy but near the US average
+  -> local emits ~0.18x the cloud estimate per token (local is cleaner)
   !! The cloud figure is an ORDER-OF-MAGNITUDE ESTIMATE, not a measurement. ...
 ```
 
@@ -38,73 +38,141 @@ weak enough that it should be something you ask for, not something the tool volu
 
 ```
 gCO2e per 1M cloud tokens  =  Wh_per_Mtok_accelerator  x  PUE  x  gCO2/kWh_grid
-                           =  500 Wh                   x  1.15 x  390 g/kWh  (us-avg)
-                           ≈  224 g
+                           =  600 Wh                   x  1.13 x  350 g/kWh  (us-avg)
+                           ≈  237 g
 ```
 
 All three inputs live in `savings/energy.json` under `cloud_inference_co2_estimate`, so
 you can replace any of them without touching code (or point `TOKEN_FINOPS_ENERGY_JSON` at
 your own copy).
 
-### 1. ~500 Wh per 1M tokens, accelerator-side — **estimate, low confidence**
+### 1. ~600 Wh per 1M tokens, accelerator-side — **estimate, low confidence**
 
 No cloud AI provider — Anthropic, OpenAI, Google, AWS — publishes energy per token. What
 does exist is a handful of published **per-query** figures, which have to be divided by an
 assumed response length to become per-token:
 
-| Source | Figure | Note |
-|---|---|---|
-| Google, *Measuring the environmental impact of delivering AI products* (2025) | median Gemini text prompt ≈ **0.24 Wh**, ≈ 0.03 gCO2e | The most directly relevant published number. Google states it covers the full serving stack, not just the accelerator. |
-| Epoch AI (2025), GPT-4o-class query estimate | ≈ **0.3 Wh** per query | Independent reconstruction from model size and serving assumptions. |
-| de Vries, *The growing energy footprint of AI*, Joule (2023) | ≈ **2.9 Wh** per ChatGPT query | Widely cited and widely considered an over-estimate today; serving efficiency improved substantially after it was written. Using it would push this figure ~6x higher. |
+| Source | Figure | Output tokens/query | Per 1M tok | Note |
+|---|---|---|---|---|
+| **Epoch AI**, *How much energy does ChatGPT use?* (7 Feb 2025) — [link](https://epoch.ai/gradient-updates/how-much-energy-does-chatgpt-use) | ~**0.3 Wh**/query (GPT-4o) | **500, stated** | **600 Wh** | ← **used here.** Bottom-up model: 200B-param MoE (100B active), H100s, 10% utilisation. The only source that publishes the denominator needed to divide honestly. |
+| **Google**, *Measuring the environmental impact of delivering AI at Google Scale* (21 Aug 2025) — [arXiv:2508.15734](https://arxiv.org/abs/2508.15734) | **0.24 Wh**, 0.03 gCO2e, 0.26 mL water (median Gemini Apps text prompt, May 2025) | **not disclosed** | *underivable* | The only **production-measured** figure in this whole table — and unusable per-token, because the paper publishes no token counts. |
+| **Jegham et al.**, *How Hungry is AI?* — [arXiv:2505.09598](https://arxiv.org/abs/2505.09598) | 0.423 ± 0.085 Wh/query (GPT-4o, short) | 300, stated | ~1,410 Wh | 2.4x the figure used here. Defines its prompt classes explicitly. o3: 1.177 Wh. Cite the version — the headline moved 0.43→0.42 between v1 and v6. |
+| **Luccioni et al.**, *Power Hungry Processing* (FAccT '24) — [arXiv:2311.16863](https://arxiv.org/abs/2311.16863) | 0.047 kWh / 1000 inferences (text generation) | **10** | ~4,700 Wh | ~8x higher. A100s, no production batching, 10-token outputs. Widely quoted *without* that 10-token caveat. Not a proxy for frontier serving. |
+| **de Vries**, *The growing energy footprint of AI*, Joule (2023) — [DOI](https://doi.org/10.1016/j.joule.2023.09.004) | "at most 2.9 Wh" per ChatGPT request | n/a | — | The number everyone quotes. A *Commentary*, not peer-reviewed research; top-down, GPT-3.5-era. The IEA's *Electricity 2024* repeats it **citing de Vries**, so "the IEA says 2.9 Wh" is the same estimate laundered through a second citation, not corroboration. |
+| **IEA**, *Energy and AI* (Apr 2025) — [link](https://www.iea.org/reports/energy-and-ai) | ~0.3 Wh small text model; ~5 Wh Llama 3.3 70B; ~115 Wh video gen | n/a | — | GPU-only: excludes PUE, CPU and idle. Useful as a sanity check on magnitude, not directly comparable. |
 
-Taking the two more recent figures (~0.25–0.3 Wh/query) and dividing by an assumed
-**~500 output tokens per query** gives ~0.5 Wh per 1k tokens, i.e. **~500 Wh per 1M
-tokens**. Every step of that is soft:
+**The figure used is 600 Wh per 1M output tokens**, taken straight from Epoch AI: 0.3 Wh
+per query ÷ **the 500 output tokens per query that Epoch itself assumes**. Using a source's
+own stated denominator is the only way to divide a per-query figure honestly, which is why
+Epoch anchors this rather than Google's number.
 
-- **the response length is an assumption.** A 200-token answer and a 2,000-token answer
-  cost very different amounts of energy for the same "query". Coding-agent traffic skews
-  long, which would push the per-query figure up but the per-*token* figure down.
-- **decode dominates, prefill is cheap.** These per-token figures are really per-*output*-
-  token. `savings` compares against a blended input+output token count, so the cloud side
-  is, if anything, conservative (pessimistic about the cloud).
-- **model size is unknown.** A Haiku-class model and an Opus-class model do not cost the
-  same per token, and no provider breaks this out.
-- **batching and hardware generation** swing serving efficiency by multiples.
+Every step is still soft:
 
-This is why the output prints `Confidence: LOW -- good to roughly a factor of 3 either
-way`, and why the number is deliberately round (500, not 487).
+- **the response length is an assumption**, even when it is the source's own. A 200-token
+  answer and a 2,000-token answer cost very different amounts for the same "query". Epoch
+  notes the *observed* mean is 261 tokens, not 500 — using that would roughly double the
+  per-token figure.
+- **Jegham et al. is 2.4x higher.** Its GPT-4o short-prompt measurement (0.423 Wh / 300
+  output tokens) works out to ~1,410 Wh per 1M tokens. The defensible range is therefore
+  **600–1,500 Wh/1M**, and this tool uses the bottom of it. If anything the cloud side is
+  flattered.
+- **reasoning models are far worse.** Jegham puts o3 at ~2.8x GPT-4o per query, and a
+  poorly-batched self-hosted DeepSeek-R1 at ~45x. None of that is modelled.
+- **decode dominates, prefill is cheap.** These are really per-*output*-token figures.
+  `savings` compares against a blended input+output count, so the cloud side is again
+  conservative.
+- **model size is unknown.** Haiku-class and Opus-class tokens do not cost the same, and
+  no provider breaks this out.
+- **Luccioni et al. is not usable here** despite being the most-cited paper in this space:
+  its "0.047 kWh per 1000 inferences" for text generation is measured at **10 output
+  tokens per inference** on A100s without production batching, which works out to ~4,700
+  Wh/1M — nearly 8x the figure used here, and not representative of frontier production
+  serving. It is widely quoted without that caveat.
+- **the 2.9 Wh/query number you have seen everywhere is stale and circular.** It comes
+  from de Vries (Joule, 2023) — a *Commentary*, not peer-reviewed research, using a
+  top-down 2023 SemiAnalysis estimate of GPT-3.5-era serving. The IEA's *Electricity 2024*
+  repeats it citing de Vries, so "the IEA says 2.9 Wh" is not independent corroboration;
+  it is the same 2023 estimate laundered through a second citation.
 
-### 2. PUE 1.15 — **estimate, medium confidence**
+This is why the output prints a `Confidence: LOW` line, and why the number is deliberately
+round (600, not 587).
+
+### 2. PUE 1.13 — **well-sourced, medium confidence**
 
 Power Usage Effectiveness: total facility power divided by IT power, i.e. the cooling and
 distribution overhead on top of the chips. The three largest cloud providers publish
-fleet-wide figures in their annual sustainability reports, clustered around Google ~1.09,
-AWS ~1.15, Microsoft ~1.18. **1.15** is the midpoint used here.
+fleet-wide figures:
 
-This is the least uncertain input — hyperscale PUE is a well-measured, publicly reported
-metric, and the spread between providers is small enough that it barely moves the result.
-Note that the Google 0.24 Wh figure above already includes overhead, so applying PUE on
-top of it double-counts slightly; that is one more reason the output is rounded and
-flagged rather than presented to three significant figures.
+| provider | PUE | period | source |
+|---|---|---|---|
+| Google | **1.09** | CY2025 trailing twelve months | <https://datacenters.google/efficiency/> |
+| AWS | **1.14** | CY2025 global | <https://sustainability.aboutamazon.com/products-services/aws-cloud> |
+| Microsoft | **1.17** | FY25 (Jul 2024–Jun 2025) | <https://datacenters.microsoft.com/sustainability/efficiency/> |
 
-### 3. Grid carbon intensity — **approximate, and region-dependent**
+**1.13** is the midpoint. Two things worth knowing: the widely-quoted Microsoft figure of
+1.18 is **stale** — that is their first-ever 2022 disclosure, not a current number. And the
+industry-wide average is far worse than any of these (Uptime Institute's 2026 survey puts
+it at 1.52), but hyperscale AI serving does not run in an average facility, so the
+hyperscale figures are the right ones here.
+
+This is the least uncertain input; the spread between providers barely moves the result.
+All three exclude or obscure leased colocation capacity, and the reporting periods are not
+like-for-like. Note also that Google's 0.24 Wh figure already includes overhead, so
+applying PUE on top of a Google-derived number would double-count — another reason the
+energy input is anchored on Epoch's accelerator-side estimate instead.
+
+### 3. Grid carbon intensity — **well-sourced, and it overturns the premise**
 
 `--cloud-region` picks which grid the cloud tokens are assumed to burn on:
 
 | key | gCO2/kWh | what it is |
 |---|---|---|
-| `us-avg` (default) | 390 | The commonly-cited **EPA eGRID-class US national average** (~0.85 lb CO2/kWh). Approximate; not re-verified against the latest eGRID release. |
-| `us-gas-heavy` | 450 | A US datacentre region where **gas sets most of the marginal generation** — the "the AI industry runs on gas" framing. A modern combined-cycle gas plant emits roughly 350–400 gCO2/kWh at the plant; a grid leaning on gas at the margin lands somewhat above that. **This is a representative figure, not a published number for any named balancing authority** (ERCOT, PJM, Dominion). |
-| `de-grid` | 380 | The German grid mix — the same figure as the `grid-de-household` tariff. Use it to compare cloud vs. local hardware **on the same grid**, which isolates the hardware-efficiency difference from the grid-mix difference. |
+| `us-avg` (default) | **350** | US national average. EPA **eGRID2023 rev2** (published 12 Jun 2025, data year 2023): CO2e total output rate 770.884 lb/MWh = 349.7 g/kWh — [summary tables](https://www.epa.gov/system/files/documents/2025-06/summary_tables_rev2.pdf). EIA's Electricity Profile for data year 2024 gives 785 lb/MWh = 356 g/kWh. eGRID2024 had not been released as of Sept 2026. |
+| `us-virginia` | **270** | Northern Virginia, "Data Center Alley" — eGRID subregion SRVC. EIA's [Virginia state profile](https://www.eia.gov/electricity/state/virginia/) (2024) gives 286 g/kWh. **~20–30% cleaner than the national average**, driven by ~28–40% nuclear and only ~1.9% coal. |
+| `us-ercot` | **334** | Texas / ERCOT — eGRID subregion ERCT. EIA's [Texas state profile](https://www.eia.gov/electricity/state/texas/) (2024) gives 373 g/kWh. Gas supplies ~50% of generation, but wind+solar supply ~28.5%. |
+| `de-grid` | **344** | German grid mix, so you can compare cloud vs. local hardware **on the same grid** and isolate the hardware-efficiency difference from the grid-mix difference. Source below. |
 
-The local-side tariff carbon intensities (`co2_g_per_kwh` in `energy.json`) are unchanged
-by this work and keep their existing provenance: 380 g/kWh for the German grid mix, 390
-for the US average, 40 g/kWh lifecycle emissions for rooftop PV (Fraunhofer ISE / BDEW
-class figures — see [`sources.md`](sources.md)). The German figure is on the pessimistic
-side: the German grid has been decarbonising quickly and a current official
-Umweltbundesamt figure may be meaningfully lower, which would make the local side look
-*better* than it does here.
+**This is the part of the research that changed the answer.** The task that produced this
+feature was framed around showing "German/European power mix vs. the US AI Industry (gas,
+etc.)" — the intuition being that US AI datacentres run on gas and are therefore dirty.
+The published grid data does not support that:
+
+- **Northern Virginia, the densest concentration of AI datacentres on earth, is roughly
+  20–30% cleaner than the US average**, because Dominion's mix is heavily nuclear and
+  almost coal-free.
+- **ERCOT, the genuinely gas-heavy case, still lands at or slightly below the US
+  average**, because Texas wind and solar supply more than a quarter of it.
+- Germany at 344 g/kWh is now *within noise* of the US national average at 350, having
+  decarbonised sharply (379 in 2023 → 353 in 2024 → 344 in 2025).
+
+So there is no "dirty American gas vs. clean European grid" story to tell here, and the
+tool does not tell one. There is no `us-gas-heavy` region key, because inventing a 450
+g/kWh "representative gas-heavy datacentre grid" — which is what an earlier draft of this
+file did — would have been asserting a conclusion the data contradicts.
+
+One real caveat on Virginia: it **imports ~30% of the electricity it consumes** from the
+dirtier western PJM pool (eGRID subregion RFCW, ~416 g/kWh). The 270 figure is
+generation-based; a consumption-based figure would be materially higher. Consumption-based
+lifecycle providers such as Electricity Maps typically run 20–50% above eGRID's
+combustion-only generation-based rates, so **do not compare figures across those two
+conventions**.
+
+#### Local-side tariff figures, re-sourced
+
+Both grid figures behind the `--power` tariffs were updated by this work:
+
+| tariff | was | now | source |
+|---|---|---|---|
+| `grid-de-household` | 380 | **344** | Umweltbundesamt **CC 16/2026**, published Mar 2026 — [PDF](https://www.umweltbundesamt.de/system/files/medien/11850/publikationen/2026-03/16_2026_CC.pdf). Series: 2023 final 379, 2024 preliminary 353, 2025 estimate 344. The old 380 was the 2023 figure in its *first* published vintage, since revised to 379. Preliminary vintages move by up to ~10 g. |
+| `grid-us-avg` | 390 | **350** | EPA eGRID2023 rev2, as above. The old 390 was an unsourced round number. |
+| `solar-de-*` | 40 | 40 | unchanged — lifecycle emissions for rooftop PV. |
+
+**A convention mismatch worth knowing about**: the grid figures use the *direct combustion*
+convention (what national inventories publish), while the PV figures are *lifecycle* (there
+is no combustion to measure for a solar panel). That mismatch slightly understates the grid
+side. The lifecycle-consistent German figure is **406 gCO2eq/kWh**, not 344; Electricity
+Maps' consumption-based figure for Germany in 2025 is 335 gCO2eq/kWh. If you want a strict
+apples-to-apples solar-vs-grid comparison, use 406 against 40.
 
 ## What the numbers are NOT
 
@@ -116,7 +184,7 @@ Umweltbundesamt figure may be meaningfully lower, which would make the local sid
 - **Not a claim about any specific provider.** Nothing here is an Anthropic, OpenAI,
   Google or AWS figure. Do not quote it as one.
 - **Not a licence to greenwash either direction.** On the default settings a desktop Mac
-  Studio on the German grid emits roughly **1.6x** the cloud estimate per token, because a
+  Studio on the German grid emits roughly **1.4x** the cloud estimate per token, because a
   hyperscale datacentre batches work across many users and a box on your desk does not.
   Local inference wins on carbon mainly when it runs on your own PV, not by default.
 
