@@ -10,20 +10,27 @@ package has no third-party PyPI dependencies, it needs no `resource` blocks —
 just the sdist `url`/`sha256` and a `virtualenv_install_with_resources` install
 step.
 
-## Test it locally right now (no tap required)
+## Test it locally right now (throwaway local tap)
 
-You can build and install directly from this formula file without adding any
-tap:
+Modern Homebrew rejects path-based `install`/`audit` ("Calling `brew audit
+[path ...]` is disabled! Use `brew audit [name ...]` instead.") -- a formula
+must live in a tap and be referenced by name, even a throwaway local one:
 
 ```sh
-brew install --build-from-source contrib/homebrew/token-finops-cli.rb
+brew tap-new local/tfops --no-git
+cp contrib/homebrew/token-finops-cli.rb "$(brew --repo local/tfops)/Formula/token-finops-cli.rb"
+
+brew audit --strict --formula local/tfops/token-finops-cli
+brew style local/tfops/token-finops-cli
+brew install --build-from-source local/tfops/token-finops-cli
 token-finops --help
+
 brew uninstall token-finops-cli   # clean up when done
+brew untap local/tfops
 ```
 
-`brew audit --formula --strict contrib/homebrew/token-finops-cli.rb` and
-`brew style contrib/homebrew/token-finops-cli.rb` can also be run directly
-against this file to lint it, again with no tap needed.
+This exact sequence runs on every push/PR that touches the formula via
+`.github/workflows/homebrew-smoke.yml`.
 
 ## Distributing it as `brew install token-finops-cli`
 

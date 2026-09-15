@@ -1,0 +1,73 @@
+name: Homebrew formula smoke test
+
+# Builds and installs contrib/homebrew/token-finops-cli.rb via a throwaway local tap on a
+# real macOS runner, then runs the formula's own `test do` block plus a few extra checks. A
+# failure here means "the committed formula is broken" -- catches a stale url/sha256 (like the
+# 0.2.0-vs-0.3.0 mixup this workflow was added after), a missing dependency, or a `brew audit`
+# regression, before a human tries `brew install --build-from-source` and it just fails.
+#
+# Runs on push/PR when the formula changes (no PyPI network dependency beyond the formula's own
+# `url` download, which is the same download a real `brew install` does) plus manual dispatch.
+# `macos-latest` GitHub-hosted runners ship Homebrew preinstalled.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "contrib/homebrew/token-finops-cli.rb"
+      - ".github/workflows/homebrew-smoke.yml"
+  pull_request:
+    paths:
+      - "contrib/homebrew/token-finops-cli.rb"
+      - ".github/workflows/homebrew-smoke.yml"
+  workflow_dispatch:
+
+jobs:
+  formula:
+    name: brew install --build-from-source
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Modern Homebrew disallows path-based `audit`/`install` ("Calling `brew audit
+      # [path ...]` is disabled! Use `brew audit [name ...]` instead.") -- a formula must
+      # live in a tap and be referenced by name. This throwaway local tap mirrors exactly
+      # what contrib/homebrew's own manual verification used (see its README/history).
+      - name: create a throwaway local tap containing this formula
+        run: |
+          set -euo pipefail
+          brew tap-new local/tfops --no-git
+          tap_root="$(brew --repo local/tfops)"
+          cp contrib/homebrew/token-finops-cli.rb "${tap_root}/Formula/token-finops-cli.rb"
+
+      - name: brew audit --strict
+        run: brew audit --strict --formula local/tfops/token-finops-cli
+
+      - name: brew style
+        run: brew style local/tfops/token-finops-cli
+
+      - name: brew install --build-from-source
+        run: brew install --build-from-source --verbose local/tfops/token-finops-cli
+
+      - name: brew test (the formula's own test do block)
+        run: brew test local/tfops/token-finops-cli
+
+      - name: installed binary resolves and advertises the pinned release's subcommand surface
+        run: |
+          set -euo pipefail
+          # Pinned to what the CURRENTLY-PINNED sdist (url/sha256 in the formula) actually
+          # has, not the source repo's HEAD. `doctor` merged into main after 0.3.0 was
+          # tagged, so it is deliberately excluded here -- bump this list only alongside a
+          # url/sha256 bump to a release that includes it.
+          command -v token-finops
+          token-finops --help | tee help.txt
+          for sub in report adapters synth sessions self-audit; do
+            grep -q -- "${sub}" help.txt \
+              || { echo "::error::'${sub}' missing from --help -- did the formula pin an old sdist?"; exit 1; }
+          done
+
+      - name: clean up (leave the runner tidy)
+        if: always()
+        run: |
+          brew uninstall token-finops-cli || true
+          brew untap local/tfops || true
