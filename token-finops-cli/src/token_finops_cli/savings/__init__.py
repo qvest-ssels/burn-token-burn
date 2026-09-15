@@ -7,7 +7,14 @@ Honesty rules baked in:
 - capex is amortised per hour of *actual* utilisation — a $4k Mac Studio at
   20 % utilisation is capex-dominated and loses to Sonnet; at 80 % it wins;
 - only tokens on cloud tiers a local model can plausibly replace (haiku /
-  sonnet class) are counted as "replaceable"; Opus/Fable-class work is not.
+  sonnet class) are counted as "replaceable"; Opus/Fable-class work is not;
+- if you already own the box, its purchase price is a sunk cost — `--own-hardware`
+  drops capex entirely and compares the *marginal* cost of a token instead;
+- the local CO2 figure is arithmetic on a published grid-mix number; the cloud
+  CO2 figure is an order-of-magnitude *estimate* built from third-party inference
+  energy studies, because no cloud AI provider publishes Wh per token. The two
+  are never printed as if they were the same kind of number — see
+  `docs/CO2_ESTIMATE.md`.
 """
 from __future__ import annotations
 
@@ -47,6 +54,7 @@ class LocalCost:
     tariff: str
     eur_per_kwh: float
     eur_per_usd: float
+    include_capex: bool = True
 
     @property
     def hours_per_mtok(self) -> float:
@@ -66,6 +74,8 @@ class LocalCost:
 
     @property
     def capex_usd_per_hour(self) -> float:
+        if not self.include_capex:
+            return 0.0
         lifetime_h = self.lifetime_years * 365 * 24
         return self.price_usd / (lifetime_h * max(self.utilization, 1e-6))
 
@@ -73,21 +83,34 @@ class LocalCost:
     def capex_usd_per_mtok(self) -> float:
         return self.capex_usd_per_hour * self.hours_per_mtok
 
+    # --- CO2 ---------------------------------------------------------------- #
+    @property
+    def co2_g_per_kwh(self) -> Optional[float]:
+        v = energy().get("co2_g_per_kwh", {}).get(self.tariff)
+        return float(v) if v else None
+
+    @property
+    def co2_g_per_mtok(self) -> Optional[float]:
+        g = self.co2_g_per_kwh
+        return None if g is None else self.kwh_per_mtok * g
+
     @property
     def total_usd_per_mtok(self) -> float:
         return self.energy_usd_per_mtok + self.capex_usd_per_mtok
 
     def break_even_utilization(self, cloud_usd_per_mtok: float) -> Optional[float]:
-        """Utilisation at which local == cloud (None if energy alone already costs more)."""
+        """Utilisation at which local == cloud (None if energy alone already costs more,
+        or if capex is excluded — with a sunk-cost box there is nothing to break even on)."""
         margin = cloud_usd_per_mtok - self.energy_usd_per_mtok
-        if margin <= 0:
+        if margin <= 0 or not self.include_capex:
             return None
         lifetime_h = self.lifetime_years * 365 * 24
         return min(1.0, self.price_usd * self.hours_per_mtok / (lifetime_h * margin))
 
 
 def local_cost(hardware: str, model: str, tariff: str = "grid-de-household",
-               utilization: float = 0.2, lifetime_years: float = 3.0) -> LocalCost:
+               utilization: float = 0.2, lifetime_years: float = 3.0,
+               include_capex: bool = True) -> LocalCost:
     hw = hardware_profiles()
     en = energy()
     h = hw["hardware"][hardware]
@@ -98,13 +121,63 @@ def local_cost(hardware: str, model: str, tariff: str = "grid-de-household",
     return LocalCost(hardware=hardware, model=model, tok_s=float(m["tok_s"][hardware]),
                      load_w=float(h["load_w"]), price_usd=float(h["price_usd"]),
                      lifetime_years=lifetime_years, utilization=utilization, tariff=tariff,
-                     eur_per_kwh=float(t["eur_per_kwh"]), eur_per_usd=float(en["eur_per_usd"]))
+                     eur_per_kwh=float(t["eur_per_kwh"]), eur_per_usd=float(en["eur_per_usd"]),
+                     include_capex=include_capex)
 
 
 def cloud_blended_usd_per_mtok(tier: str, output_share: float = 0.15) -> float:
     """Blend input/output list prices with a typical coding-agent output share."""
     t = energy()["cloud_tiers_usd_per_mtok"][tier]
     return t["input"] * (1 - output_share) + t["output"] * output_share
+
+
+# --------------------------------------------------------------------------- #
+# Cloud-side CO2 — an ESTIMATE, and labelled as one everywhere it surfaces.
+# --------------------------------------------------------------------------- #
+@dataclass
+class CloudCo2Estimate:
+    """Order-of-magnitude gCO2e per 1M cloud tokens.
+
+    This is *not* the same kind of number as `LocalCost.co2_g_per_mtok`. The local
+    side multiplies a wattmeter reading by a published grid-mix figure. No cloud AI
+    provider publishes Wh per token, so this side multiplies a third-party estimate
+    of accelerator-level inference energy by a published fleet PUE and a published
+    grid carbon intensity. Treat it as a rough magnitude, not a measurement —
+    `docs/CO2_ESTIMATE.md` carries every source and the error bars.
+    """
+    region: str
+    region_label: str
+    region_source: str
+    wh_per_mtok_it: float
+    pue: float
+    pue_label: str
+    g_co2_per_kwh: float
+    confidence: str
+    basis: str
+
+    @property
+    def kwh_per_mtok(self) -> float:
+        return self.wh_per_mtok_it * self.pue / 1000.0
+
+    @property
+    def g_co2_per_mtok(self) -> float:
+        return self.kwh_per_mtok * self.g_co2_per_kwh
+
+
+def cloud_co2_estimate(region: Optional[str] = None) -> Optional[CloudCo2Estimate]:
+    """Build the cloud-side estimate from energy.json, or None if that block is absent
+    (a user pointing TOKEN_FINOPS_ENERGY_JSON at an older file simply gets no cloud line)."""
+    blk = energy().get("cloud_inference_co2_estimate")
+    if not blk:
+        return None
+    region = region or blk["default_region"]
+    if region not in blk["regions"]:
+        raise KeyError(f"unknown --cloud-region {region!r}; known: {', '.join(blk['regions'])}")
+    r = blk["regions"][region]
+    return CloudCo2Estimate(region=region, region_label=r["label"], region_source=r["source"],
+                            wh_per_mtok_it=float(blk["wh_per_mtok_it"]), pue=float(blk["pue"]),
+                            pue_label=blk["pue_label"], g_co2_per_kwh=float(r["g_co2_per_kwh"]),
+                            confidence=blk["confidence"], basis=blk["basis"])
 
 
 # --------------------------------------------------------------------------- #
@@ -118,6 +191,12 @@ def add_savings_parsers(sub):
     s.add_argument("--utilization", type=float, default=0.2, help="fraction of 24/7 the box is actually inferring")
     s.add_argument("--lifetime-years", type=float, default=3.0)
     s.add_argument("--output-share", type=float, default=0.15, help="share of output tokens in the cloud blend")
+    s.add_argument("--own-hardware", action="store_true",
+                   help="you already own the box: treat its price as sunk and compare marginal (energy-only) cost")
+    s.add_argument("--co2", action="store_true",
+                   help="green-IT block: local gCO2/1M tok (measured tariff) vs an ESTIMATED cloud figure")
+    s.add_argument("--cloud-region", default=None,
+                   help="grid region for the cloud CO2 estimate (see --list); default from energy.json")
     s.add_argument("--list", action="store_true", help="list hardware/model/tariff keys")
 
     b = sub.add_parser("break-even", help="from your real usage: when would a local box have paid off?")
@@ -131,14 +210,52 @@ def add_savings_parsers(sub):
     b.add_argument("--since", default="all", choices=["30d", "90d", "all"])
 
 
+def _green_it_block(lc: LocalCost, region: Optional[str]) -> list:
+    """The opt-in `--co2` section. Deliberately prints the provenance of each side on
+    its own line, because the two numbers are not equally trustworthy and a reader who
+    only sees 'local 380 g vs cloud 120 g' would draw a conclusion the cloud figure
+    cannot support."""
+    en = energy()
+    out = ["Green IT: gCO2e per 1M tokens (energy only -- capex/embodied emissions are NOT in either figure)"]
+    local_g = lc.co2_g_per_mtok
+    if local_g is None:
+        out.append(f"  local:  n/a           -- no co2_g_per_kwh entry for tariff '{lc.tariff}' in energy.json")
+    else:
+        out.append(f"  local:  ~{local_g:>6.0f} g   [computed]  {lc.kwh_per_mtok:.2f} kWh/1M tok x {lc.co2_g_per_kwh:.0f} g/kWh")
+        out.append(f"                      {en['tariffs'][lc.tariff]['label']}")
+    est = cloud_co2_estimate(region)
+    if est is None:
+        out.append("  cloud:  n/a           -- no cloud_inference_co2_estimate block in energy.json")
+        return out
+    out.append(f"  cloud:  ~{est.g_co2_per_mtok:>6.0f} g   [ESTIMATE]  {est.wh_per_mtok_it:.0f} Wh/1M tok accelerator-side"
+               f" x PUE {est.pue:.2f} x {est.g_co2_per_kwh:.0f} g/kWh")
+    out.append(f"                      {est.region_label}; {est.pue_label}")
+    if local_g is not None and est.g_co2_per_mtok:
+        r = local_g / est.g_co2_per_mtok
+        out.append(f"  -> local emits ~{r:.1f}x the cloud estimate per token"
+                   if r >= 1 else f"  -> local emits ~{r:.2f}x the cloud estimate per token (local is cleaner)")
+    out.append("  !! The cloud figure is an ORDER-OF-MAGNITUDE ESTIMATE, not a measurement. No cloud AI provider")
+    out.append(f"     publishes energy per token. Basis: {est.basis}")
+    out.append(f"     Confidence: {est.confidence}")
+    out.append(f"     Grid figure: {est.region_source}")
+    out.append("     Every source, and why the error bars are this wide: docs/CO2_ESTIMATE.md")
+    return out
+
+
 def cmd_savings(args) -> str:
     hw, en = hardware_profiles(), energy()
     if args.list:
         lines = ["hardware:"] + [f"  {k:<28} {v['label']}  (${v['price_usd']}, {v['load_w']} W load)" for k, v in hw["hardware"].items()]
         lines += ["models:"] + [f"  {k:<28} {v['label']}  ~{v['quality_tier']}-class" for k, v in hw["models"].items() if not k.startswith('_')]
         lines += ["tariffs:"] + [f"  {k:<28} {v['eur_per_kwh']:.3f} EUR/kWh  {v['label']}" for k, v in en["tariffs"].items()]
+        blk = en.get("cloud_inference_co2_estimate")
+        if blk:
+            lines += ["cloud regions (--cloud-region, CO2 estimate only):"] + \
+                [f"  {k:<28} {v['g_co2_per_kwh']:.0f} gCO2/kWh  {v['label']}" for k, v in blk["regions"].items()]
         return "\n".join(lines)
-    lc = local_cost(args.hardware, args.model, args.power, args.utilization, args.lifetime_years)
+    own = bool(getattr(args, "own_hardware", False))
+    lc = local_cost(args.hardware, args.model, args.power, args.utilization, args.lifetime_years,
+                    include_capex=not own)
     tier = hw["models"][args.model]["quality_tier"]
     cloud = cloud_blended_usd_per_mtok(tier, args.output_share)
     lines = [f"Local inference: {hw['hardware'][args.hardware]['label']} + {hw['models'][args.model]['label']}"]
@@ -146,22 +263,33 @@ def cmd_savings(args) -> str:
     lines.append(f"  energy:            {lc.load_w:.0f} W load  ->  {lc.wh_per_1k_tok:.2f} Wh per 1k tok, {lc.kwh_per_mtok:.2f} kWh per 1M tok")
     lines.append(f"  tariff:            {en['tariffs'][args.power]['label']} = {lc.eur_per_kwh:.3f} EUR/kWh")
     lines.append(f"  energy cost:       ${lc.energy_usd_per_mtok:.2f} / 1M tok")
-    lines.append(f"  capex:             ${lc.price_usd:,.0f} over {lc.lifetime_years:.0f} y at {lc.utilization*100:.0f}% utilisation"
-                 f" = ${lc.capex_usd_per_hour:.3f}/h -> ${lc.capex_usd_per_mtok:.2f} / 1M tok")
-    lines.append(f"  local total:       ${lc.total_usd_per_mtok:.2f} / 1M tok")
+    if own:
+        lines.append(f"  capex:             EXCLUDED (--own-hardware): ${lc.price_usd:,.0f} is sunk, "
+                     "so only the marginal cost of the next token counts")
+    else:
+        lines.append(f"  capex:             ${lc.price_usd:,.0f} over {lc.lifetime_years:.0f} y at {lc.utilization*100:.0f}% utilisation"
+                     f" = ${lc.capex_usd_per_hour:.3f}/h -> ${lc.capex_usd_per_mtok:.2f} / 1M tok")
+    label = "local marginal:   " if own else "local total:      "
+    lines.append(f"  {label} ${lc.total_usd_per_mtok:.2f} / 1M tok")
     lines.append("")
     lines.append(f"Cloud comparison ({tier}-class, {args.output_share*100:.0f}% output tokens): ${cloud:.2f} / 1M tok  ({en['cloud_tiers_usd_per_mtok'][tier]['label']})")
     ratio = lc.total_usd_per_mtok / cloud if cloud else float("inf")
     verdict = "LOCAL CHEAPER" if ratio < 1 else "CLOUD CHEAPER"
     lines.append(f"  -> local is {ratio:.2f}x the cloud price: {verdict}")
-    be = lc.break_even_utilization(cloud)
-    if be is None:
-        lines.append("  -> energy alone already exceeds the cloud price; no utilisation makes this box win")
+    if own:
+        lines.append("  -> sunk-cost view: no break-even to reach, the box is already bought; "
+                     "this is purely electricity vs. the API bill")
     else:
-        lines.append(f"  -> break-even utilisation: {be*100:.0f}% of 24/7 ({be*24:.1f} h/day of inference)")
-    co2 = en.get("co2_g_per_kwh", {}).get(args.power)
-    if co2:
-        lines.append(f"  CO2: ~{lc.kwh_per_mtok * co2:.0f} g per 1M tok on this tariff")
+        be = lc.break_even_utilization(cloud)
+        if be is None:
+            lines.append("  -> energy alone already exceeds the cloud price; no utilisation makes this box win")
+        else:
+            lines.append(f"  -> break-even utilisation: {be*100:.0f}% of 24/7 ({be*24:.1f} h/day of inference)")
+    green = bool(getattr(args, "co2", False))
+    if lc.co2_g_per_mtok is not None and not green:
+        lines.append(f"  CO2: ~{lc.co2_g_per_mtok:.0f} g per 1M tok on this tariff  (--co2 adds the cloud comparison)")
+    if green:
+        lines += ["", *_green_it_block(lc, getattr(args, "cloud_region", None))]
     lines.append("")
     lines.append("Caveats: throughput/power figures are editable defaults (see hardware_profiles.json, "
                  f"reviewed {hw['_review_date']}); quality equivalence is an assumption; a {tier}-class local "

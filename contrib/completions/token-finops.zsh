@@ -86,18 +86,21 @@ _token-finops() {
                     ;;
                 savings)
                     _arguments \
-                        '--hardware=[hardware profile key]:hardware:(mac-mini-m4-pro-64gb mac-studio-m4-max-128gb mac-studio-m3-ultra-256gb rtx-4090-workstation rtx-5090-workstation dgx-spark strix-halo-128gb)' \
+                        '--hardware=[hardware profile key]:hardware:(macbook-pro-16-m4-max-48gb mac-mini-m4-pro-64gb mac-studio-m4-max-128gb mac-studio-m3-ultra-256gb rtx-4090-workstation rtx-5090-workstation dgx-spark strix-halo-128gb)' \
                         '--model=[local model key]:model:(qwen3-8b qwen3-32b gpt-oss-120b llama-3.3-70b qwen3-235b-a22b)' \
                         '--power=[tariff key from energy.json]:tariff:(grid-de-household solar-de-feed-in solar-de-lcoe grid-us-avg)' \
                         '--utilization=[fraction of 24/7 actually inferring]:fraction:' \
                         '--lifetime-years=[amortisation lifetime]:years:' \
                         '--output-share=[share of output tokens in the cloud blend]:fraction:' \
+                        '--own-hardware[you already own the box: energy-only, capex is sunk]' \
+                        '--co2[green-IT block: local vs ESTIMATED cloud gCO2/1M tok]' \
+                        '--cloud-region=[grid region for the cloud CO2 estimate]:region:(us-avg us-gas-heavy de-grid)' \
                         '--list[list hardware/model/tariff keys]' \
                         '(-h --help)'{-h,--help}'[show help and exit]'
                     ;;
                 break-even)
                     _arguments \
-                        '--hardware=[hardware profile key]:hardware:(mac-mini-m4-pro-64gb mac-studio-m4-max-128gb mac-studio-m3-ultra-256gb rtx-4090-workstation rtx-5090-workstation dgx-spark strix-halo-128gb)' \
+                        '--hardware=[hardware profile key]:hardware:(macbook-pro-16-m4-max-48gb mac-mini-m4-pro-64gb mac-studio-m4-max-128gb mac-studio-m3-ultra-256gb rtx-4090-workstation rtx-5090-workstation dgx-spark strix-halo-128gb)' \
                         '--model=[local model key]:model:(qwen3-8b qwen3-32b gpt-oss-120b llama-3.3-70b qwen3-235b-a22b)' \
                         '--power=[tariff key from energy.json]:tariff:(grid-de-household solar-de-feed-in solar-de-lcoe grid-us-avg)' \
                         '--lifetime-years=[amortisation lifetime]:years:' \

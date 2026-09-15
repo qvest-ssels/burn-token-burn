@@ -46,6 +46,21 @@ local alternative: energy $14.29 + capex $116.87 = $131.15
 $ token-finops savings --power solar-de-feed-in --utilization 0.8</code></pre>
 <p class="cast-note">What to notice: utilisation dominates. The same hardware looks like a bad deal at 20 % and a good one at 80 %, because the purchase price is amortised over the tokens you actually generate. The electricity price matters too, which is why the tariff is a switch rather than a constant.</p>
 
+<h2>Already own the box?</h2>
+<p>Then its purchase price is a sunk cost, and amortising it per token answers a question you no longer have. <code>--own-hardware</code> drops capex entirely and compares the <em>marginal</em> cost of the next token — electricity against the API bill — which is the only number still open to a decision.</p>
+<pre><code>$ token-finops savings --own-hardware --power solar-de-feed-in
+  capex:             EXCLUDED (--own-hardware): $3,999 is sunk
+  local marginal:    $0.08 / 1M tok  -&gt; LOCAL CHEAPER (0.03x)</code></pre>
+
+<h2>Green IT: CO2 per 1M tokens</h2>
+<p>Optional, via <code>--co2</code>. It puts the local emissions figure next to an estimate for the cloud side, and is careful to show that the two are not the same kind of number:</p>
+<pre><code>$ token-finops savings --co2 --power solar-de-feed-in --cloud-region us-gas-heavy
+  local:  ~    40 g   [computed]  1.00 kWh/1M tok x 40 g/kWh
+  cloud:  ~   259 g   [ESTIMATE]  500 Wh/1M tok accelerator-side x PUE 1.15 x 450 g/kWh
+  -&gt; local emits ~0.15x the cloud estimate per token (local is cleaner)
+  !! The cloud figure is an ORDER-OF-MAGNITUDE ESTIMATE, not a measurement.</code></pre>
+<p>The local number is arithmetic on your box's wattage and a published grid-mix figure. The cloud number is reconstructed from published <em>per-query</em> energy estimates divided by an assumed response length, because no cloud AI provider publishes energy per token — it is honest to roughly a factor of three, and the output says so rather than hiding it in a footnote. On the default settings (German grid, US average) local emits <em>more</em> per token than the cloud estimate: a hyperscale datacentre batches work across many users and a box on your desk does not. Local wins on carbon mainly when it runs on your own panels. Neither figure counts embodied carbon or water. <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/CO2_ESTIMATE.md">docs/CO2_ESTIMATE.md</a> has every source and every caveat.</p>
+
 <h2>Three honesty caveats</h2>
 <ul>
   <li><strong>Capex is amortised on actual inference</strong> — a box sitting idle 80% of the time does not get to spread its purchase price over hours it wasn't working.</li>

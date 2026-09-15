@@ -1,7 +1,13 @@
 {
   "_comment": "Editable defaults. Numbers marked 'aggregator' are order-of-magnitude, not measured by us. Replace with your own: run llama-bench / ollama run --verbose and read power with `sudo powermetrics --samplers gpu_power` (macOS) or `nvidia-smi --query-gpu=power.draw --format=csv` (NVIDIA). Prices are street prices in USD at review date.",
-  "_review_date": "2026-09-04",
+  "_review_date": "2026-09-15",
+  "_laptop_note": "The MacBook Pro profile is the only laptop here and it behaves differently from the desktops: (a) sustained tok/s drops a few percent below the identically-specced Mac Studio M4 Max once the chassis heat-soaks, because a laptop cooler cannot hold peak clocks for a multi-hour agent session; (b) 48 GB unified memory is the binding constraint, not throughput -- macOS caps GPU-usable memory at roughly 75 % of it by default, so ~36 GB, which fits 32B-class models at Q4 but NOT gpt-oss-120b (~63 GB) or Llama 3.3 70B Q4 (~40 GB). Those models are therefore absent from its tok_s tables on purpose; (c) on battery, macOS reduces sustained GPU power further. All laptop figures are estimates.",
   "hardware": {
+    "macbook-pro-16-m4-max-48gb": {
+      "label": "MacBook Pro 16in M4 Max, 48 GB (laptop)",
+      "price_usd": 3699, "idle_w": 6, "load_w": 75, "vram_gb": 48,
+      "source": "Apple US list price for the 16in M4 Max 48 GB/1 TB build (approx., re-check at apple.com). Power: 140 W adapter; 75 W is an ESTIMATE of sustained *system* draw during LLM decode, which is memory-bandwidth-bound rather than power-bound, so it sits well below the ~110-120 W this chassis pulls under an all-core CPU+GPU burn. A laptop also throttles on prolonged load where a Mac Studio does not -- see the _laptop_note below."
+    },
     "mac-mini-m4-pro-64gb": {
       "label": "Mac mini M4 Pro, 64 GB",
       "price_usd": 2199, "idle_w": 4, "load_w": 65, "vram_gb": 64,
@@ -42,12 +48,12 @@
     "_comment": "decode tok/s per hardware key; quality_tier is an *assumption* about which cloud tier the model plausibly replaces for coding-agent work (haiku|sonnet|opus). Open models rarely match frontier quality.",
     "qwen3-8b": {
       "label": "Qwen3 8B (Q4/Q8 or MLX 8-bit)", "quality_tier": "haiku",
-      "tok_s": {"mac-mini-m4-pro-64gb": 45, "mac-studio-m4-max-128gb": 70, "mac-studio-m3-ultra-256gb": 90,
+      "tok_s": {"macbook-pro-16-m4-max-48gb": 65, "mac-mini-m4-pro-64gb": 45, "mac-studio-m4-max-128gb": 70, "mac-studio-m3-ultra-256gb": 90,
                 "rtx-4090-workstation": 140, "rtx-5090-workstation": 180, "dgx-spark": 60, "strix-halo-128gb": 35}
     },
     "qwen3-32b": {
       "label": "Qwen3 32B (Q4)", "quality_tier": "sonnet",
-      "tok_s": {"mac-mini-m4-pro-64gb": 11, "mac-studio-m4-max-128gb": 25, "mac-studio-m3-ultra-256gb": 35,
+      "tok_s": {"macbook-pro-16-m4-max-48gb": 22, "mac-mini-m4-pro-64gb": 11, "mac-studio-m4-max-128gb": 25, "mac-studio-m3-ultra-256gb": 35,
                 "rtx-4090-workstation": 35, "rtx-5090-workstation": 45, "dgx-spark": 18, "strix-halo-128gb": 9}
     },
     "gpt-oss-120b": {

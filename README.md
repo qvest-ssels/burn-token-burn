@@ -155,13 +155,37 @@ $ token-finops savings --hardware mac-studio-m4-max-128gb --model qwen3-32b --ut
 $ token-finops savings --power solar-de-feed-in --utilization 0.8
   local total:       $2.20 / 1M tok    -> LOCAL CHEAPER (0.69x)
 
+$ token-finops savings --own-hardware          # the box is already bought: marginal cost only
+  capex:             EXCLUDED (--own-hardware): $3,999 is sunk
+  local marginal:    $0.40 / 1M tok  -> LOCAL CHEAPER (0.13x)
+
 $ token-finops break-even --hardware mac-studio-m4-max-128gb
   replaceable cloud usage (haiku/sonnet-class): 35.5M tokens = $14.94 API-equivalent
   local alternative: energy $14.29 + capex $116.87 = $131.15
   -> cloud still cheaper by $116.21; at the current pace the box never pays off
 ```
 
-Solar is priced at the feed-in tariff you forgo (7.7 ct/kWh in Germany), not at zero. Capex is amortised per hour of *actual* inference. Only Haiku/Sonnet-class work counts as replaceable — a 32B model does not do Opus/Fable-class work. All hardware numbers live in editable JSON with their sources and a review date; measure your own with `powermetrics` / `nvidia-smi` and overwrite them.
+Solar is priced at the feed-in tariff you forgo (7.7 ct/kWh in Germany), not at zero. Capex is amortised per hour of *actual* inference — or dropped entirely with `--own-hardware`, when the purchase is already sunk and only the next token's electricity is a real decision. Only Haiku/Sonnet-class work counts as replaceable — a 32B model does not do Opus/Fable-class work. All hardware numbers live in editable JSON with their sources and a review date; measure your own with `powermetrics` / `nvidia-smi` and overwrite them.
+
+### Green IT: CO2 per 1M tokens, local vs cloud
+
+```
+$ token-finops savings --co2 --power solar-de-feed-in --cloud-region us-gas-heavy
+  local:  ~    40 g   [computed]  1.00 kWh/1M tok x 40 g/kWh
+  cloud:  ~   259 g   [ESTIMATE]  500 Wh/1M tok accelerator-side x PUE 1.15 x 450 g/kWh
+  -> local emits ~0.15x the cloud estimate per token (local is cleaner)
+  !! The cloud figure is an ORDER-OF-MAGNITUDE ESTIMATE, not a measurement.
+```
+
+Opt-in, because the two sides are not equally trustworthy and the output says so on every
+line. The local figure is arithmetic on your box's wattage and a published grid-mix number.
+The cloud figure is reconstructed from published *per-query* energy estimates divided by an
+assumed response length — no provider publishes energy per token — and is honest to roughly
+a factor of 3. On the default German-grid/US-average settings local actually emits **more**
+per token than the cloud estimate, because hyperscale batching beats a box on your desk;
+local wins on carbon mainly when it runs on your own PV. Every source, every error bar, and
+what is deliberately *not* counted (embodied carbon, water) is in
+[`docs/CO2_ESTIMATE.md`](docs/CO2_ESTIMATE.md).
 
 ## Status line / tmux / editors
 
@@ -201,6 +225,7 @@ Each row names the pytest id, so `pytest -k UC-13` runs exactly that case.
 - [`docs/USECASES.md`](docs/USECASES.md) — all 50 executable use cases
 - [`docs/BURN.md`](docs/BURN.md) — `burn`: maxing multiplier, weekly/monthly tables, history, burn efficiency
 - [`docs/COST_PER_TOKEN.md`](docs/COST_PER_TOKEN.md) — `cost-per-token`: $/1M tokens by tool and model, real vs. derived (and why Copilot's AI-credit billing has no official $/token rate)
+- [`docs/CO2_ESTIMATE.md`](docs/CO2_ESTIMATE.md) — `savings --co2`: gCO2e per 1M tokens local vs. cloud, every source, and why the cloud side is an estimate
 - [`docs/INSTALL.md`](docs/INSTALL.md) — installing token-finops itself, and installing the coding-agent CLIs each adapter reads (macOS/Linux)
 - [`docs/README.md`](docs/README.md) — index of everything under `docs/`
 - [`AGENTS.md`](AGENTS.md) — rules for coding agents (Claude Code, Codex, Copilot) working in this repo

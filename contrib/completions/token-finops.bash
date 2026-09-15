@@ -48,7 +48,7 @@ _token_finops_completions() {
         --by)
             COMPREPLY=($(compgen -W "day week month" -- "$cur")); return 0 ;;
         --hardware)
-            COMPREPLY=($(compgen -W "mac-mini-m4-pro-64gb mac-studio-m4-max-128gb mac-studio-m3-ultra-256gb
+            COMPREPLY=($(compgen -W "macbook-pro-16-m4-max-48gb mac-mini-m4-pro-64gb mac-studio-m4-max-128gb mac-studio-m3-ultra-256gb
                 rtx-4090-workstation rtx-5090-workstation dgx-spark strix-halo-128gb" -- "$cur")); return 0 ;;
         --model)
             COMPREPLY=($(compgen -W "qwen3-8b qwen3-32b gpt-oss-120b llama-3.3-70b qwen3-235b-a22b" -- "$cur")); return 0 ;;
@@ -69,7 +69,7 @@ _token_finops_completions() {
         report)  opts="--tool --budget --cycle-day --allowance --compact -c --watch --json --since --db-path" ;;
         sessions) opts="--tool --since --limit --session --gap-minutes --totals --db-path" ;;
         self-audit) opts="--session --config-dir --json" ;;
-        savings) opts="--hardware --model --power --utilization --lifetime-years --output-share --list" ;;
+        savings) opts="--hardware --model --power --utilization --lifetime-years --output-share --own-hardware --co2 --cloud-region --list" ;;
         break-even) opts="--hardware --model --power --lifetime-years --replaceable-tiers --tool --since" ;;
         collect-statusline|adapters) opts="" ;;
         doctor)  opts="--tool" ;;

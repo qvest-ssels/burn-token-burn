@@ -26,9 +26,10 @@ end
 
 # --tool choices: the adapter registry (adapters/__init__.py::all_adapters)
 set -l __tf_tools aider claude_code cline codex continue copilot gemini_cli hermes opencode
-set -l __tf_hardware mac-mini-m4-pro-64gb mac-studio-m4-max-128gb mac-studio-m3-ultra-256gb rtx-4090-workstation rtx-5090-workstation dgx-spark strix-halo-128gb
+set -l __tf_hardware macbook-pro-16-m4-max-48gb mac-mini-m4-pro-64gb mac-studio-m4-max-128gb mac-studio-m3-ultra-256gb rtx-4090-workstation rtx-5090-workstation dgx-spark strix-halo-128gb
 set -l __tf_models qwen3-8b qwen3-32b gpt-oss-120b llama-3.3-70b qwen3-235b-a22b
 set -l __tf_power grid-de-household solar-de-feed-in solar-de-lcoe grid-us-avg
+set -l __tf_cloud_regions us-avg us-gas-heavy de-grid
 
 # no file completion anywhere unless a flag explicitly asks for it
 complete -c token-finops -f
@@ -81,6 +82,9 @@ complete -c token-finops -n '__fish_seen_subcommand_from savings break-even' -l 
 complete -c token-finops -n '__fish_seen_subcommand_from savings break-even' -l lifetime-years -x -d 'amortisation lifetime'
 complete -c token-finops -n '__fish_seen_subcommand_from savings' -l utilization -x -d 'fraction of 24/7 actually inferring'
 complete -c token-finops -n '__fish_seen_subcommand_from savings' -l output-share -x -d 'share of output tokens in the cloud blend'
+complete -c token-finops -n '__fish_seen_subcommand_from savings' -l own-hardware -d 'capex is sunk: energy-only comparison'
+complete -c token-finops -n '__fish_seen_subcommand_from savings' -l co2 -d 'green-IT block: local vs ESTIMATED cloud gCO2/1M tok'
+complete -c token-finops -n '__fish_seen_subcommand_from savings' -l cloud-region -x -a "$__tf_cloud_regions" -d 'grid region for the cloud CO2 estimate'
 complete -c token-finops -n '__fish_seen_subcommand_from savings' -l list -d 'list hardware/model/tariff keys'
 
 # ----------------------------------------------------------------- break-even
