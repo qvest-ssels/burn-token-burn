@@ -14,12 +14,20 @@ delete old rows — move them to "Done" below instead, so the history stays legi
 
 | Session | Branch | Task | Touches | Status |
 |---|---|---|---|---|
-| Claude Opus 5 (local) | `feature/agentic/shell-completions` | Static bash/zsh/fish tab-completion scripts for `token-finops` (subcommand + per-subcommand flag + enumerated-value completion, no argcomplete), plus a drift-guard test that introspects the real argparse subparsers | `contrib/completions/` (new), `token-finops-cli/tests/test_completions.py` (new), `docs/INSTALL.md`, `AGENTIC.md` | [PR #16](https://github.com/qvest-ssels/burn-token-burn/pull/16) opened |
 
 ## Done
 
 | Session | Branch | Task | Touches | Status |
 |---|---|---|---|---|
+| Claude Opus 5 (local) | `feature/agentic/shell-completions` | Static bash/zsh/fish tab-completion scripts for `token-finops` (subcommand + per-subcommand flag + enumerated-value completion, no argcomplete), plus a drift-guard test that introspects the real argparse subparsers | `contrib/completions/` (new), `token-finops-cli/tests/test_completions.py` (new), `docs/INSTALL.md`, `AGENTIC.md` | merged (PR #16) |
+| Claude Opus 5 (local) | `feature/agentic/doctor-subcommand` | `token-finops doctor`: per-adapter found/empty/missing diagnosis with probed paths and one actionable hint each, Python/package version header, synth footer | `token-finops-cli/src/token_finops_cli/doctor.py` (new), `token-finops-cli/src/token_finops_cli/cli.py`, `token-finops-cli/tests/test_doctor.py` (new), `token-finops-cli/README.md` | merged (PR #12) |
+| Claude Opus 5 (local) | `feature/agentic/claude-code-runway-skill` | T-04: agent-native `/runway` surface — a Claude Code skill (`runway/SKILL.md`) and the equivalent Codex custom prompt, both checking the runway *before* a sub-agent fan-out (`docs/INTEGRATIONS.md` §3), with a smoke test that parses every command string against the real argparse parser | `contrib/claude-code/` (new), `contrib/codex/` (new), `token-finops-cli/tests/test_contrib_skills.py` (new), `docs/INTEGRATIONS.md`, `docs/README.md`, `README.md`, `claude-tasks.md` | merged (PR #13) |
+| Claude Opus 5 (local) | `feature/agentic/adr-0013-claude-desktop` | T-16: investigate `~/Library/Application Support/Claude/` read-only and write ADR-0013 (Claude Desktop / Cowork macOS coverage) | `docs/adr/0013-claude-desktop-cowork.md` (new), `docs/adr/README.md`, `docs/landscape.md`, `README.md` (one row), `claude-tasks.md`, `AGENTIC.md` | merged (PR #14) |
+| Claude Opus 5 (local) | `feature/agentic/pypi-smoke-workflow` | Weekly `pypi-smoke.yml`: install the real published wheel across py3.10-3.13, smoke `adapters`/`synth`/`report`/`report --json` | `.github/workflows/pypi-smoke.yml` (new), `AGENTIC.md` | merged (PR #15) |
+
+| Session | Branch | Task | Touches | Status |
+|---|---|---|---|---|
+| Claude Opus 5 (local) | `feature/agentic/pypi-smoke-workflow` | Weekly PyPI wheel smoke test: install the published `token-finops-cli` from the real index on 3.10–3.13 and run `--help` / `adapters` / `synth` / `report` / `report --json` / `cost-per-token` / `sessions` against a synthetic home. Closes the honesty gap where CI only ever tested the source checkout | `.github/workflows/pypi-smoke.yml` (new) | PR opened |
 | Claude Sonnet 5 (cloud) | `feature/agentic/self-audit-compaction` | T-15: stitch every Claude Code transcript segment sharing a `sessionId` (compaction splits the main transcript into a new file) into one `self-audit` report, dedup across segments by `event_id`, print `segments: N` in the header | `token-finops-cli/src/token_finops_cli/adapters/claude_code.py`, `token-finops-cli/src/token_finops_cli/cli.py`, `token-finops-cli/tests/test_self_audit.py`, `docs/adr/0002-claude-code.md`, `claude-tasks.md` | [PR #10](https://github.com/qvest-ssels/burn-token-burn/pull/10) opened |
 
 | Session | Branch | Task | Touches | Status |

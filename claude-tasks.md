@@ -23,11 +23,14 @@ follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a ta
   `GET https://openrouter.ai/api/v1/key` for Hermes. Add `--online` to `report`/`status`; unit-test
   with a stubbed `urllib` (no network in CI). Update ADRs 0001/0002/0004/0005 and `docs/sources.md`.
 
-- [ ] **T-04 Claude Code `/runway` skill** — branch `feat/claude-code-skill` — model: Sonnet — S
-  A skill/slash command file under `contrib/claude-code/` that runs `token-finops status --format plain`
-  and `report --tool claude_code` and tells the agent to *check runway before spawning sub-agents*
-  (`docs/INTEGRATIONS.md` §3). Include install instructions and a smoke test that the command
-  string parses. Same for Codex (`contrib/codex/`) if its custom-command format is verifiable.
+- [x] **T-04 Claude Code `/runway` skill** — branch `feature/agentic/claude-code-runway-skill` — model: Opus — S
+  Shipped `contrib/claude-code/runway/SKILL.md` (a skill is a *directory* with `SKILL.md`, not a
+  flat file) and `contrib/codex/prompts/runway.md` (Codex custom prompt, `/prompts:runway`);
+  both run `token-finops status --format plain` + `report --tool claude_code|codex --compact` and
+  tell the agent to size the fan-out to the runway. Install docs per scope in each `README.md`;
+  `tests/test_contrib_skills.py` feeds every command string through `shlex.split()` and the real
+  argparse parser, so a flag the CLI does not have fails CI. Codex's newer "skills" successor is
+  documented-but-unstable, so only the verifiable prompt form shipped (`docs/INTEGRATIONS.md` §3).
 
 - [ ] **T-05 PyPI trusted publishing + v0.3.0 release** — branch `release/0.3.0` — model: Sonnet — S
   Verify `.github/workflows/release.yml` works from the `token-finops-cli/` subdirectory (artifact
@@ -48,7 +51,7 @@ follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a ta
   (main + `subagents/`), dedup across them, and print "segments: N" in the header. Fixture: two
   JSONL files with the same `sessionId` in `tests/`. Acceptance: totals equal the sum of the parts.
 
-- [ ] **T-16 Claude Desktop / Cowork (macOS) coverage** — branch `docs/adr-0013-claude-desktop` — model: Opus — S
+- [x] **T-16 Claude Desktop / Cowork (macOS) coverage** — branch `feature/agentic/adr-0013-claude-desktop` — model: Opus — S — done: [ADR-0013](docs/adr/0013-claude-desktop-cowork.md). Findings differ from the premise in two ways: Desktop caches the account-wide 5 h/7 d utilisation offline in `plan-usage-history.json` (~30 days of history), and on-computer Cowork mirrors full token/USD/quota records to the Mac in `local-agent-mode-sessions/**/audit.jsonl`. Cloud Cowork confirmed metadata-only. Follow-ups: quota source + on-computer Cowork adapter.
   Question from the field: "can we measure Claude Desktop?" Investigate and write ADR-0013:
   the desktop chat app keeps no local usage telemetry (conversations are server-side; check
   `~/Library/Application Support/Claude/` for anything usable and document what is there);

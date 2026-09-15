@@ -1,0 +1,205 @@
+name: PyPI wheel smoke test
+
+# Installs `token-finops-cli` from the REAL PyPI index -- no checkout, no `uv sync`, no
+# `pip install -e .`, no local build. The `CI` workflow already tests the source tree; this
+# one tests the artifact an actual user gets from `pip install token-finops-cli`, which is a
+# different thing (packaging metadata, console-script entry point, what ended up inside the
+# wheel, the declared python-requires floor).
+#
+# A failure here means "the published wheel is broken for real users", not "the source is
+# broken" -- those are covered by .github/workflows/ci.yml.
+#
+# Trigger: NOT on push/PR. This reaches out to the real PyPI index on every run, so it is a
+# weekly cron (Monday, offset from cli-smoke.yml's 06:17 so the two don't collide) plus
+# manual `workflow_dispatch` when you want to check a release by hand.
+#
+# Version pin, and the tradeoff:
+#   PIN below is an explicit `==` pin rather than installing whatever is latest.
+#   * Pinned (what we do): the smoke test is repeatable and its assertions are anchored to a
+#     version whose behaviour we actually verified. A red run means "that known-good version
+#     stopped installing/working", never "the CLI changed and the test is stale". The cost is
+#     that PIN MUST BE BUMPED ON EVERY RELEASE -- otherwise this silently keeps re-testing an
+#     old artifact and the newest wheel ships untested.
+#   * Floating (`pip install token-finops-cli`): always covers the newest release with no
+#     maintenance, but output assertions drift against an unpinned CLI, and a release that has
+#     not finished propagating to the index mirrors yields a spurious red.
+#   The `latest-too` job below hedges: it also installs the unpinned latest and runs the same
+#   sequence, but is `continue-on-error` so index lag / expected output changes report as a
+#   warning instead of failing the workflow. The pinned matrix stays the hard gate.
+#
+# >>> ON RELEASE: bump PIN to the new version. <<<
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 6 * * 1"  # weekly, Monday 06:41 UTC
+
+env:
+  PIN: "0.3.0"
+
+jobs:
+  wheel:
+    # (the `env` context is not available in a job-level `name`, so the pin is not repeated
+    #  here -- it lives in exactly one place, the workflow-level `env.PIN` above)
+    name: pip install pinned wheel · py${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      # Deliberately no actions/checkout: nothing in this job may come from the repo.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: pip install token-finops-cli==${{ env.PIN }} (real PyPI)
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install "token-finops-cli==${PIN}"
+
+      - name: installed version is the pinned one
+        run: |
+          set -euo pipefail
+          got="$(python -c 'from importlib.metadata import version; print(version("token-finops-cli"))')"
+          echo "installed: ${got}"
+          test "${got}" = "${PIN}"
+
+      - name: console script resolves and `--help` exits 0
+        run: |
+          set -euo pipefail
+          command -v token-finops
+          token-finops --help | tee help.txt
+          # subcommands the rest of this smoke test depends on must be advertised
+          for sub in report adapters synth sessions self-audit; do
+            grep -q -- "${sub}" help.txt || { echo "::error::'${sub}' missing from --help"; exit 1; }
+          done
+
+      - name: "`adapters` exits 0 and prints the detection table"
+        run: |
+          set -euo pipefail
+          token-finops adapters | tee adapters.txt
+          grep -qE '^ +tool +found +root' adapters.txt
+          # the registry must list its adapters. Deliberately no assertion on the found
+          # column here: a bare runner has no assistant installed, but `aider` defaults its
+          # search root to `~` so "found" is not reliably "no". The synthetic-home step
+          # below is where found=yes is actually asserted.
+          grep -q 'copilot' adapters.txt
+          grep -q 'claude_code' adapters.txt
+
+      - name: "`synth` generates a synthetic fake-home tree"
+        run: |
+          set -euo pipefail
+          token-finops synth --out "${GITHUB_WORKSPACE}/synth-home" --scenario steady --print-env \
+            | tee synth.txt
+          grep -q 'Synthetic data written under' synth.txt
+          # every adapter the generator knows about must have produced events
+          for tool in copilot claude_code codex gemini_cli hermes opencode cline aider continue; do
+            grep -qE "^ +${tool} +events=[1-9]" synth.txt \
+              || { echo "::error::synth produced no events for ${tool}"; exit 1; }
+          done
+          # `--print-env` emits a banner too, so filter to the export lines rather than
+          # eval-ing the whole thing. HOME is among them -- that is the point: it points every
+          # adapter at the synthetic tree.
+          grep '^export ' synth.txt | sed 's/^export //' > synth.env
+          grep -q '^HOME=' synth.env
+          grep -q '^TOKEN_FINOPS_COPILOT_DB=' synth.env
+
+      - name: "`adapters` finds every synthetic source"
+        run: |
+          set -euo pipefail
+          set -a; . ./synth.env; set +a
+          token-finops adapters | tee adapters-synth.txt
+          for tool in copilot claude_code codex gemini_cli hermes opencode cline aider continue; do
+            grep -qE "^ +${tool} +yes " adapters-synth.txt \
+              || { echo "::error::adapter ${tool} not detected in the synthetic home"; exit 1; }
+          done
+
+      - name: "`report` exits 0 and renders real runway output"
+        run: |
+          set -euo pipefail
+          set -a; . ./synth.env; set +a
+          token-finops report | tee report.txt
+          # substrings taken from real 0.3.0 output, not invented: display names from the
+          # adapters, the runway/budget rows from report.py, the roll-up footer, and the
+          # Copilot AI-unit allowance line.
+          for needle in \
+            'GitHub Copilot CLI' \
+            'Claude Code' \
+            'OpenAI Codex CLI' \
+            'Gemini CLI' \
+            'budget:' \
+            'burn:' \
+            'runway:' \
+            'AI units' \
+            'binding constraint:' ; do
+            grep -qF "${needle}" report.txt \
+              || { echo "::error::report output missing expected substring: ${needle}"; exit 1; }
+          done
+
+      - name: "`report --json` is valid JSON with the documented keys"
+        run: |
+          set -euo pipefail
+          set -a; . ./synth.env; set +a
+          token-finops report --json > report.json
+          python - <<'PY'
+          import json, sys
+          rows = json.load(open("report.json"))
+          assert isinstance(rows, list) and rows, f"expected a non-empty list, got {type(rows)}"
+          required = {"tool", "display_name", "window", "unit", "used", "status"}
+          for row in rows:
+              missing = required - set(row)
+              assert not missing, f"row {row.get('tool')!r} missing keys: {sorted(missing)}"
+          tools = {row["tool"] for row in rows}
+          for expected in ("copilot", "claude_code", "codex", "gemini_cli"):
+              assert expected in tools, f"{expected} missing from report --json (got {sorted(tools)})"
+          print(f"ok: {len(rows)} rows, tools={sorted(tools)}")
+          PY
+
+      - name: "`cost-per-token` and `sessions` exit 0"
+        run: |
+          set -euo pipefail
+          set -a; . ./synth.env; set +a
+          token-finops cost-per-token
+          token-finops sessions --limit 5
+
+  # Non-blocking companion: same sequence against whatever PyPI currently calls latest, so a
+  # release that breaks the wheel shows up here as a warning even before someone bumps PIN.
+  # Kept `continue-on-error` on purpose -- see the version-pin tradeoff note at the top.
+  latest-too:
+    name: pip install token-finops-cli (latest, advisory)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install latest from real PyPI
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install token-finops-cli
+          python -c 'from importlib.metadata import version; print("latest on PyPI:", version("token-finops-cli"))'
+
+      - name: smoke the same sequence
+        run: |
+          set -euo pipefail
+          token-finops --help > /dev/null
+          token-finops adapters > /dev/null
+          token-finops synth --out "${GITHUB_WORKSPACE}/synth-home" --scenario steady --print-env \
+            | grep '^export ' | sed 's/^export //' > synth.env
+          set -a; . ./synth.env; set +a
+          token-finops report | tee report.txt
+          grep -qF 'binding constraint:' report.txt
+          grep -qF 'runway:' report.txt
+
+      - name: warn if latest has moved past the pin
+        if: always()
+        run: |
+          set -euo pipefail
+          got="$(python -c 'from importlib.metadata import version; print(version("token-finops-cli"))' 2>/dev/null || echo unknown)"
+          if [ "${got}" != "${PIN}" ]; then
+            echo "::warning::PyPI latest is ${got} but this workflow pins ${PIN}. Bump PIN in .github/workflows/pypi-smoke.yml."
+          fi

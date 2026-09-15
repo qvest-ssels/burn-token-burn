@@ -37,6 +37,40 @@ $ token-finops adapters
   continue     no     ~/.continue
 ```
 
+Empty output? `doctor` says why, per tool, and what to do about it:
+
+```bash
+$ token-finops doctor
+token-finops doctor — what `report` can and cannot see on this machine
+
+  token-finops-cli 0.3.0
+  Python 3.12.7 (/usr/local/bin/python3)
+  platform Darwin 24.5.0
+
+  [found]   Claude Code (claude_code) — 13305 events, latest 2026-09-14 20:14 UTC
+      probed: ~/.claude/projects  (exists)
+      hint:   5h/7d quota percentages only exist in the status line: wire
+              `token-finops collect-statusline` as statusLine.command in ~/.claude/settings.json.
+
+  [empty]   OpenAI Codex CLI (codex)
+      probed: ~/.codex  (exists)
+      hint:   Codex CLI's home exists but has no rollout-*.jsonl sessions — run `codex` once.
+
+  [missing] Gemini CLI (gemini_cli)
+      probed: ~/.gemini  (not found)
+      hint:   No ~/.gemini. Install the Gemini CLI (`brew install gemini-cli` or
+              `npm install -g @google/gemini-cli`), or set GEMINI_CLI_HOME.
+  ...
+
+  summary: 1 with data, 1 installed but no usage yet, 7 not found
+```
+
+`found` = the adapter read usage events; `empty` = the tool's data location
+exists but holds no usage yet; `missing` = the coding agent itself does not
+look installed (or its data lives somewhere else — every entry names the
+environment variable that repoints it). `doctor` always exits 0: an empty
+machine is a normal state, not a failure. `--tool` narrows it to one adapter.
+
 ```bash
 $ token-finops report --compact
 GitHub Copilot CLI [######--------------]  29.4%  runway  41.2d  OK

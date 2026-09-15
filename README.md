@@ -23,6 +23,7 @@ Everything is Python ≥ 3.10, **standard library only**, and never writes to an
 | Cline / Roo / Kilo (VS Code) | `…/globalStorage/<ext>/tasks/*/ui_messages.json` | BYO provider ($) | usage ✓ |
 | Aider | `.aider.chat.history.md`, opt-in analytics JSONL | BYO provider ($) | usage ✓ (timestamps approximate) |
 | Continue.dev | `~/.continue/sessions/*.json` | BYO provider ($) | usage ✓ (low confidence) |
+| Claude Desktop / Cowork (macOS) | chat: none · quota: `~/Library/Application Support/Claude/plan-usage-history.json` · on-computer Cowork: `…/local-agent-mode-sessions/**/audit.jsonl` | same account-wide 5 h / 7 d windows as Claude Code | chat reference-only, quota + on-computer Cowork proposed (`docs/adr/0013`) |
 | Cursor · Windsurf · Ollama | — | see `docs/adr/0008`, `0011`, `0012` | reference-only |
 
 Usage-only tools get a runway too when you pass `--allowance <USD per 30 days>`.
@@ -174,8 +175,11 @@ token-finops status --format waybar       # JSON with class/tooltip; also polyba
 ```
 
 `contrib/` ships a tmux plugin, systemd/launchd refresh timers, and starship/waybar/SwiftBar
-recipes — see [`docs/TMUX.md`](docs/TMUX.md). Editors, agent-native `/runway` skills and the
-remaining desktop surfaces are designed in [`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md).
+recipes — see [`docs/TMUX.md`](docs/TMUX.md) — plus the agent-native surface: a `/runway`
+skill for Claude Code ([`contrib/claude-code/`](contrib/claude-code/)) and the equivalent
+custom prompt for Codex CLI ([`contrib/codex/`](contrib/codex/)), so the agent checks the
+budget *before* it fans out three sub-agents rather than after. Editors and the remaining
+desktop surfaces are designed in [`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md).
 
 ## Tested against 50 real-world use cases
 
