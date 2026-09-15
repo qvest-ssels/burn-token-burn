@@ -54,10 +54,10 @@ $ token-finops savings --power solar-de-feed-in --utilization 0.8</code></pre>
 
 <h2>Green IT: CO2 per 1M tokens</h2>
 <p>Optional, via <code>--co2</code>. It puts the local emissions figure next to an estimate for the cloud side, and is careful to show that the two are not the same kind of number:</p>
-<pre><code>$ token-finops savings --co2 --power solar-de-feed-in --cloud-region us-gas-heavy
+<pre><code>$ token-finops savings --co2 --power solar-de-feed-in --cloud-region us-ercot
   local:  ~    40 g   [computed]  1.00 kWh/1M tok x 40 g/kWh
-  cloud:  ~   259 g   [ESTIMATE]  500 Wh/1M tok accelerator-side x PUE 1.15 x 450 g/kWh
-  -&gt; local emits ~0.15x the cloud estimate per token (local is cleaner)
+  cloud:  ~   226 g   [ESTIMATE]  600 Wh/1M tok accelerator-side x PUE 1.13 x 334 g/kWh
+  -&gt; local emits ~0.18x the cloud estimate per token (local is cleaner)
   !! The cloud figure is an ORDER-OF-MAGNITUDE ESTIMATE, not a measurement.</code></pre>
 <p>The local number is arithmetic on your box's wattage and a published grid-mix figure. The cloud number is reconstructed from published <em>per-query</em> energy estimates divided by an assumed response length, because no cloud AI provider publishes energy per token — it is honest to roughly a factor of three, and the output says so rather than hiding it in a footnote. On the default settings (German grid, US average) local emits <em>more</em> per token than the cloud estimate: a hyperscale datacentre batches work across many users and a box on your desk does not. Local wins on carbon mainly when it runs on your own panels. Neither figure counts embodied carbon or water. <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/CO2_ESTIMATE.md">docs/CO2_ESTIMATE.md</a> has every source and every caveat.</p>
 

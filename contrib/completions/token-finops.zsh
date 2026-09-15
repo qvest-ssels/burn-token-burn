@@ -94,7 +94,7 @@ _token-finops() {
                         '--output-share=[share of output tokens in the cloud blend]:fraction:' \
                         '--own-hardware[you already own the box: energy-only, capex is sunk]' \
                         '--co2[green-IT block: local vs ESTIMATED cloud gCO2/1M tok]' \
-                        '--cloud-region=[grid region for the cloud CO2 estimate]:region:(us-avg us-gas-heavy de-grid)' \
+                        '--cloud-region=[grid region for the cloud CO2 estimate]:region:(us-avg us-virginia us-ercot de-grid)' \
                         '--list[list hardware/model/tariff keys]' \
                         '(-h --help)'{-h,--help}'[show help and exit]'
                     ;;

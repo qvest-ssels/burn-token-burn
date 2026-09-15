@@ -29,7 +29,7 @@ set -l __tf_tools aider claude_code cline codex continue copilot gemini_cli herm
 set -l __tf_hardware macbook-pro-16-m4-max-48gb mac-mini-m4-pro-64gb mac-studio-m4-max-128gb mac-studio-m3-ultra-256gb rtx-4090-workstation rtx-5090-workstation dgx-spark strix-halo-128gb
 set -l __tf_models qwen3-8b qwen3-32b gpt-oss-120b llama-3.3-70b qwen3-235b-a22b
 set -l __tf_power grid-de-household solar-de-feed-in solar-de-lcoe grid-us-avg
-set -l __tf_cloud_regions us-avg us-gas-heavy de-grid
+set -l __tf_cloud_regions us-avg us-virginia us-ercot de-grid
 
 # no file completion anywhere unless a flag explicitly asks for it
 complete -c token-finops -f
