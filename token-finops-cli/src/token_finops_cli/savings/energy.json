@@ -17,5 +17,25 @@
     "opus":   {"input": 5.0,  "output": 25.0, "label": "Claude Opus 5"},
     "fable":  {"input": 10.0, "output": 50.0, "label": "Claude Fable 5.1"}
   },
-  "co2_g_per_kwh": {"grid-de-household": 380, "grid-us-avg": 390, "solar-de-feed-in": 40, "solar-de-lcoe": 40}
+  "co2_g_per_kwh": {"grid-de-household": 380, "grid-us-avg": 390, "solar-de-feed-in": 40, "solar-de-lcoe": 40},
+  "cloud_inference_co2_estimate": {
+    "_comment": "*** ORDER-OF-MAGNITUDE ESTIMATE, NOT A MEASUREMENT. *** No cloud AI provider publishes energy per token, so unlike every other number in this file this one cannot be sourced to a vendor figure -- it is reconstructed from published per-query estimates divided by an assumed response length. Treat it as accurate to within roughly a factor of 3, and do not quote it as a fact about any specific provider. Full derivation, sources and error bars: docs/CO2_ESTIMATE.md.",
+    "_review_date": "2026-09-15",
+    "wh_per_mtok_it": 500,
+    "wh_per_mtok_it_source": "ESTIMATE: ~0.25-0.3 Wh per typical LLM chat query (Google, 'Measuring the environmental impact of delivering AI products', 2025, median Gemini text prompt 0.24 Wh; Epoch AI 2025 GPT-4o-class estimate ~0.3 Wh/query) divided by an assumed ~500 output tokens per query => ~0.5 Wh per 1k tokens => 500 Wh per 1M tokens. Older widely-cited figures (de Vries, Joule 2023, ~2.9 Wh/query) would put this ~6x higher; see docs/CO2_ESTIMATE.md.",
+    "pue": 1.15,
+    "pue_label": "PUE 1.15 (hyperscale fleet average; Google reports ~1.09, Microsoft ~1.18, AWS ~1.15)",
+    "pue_source": "ESTIMATE: midpoint of the fleet-wide PUE figures the three largest cloud providers publish in their annual sustainability reports.",
+    "confidence": "LOW -- good to roughly a factor of 3 either way. It is a magnitude, not a measurement.",
+    "basis": "~0.25-0.3 Wh per published LLM query / ~500 output tokens per query, x datacentre PUE, x grid carbon intensity.",
+    "default_region": "us-avg",
+    "regions": {
+      "us-avg": {"g_co2_per_kwh": 390, "label": "US national average grid mix (approx.)",
+                 "source": "ESTIMATE: ~0.85 lb CO2/kWh, the commonly-cited EPA eGRID-class US national average; not re-verified against the latest eGRID release."},
+      "us-gas-heavy": {"g_co2_per_kwh": 450, "label": "US datacentre region with a gas-dominated mix (ERCOT/PJM-class, approx.)",
+                       "source": "ESTIMATE: a modern combined-cycle gas plant emits roughly 350-400 gCO2/kWh at the plant; a grid where gas sets most of the marginal generation lands somewhat above that. Representative of the 'AI industry runs on gas' framing, not a figure published for any named balancing authority."},
+      "de-grid": {"g_co2_per_kwh": 380, "label": "German grid mix -- the same-grid comparison (approx.)",
+                  "source": "Same figure as the grid-de-household tariff above; use it to compare cloud vs. local hardware on the SAME grid, isolating the efficiency difference from the grid-mix difference."}
+    }
+  }
 }

@@ -16,8 +16,9 @@ from conftest import build_claude_tree, transcript_line, write_copilot_db, write
 from token_finops_cli import cli
 from token_finops_cli.cli import _normalize_argv, _runway_json, _since, build_parser
 from token_finops_cli.core.model import Status
-from token_finops_cli.savings import (LocalCost, add_savings_parsers, cloud_blended_usd_per_mtok, cmd_break_even,
-                                      cmd_savings, energy, hardware_profiles, local_cost)
+from token_finops_cli.savings import (LocalCost, add_savings_parsers, cloud_blended_usd_per_mtok,
+                                      cloud_co2_estimate, cmd_break_even, cmd_savings, energy,
+                                      hardware_profiles, local_cost)
 
 REAL_NOW = datetime.now(timezone.utc)
 
@@ -426,6 +427,108 @@ def test_profile_files_are_consistent(home):
     assert hw["_review_date"] and en["_review_date"]
 
 
+def test_laptop_profile_is_memory_limited_not_throughput_limited(home):
+    """The 48 GB MacBook is the only laptop profile; its point is that unified memory,
+    not tok/s, is the binding constraint. Models that cannot fit must stay absent."""
+    hw = hardware_profiles()
+    lap = hw["hardware"]["macbook-pro-16-m4-max-48gb"]
+    assert lap["vram_gb"] == 48 and "laptop" in lap["label"].lower()
+    assert lap["load_w"] < hw["hardware"]["mac-studio-m4-max-128gb"]["load_w"]
+    assert "ESTIMATE" in lap["source"]
+    assert "_laptop_note" in hw and "throttles" in lap["source"]
+    assert "binding constraint" in hw["_laptop_note"]
+    fits = {k for k, m in hw["models"].items()
+            if not k.startswith("_") and "macbook-pro-16-m4-max-48gb" in m["tok_s"]}
+    assert fits == {"qwen3-8b", "qwen3-32b"}
+    # same silicon as the Mac Studio M4 Max, but a laptop cooler -> strictly slower
+    for k in fits:
+        assert hw["models"][k]["tok_s"]["macbook-pro-16-m4-max-48gb"] < \
+            hw["models"][k]["tok_s"]["mac-studio-m4-max-128gb"]
+    lc = local_cost("macbook-pro-16-m4-max-48gb", "qwen3-32b")
+    assert lc.total_usd_per_mtok > 0 and lc.co2_g_per_mtok > 0
+
+
+# --------------------------------------------------------------------------- #
+# CO2: local (computed) vs cloud (estimate)
+# --------------------------------------------------------------------------- #
+def test_cloud_co2_estimate_arithmetic(home):
+    est = cloud_co2_estimate()
+    assert est.region == "us-avg"
+    assert est.kwh_per_mtok == pytest.approx(est.wh_per_mtok_it * est.pue / 1000.0)
+    assert est.g_co2_per_mtok == pytest.approx(est.kwh_per_mtok * est.g_co2_per_kwh)
+    dirty = cloud_co2_estimate("us-gas-heavy")
+    assert dirty.g_co2_per_mtok > est.g_co2_per_mtok  # gas-heavy grid must be worse
+    with pytest.raises(KeyError, match="unknown --cloud-region"):
+        cloud_co2_estimate("mars")
+    # the estimate must advertise itself as one, in the data, not just in a docstring
+    blk = energy()["cloud_inference_co2_estimate"]
+    assert "ESTIMATE" in blk["_comment"].upper() and "LOW" in blk["confidence"].upper()
+    assert set(blk["regions"]) >= {"us-avg", "us-gas-heavy", "de-grid"}
+    for r in blk["regions"].values():
+        assert r["source"] and r["label"]
+
+
+def test_local_co2_properties(home):
+    lc = local_cost("mac-studio-m4-max-128gb", "qwen3-32b", "grid-de-household")
+    assert lc.co2_g_per_kwh == 380
+    assert lc.co2_g_per_mtok == pytest.approx(lc.kwh_per_mtok * 380)
+    solar = local_cost("mac-studio-m4-max-128gb", "qwen3-32b", "solar-de-feed-in")
+    assert solar.co2_g_per_mtok < lc.co2_g_per_mtok
+
+
+def test_cmd_savings_co2_block_shows_both_sides(home, run_cli):
+    out = run_cli("savings", "--co2")
+    lines = out.splitlines()
+    assert any(ln.startswith("Green IT:") and "energy only" in ln for ln in lines)
+    local_ln = next(ln for ln in lines if ln.startswith("  local:"))
+    cloud_ln = next(ln for ln in lines if ln.startswith("  cloud:"))
+    # the provenance tags are the whole point: they must never be swapped or dropped
+    assert "[computed]" in local_ln and "~   380 g" in local_ln
+    assert "[ESTIMATE]" in cloud_ln and "PUE 1.15" in cloud_ln
+    assert "~   224 g" in cloud_ln  # 500 Wh x 1.15 x 390 g/kWh
+    assert "  -> local emits ~1.7x the cloud estimate per token" in lines
+    assert any("ORDER-OF-MAGNITUDE ESTIMATE, not a measurement" in ln for ln in lines)
+    assert any(ln.strip().startswith("Confidence: LOW") for ln in lines)
+    assert any("docs/CO2_ESTIMATE.md" in ln for ln in lines)
+    # opt-in: the one-line local figure is replaced, not duplicated
+    assert "  CO2: ~380 g per 1M tok on this tariff" not in lines
+
+
+def test_cmd_savings_co2_solar_beats_gas_heavy_cloud(home, run_cli):
+    out = run_cli("savings", "--co2", "--power", "solar-de-feed-in", "--cloud-region", "us-gas-heavy")
+    assert "gas-dominated mix" in out
+    assert "x 450 g/kWh" in out
+    assert "(local is cleaner)" in out
+
+
+def test_cmd_savings_co2_degrades_without_estimate_block(home, run_cli, monkeypatch):
+    """An older/user-supplied energy.json without the block loses the cloud line, not the command."""
+    _energy_override(home, monkeypatch, cloud_inference_co2_estimate=None)
+    out = run_cli("savings", "--co2")
+    assert "no cloud_inference_co2_estimate block" in out
+    assert "[computed]" in out and "[ESTIMATE]" not in out
+
+
+def test_cmd_savings_own_hardware_drops_capex(home, run_cli):
+    out = run_cli("savings", "--own-hardware")
+    assert "capex:             EXCLUDED (--own-hardware)" in out
+    assert "  local marginal:    $0.40 / 1M tok" in out
+    assert "LOCAL CHEAPER" in out
+    assert "sunk-cost view: no break-even to reach" in out
+    assert "break-even utilisation" not in out
+    lc = local_cost("mac-studio-m4-max-128gb", "qwen3-32b", include_capex=False)
+    assert lc.capex_usd_per_mtok == 0.0
+    assert lc.total_usd_per_mtok == lc.energy_usd_per_mtok
+    assert lc.break_even_utilization(3.20) is None
+
+
+def test_cmd_savings_list_includes_cloud_regions(home, run_cli):
+    out = run_cli("savings", "--list")
+    assert "cloud regions (--cloud-region, CO2 estimate only):" in out
+    assert any(ln.startswith("  us-gas-heavy") and "450 gCO2/kWh" in ln for ln in out.splitlines())
+    assert any(ln.startswith("  macbook-pro-16-m4-max-48gb") for ln in out.splitlines())
+
+
 def _energy_override(home, monkeypatch, **changes):
     data = json.loads(open(os.path.join(os.path.dirname(cli.__file__), "savings", "energy.json")).read())
     for k, v in changes.items():
@@ -457,7 +560,8 @@ def test_cmd_savings_cloud_cheaper_at_low_utilisation(home, run_cli):
     assert "Cloud comparison (sonnet-class, 15% output tokens): $3.20 / 1M tok  (Claude Sonnet 5)" in lines
     assert "  -> local is 2.77x the cloud price: CLOUD CHEAPER" in lines
     assert any(ln.startswith("  -> break-even utilisation: 6") and "h/day of inference)" in ln for ln in lines)
-    assert "  CO2: ~380 g per 1M tok on this tariff" in lines
+    assert "  CO2: ~380 g per 1M tok on this tariff  (--co2 adds the cloud comparison)" in lines
+    assert "Green IT:" not in out  # the cloud comparison is opt-in
     assert lines[-1].startswith("Caveats:") and "sonnet-class local" in lines[-1]
 
 
@@ -505,7 +609,8 @@ def test_cmd_savings_list(home, run_cli):
 
 def test_cmd_savings_direct_call_matches_cli(home, run_cli):
     args = SimpleNamespace(hardware="mac-studio-m4-max-128gb", model="qwen3-32b", power="grid-de-household",
-                           utilization=0.2, lifetime_years=3.0, output_share=0.15, list=False)
+                           utilization=0.2, lifetime_years=3.0, output_share=0.15, list=False,
+                           own_hardware=False, co2=False, cloud_region=None)
     assert cmd_savings(args) + "\n" == run_cli("savings")
 
 
@@ -516,6 +621,7 @@ def test_add_savings_parsers_defaults():
     a = p.parse_args(["savings"])
     assert (a.hardware, a.model, a.power, a.utilization, a.lifetime_years, a.output_share, a.list) == \
         ("mac-studio-m4-max-128gb", "qwen3-32b", "grid-de-household", 0.2, 3.0, 0.15, False)
+    assert (a.own_hardware, a.co2, a.cloud_region) == (False, False, None)
     b = p.parse_args(["break-even"])
     assert (b.replaceable_tiers, b.since, b.tool) == ("haiku,sonnet", "all", None)
 
