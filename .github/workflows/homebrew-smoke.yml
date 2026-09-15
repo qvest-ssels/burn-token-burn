@@ -1,0 +1,56 @@
+name: Homebrew formula smoke test
+
+# Builds and installs contrib/homebrew/token-finops-cli.rb via a throwaway local tap on a
+# real macOS runner, then runs the formula's own `test do` block plus a few extra checks. A
+# failure here means "the committed formula is broken" -- catches a stale url/sha256 (like the
+# 0.2.0-vs-0.3.0 mixup this workflow was added after), a missing dependency, or a `brew audit`
+# regression, before a human tries `brew install --build-from-source` and it just fails.
+#
+# Runs on push/PR when the formula changes (no PyPI network dependency beyond the formula's own
+# `url` download, which is the same download a real `brew install` does) plus manual dispatch.
+# `macos-latest` GitHub-hosted runners ship Homebrew preinstalled.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "contrib/homebrew/token-finops-cli.rb"
+      - ".github/workflows/homebrew-smoke.yml"
+  pull_request:
+    paths:
+      - "contrib/homebrew/token-finops-cli.rb"
+      - ".github/workflows/homebrew-smoke.yml"
+  workflow_dispatch:
+
+jobs:
+  formula:
+    name: brew install --build-from-source
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: brew audit --strict
+        run: brew audit --strict --formula contrib/homebrew/token-finops-cli.rb
+
+      - name: brew style
+        run: brew style contrib/homebrew/token-finops-cli.rb
+
+      - name: brew install --build-from-source
+        run: brew install --build-from-source --verbose contrib/homebrew/token-finops-cli.rb
+
+      - name: brew test (the formula's own test do block)
+        run: brew test token-finops-cli
+
+      - name: installed binary resolves and advertises the 0.3.x subcommand surface
+        run: |
+          set -euo pipefail
+          command -v token-finops
+          token-finops --help | tee help.txt
+          for sub in report adapters synth sessions self-audit doctor; do
+            grep -q -- "${sub}" help.txt \
+              || { echo "::error::'${sub}' missing from --help -- did the formula pin an old sdist?"; exit 1; }
+          done
+
+      - name: brew uninstall (leave the runner clean)
+        if: always()
+        run: brew uninstall token-finops-cli || true
