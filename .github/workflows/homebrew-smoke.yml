@@ -29,17 +29,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Modern Homebrew disallows path-based `audit`/`install` ("Calling `brew audit
+      # [path ...]` is disabled! Use `brew audit [name ...]` instead.") -- a formula must
+      # live in a tap and be referenced by name. This throwaway local tap mirrors exactly
+      # what contrib/homebrew's own manual verification used (see its README/history).
+      - name: create a throwaway local tap containing this formula
+        run: |
+          set -euo pipefail
+          brew tap-new local/tfops --no-git
+          tap_root="$(brew --repo local/tfops)"
+          cp contrib/homebrew/token-finops-cli.rb "${tap_root}/Formula/token-finops-cli.rb"
+
       - name: brew audit --strict
-        run: brew audit --strict --formula contrib/homebrew/token-finops-cli.rb
+        run: brew audit --strict --formula local/tfops/token-finops-cli
 
       - name: brew style
-        run: brew style contrib/homebrew/token-finops-cli.rb
+        run: brew style local/tfops/token-finops-cli
 
       - name: brew install --build-from-source
-        run: brew install --build-from-source --verbose contrib/homebrew/token-finops-cli.rb
+        run: brew install --build-from-source --verbose local/tfops/token-finops-cli
 
       - name: brew test (the formula's own test do block)
-        run: brew test token-finops-cli
+        run: brew test local/tfops/token-finops-cli
 
       - name: installed binary resolves and advertises the 0.3.x subcommand surface
         run: |
@@ -51,6 +62,8 @@ jobs:
               || { echo "::error::'${sub}' missing from --help -- did the formula pin an old sdist?"; exit 1; }
           done
 
-      - name: brew uninstall (leave the runner clean)
+      - name: clean up (leave the runner tidy)
         if: always()
-        run: brew uninstall token-finops-cli || true
+        run: |
+          brew uninstall token-finops-cli || true
+          brew untap local/tfops || true
