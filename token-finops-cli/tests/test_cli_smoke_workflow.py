@@ -12,9 +12,22 @@ from __future__ import annotations
 
 import os
 
+import pytest
+
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 WORKFLOW = os.path.join(_ROOT, ".github", "workflows", "cli-smoke.yml")
 INSTALL_DOC = os.path.join(_ROOT, "docs", "INSTALL.md")
+
+# This whole module only makes sense inside the burn-token-burn monorepo checkout,
+# where cli-smoke.yml and docs/INSTALL.md live two directories above this package
+# (token-finops-cli/ is a git subtree of both). token-finops-cli is ALSO published
+# standalone (oh-my-agent-code/token-finops-cli), where neither file exists and never
+# should -- that repo has no other coding-agent CLIs to document. Skip gracefully
+# there instead of hard-failing on a precondition that repo can't satisfy.
+pytestmark = pytest.mark.skipif(
+    not (os.path.isfile(WORKFLOW) and os.path.isfile(INSTALL_DOC)),
+    reason="cli-smoke.yml/docs/INSTALL.md only exist in the burn-token-burn monorepo checkout",
+)
 
 # tool -> the exact strings both files must agree on
 TIER1 = {
