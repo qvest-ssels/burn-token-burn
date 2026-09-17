@@ -22,6 +22,7 @@
       <a href="statusline.html">status line</a>
       <a href="self-audit.html">self-audit (session cost)</a>
       <a href="savings.html">savings</a>
+      <a href="co2-research.html">CO<sub>2</sub> research</a>
       <a href="synth.html">synth</a>
       <a href="reference.html">reference</a>
     </nav>
@@ -84,7 +85,7 @@ binding constraint: Claude Code (5h) &mdash; runway 1.9h -&gt; WARN</code></pre>
 
 <div class="featured" id="install-wizard">
   <h2>Install it</h2>
-  <p>PyPI currently serves <strong>0.2.0</strong>, the original Copilot-only single-file tool. The 9-adapter CLI below is 0.3.x and not tagged yet, so for now it installs from a checkout — once it's released, <code>uv tool install token-finops-cli</code> / <code>pipx install token-finops-cli</code> / <code>pip install token-finops-cli</code> will work directly against the package name. Four steps, install through your first report:</p>
+  <p><strong>0.3.0 &mdash; the 9-adapter CLI this site documents &mdash; is on PyPI.</strong> Install it by name; it needs Python &ge; 3.10 and nothing else. Five steps, install through your first report:</p>
 
   <p class="os-tabs" role="group" aria-label="Operating system">
     <button type="button" class="os-tab" data-os="macos" aria-current="false">macOS</button>
@@ -98,22 +99,20 @@ binding constraint: Claude Code (5h) &mdash; runway 1.9h -&gt; WARN</code></pre>
     <li>
       <h3><span class="num">1</span> Install</h3>
       <div class="cmd-block">
-        <pre id="cmd-install-macos" data-os-block="macos" hidden><code>git clone https://github.com/qvest-ssels/burn-token-burn.git
-cd burn-token-burn/token-finops-cli
-uv tool install .                 # or: pipx install .   /   pip install .</code></pre>
-        <pre id="cmd-install-linux" data-os-block="linux"><code>git clone https://github.com/qvest-ssels/burn-token-burn.git
-cd burn-token-burn/token-finops-cli
-uv tool install .                 # or: pipx install .   /   pip install .</code></pre>
+        <pre id="cmd-install-macos" data-os-block="macos" hidden><code>uv tool install token-finops-cli   # or: pipx install token-finops-cli
+                                  # or: pip install token-finops-cli</code></pre>
+        <pre id="cmd-install-linux" data-os-block="linux"><code>uv tool install token-finops-cli   # or: pipx install token-finops-cli
+                                  # or: pip install token-finops-cli</code></pre>
         <pre id="cmd-install-windows" data-os-block="windows" hidden><code>wsl --install                     # one-time, if WSL isn't set up yet
 # then, inside your WSL Linux shell:
-git clone https://github.com/qvest-ssels/burn-token-burn.git
-cd burn-token-burn/token-finops-cli
-uv tool install .                 # or: pipx install .   /   pip install .</code></pre>
+uv tool install token-finops-cli   # or: pipx install token-finops-cli
+                                  # or: pip install token-finops-cli</code></pre>
         <button type="button" class="copy-btn" data-copy-target="cmd-install-macos" data-os-block="macos" hidden>copy</button>
         <button type="button" class="copy-btn" data-copy-target="cmd-install-linux" data-os-block="linux">copy</button>
         <button type="button" class="copy-btn" data-copy-target="cmd-install-windows" data-os-block="windows" hidden>copy</button>
       </div>
       <p class="cast-note expected"># installs the <code>token-finops</code> command</p>
+      <p class="cast-note">Needs <strong>Python &ge; 3.10</strong>. On an older interpreter the install quietly resolves to the ancient 0.2.0 instead of failing, so if <code>adapters</code> later turns up missing, check your Python version first.</p>
     </li>
 
     <li>
@@ -149,11 +148,36 @@ uv tool install .                 # or: pipx install .   /   pip install .</code
       <p class="cast-note expected"># Claude Code   [############--------]  61.0%  runway   1.9h  WARN</p>
       <p class="cast-note">One line per tool it found data for: a usage bar, a percentage, a runway (how long until you hit the limit at today's pace), and a status word. If more than one tool shows up, the <em>binding constraint</em> is whichever one runs out first.</p>
     </li>
+
+    <li>
+      <h3><span class="num">5</span> Empty report? Ask <code>doctor</code> why</h3>
+      <div class="cmd-block">
+        <pre id="cmd-doctor"><code>token-finops doctor</code></pre>
+        <button type="button" class="copy-btn" data-copy-target="cmd-doctor">copy</button>
+      </div>
+      <p class="cast-note expected"># [found]   Claude Code (claude_code) — 108 events, latest 2026-09-17 12:23 UTC
+# [missing] OpenAI Codex CLI (codex)
+#     probed: ~/.codex  (not found)
+#     hint:   No ~/.codex. Install the OpenAI Codex CLI, or set CODEX_HOME.</p>
+      <p class="cast-note">A blank report is ambiguous &mdash; is the tool not installed, installed but unused, or installed somewhere the CLI didn't look? <code>doctor</code> answers that per tool: every path it probed, whether that path exists, and one concrete thing to do about it. It's the fastest way to tell "nothing to report" apart from "looking in the wrong place".</p>
+    </li>
   </ol>
 
   <p class="cast-note">The recording below is the real thing: a live <code>pip install token-finops-cli</code> from PyPI, and the <code>token-finops</code> entry point landing on <code>$PATH</code> right after.</p>
   <div class="player" id="player-06" data-cast="casts/06-install-pip.cast"></div>
-  <p class="cast-note">Note what it shows honestly: PyPI currently serves <strong>0.2.0</strong>, the original Copilot-only single-file tool, so this cast runs <code>sessions --help</code> rather than <code>adapters</code>.</p>
+  <p class="cast-note">The closing <code>adapters</code> run is against sample data rather than the recording machine's own tools, so the list you get will be your own.</p>
+
+  <h3>Tab completion (optional)</h3>
+  <p class="cast-note">Ready-made completion scripts for bash, zsh and fish ship in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/contrib/completions">contrib/completions/</a>. They complete subcommand names and each subcommand's flags, including enumerated values like <code>--tool</code>, <code>--format</code> and <code>--scenario</code>. They are plain static files &mdash; nothing to install beyond the file itself, and no startup cost in your shell. Per-shell instructions are in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/INSTALL.md#shell-tab-completion-optional">docs/INSTALL.md</a>.</p>
+</div>
+
+<div class="escape-hatch">
+  <h2>Newer than the release</h2>
+  <p>Two things on this site landed after the 0.3.0 upload and are not in the published wheel yet: <code>doctor</code> (step 5 above) and the <code>savings --co2</code> green-IT comparison behind the <a href="co2-research.html">CO<sub>2</sub> research page</a>. Until the next release, those two want a source install:</p>
+  <pre><code>git clone https://github.com/qvest-ssels/burn-token-burn.git
+cd burn-token-burn/token-finops-cli
+uv tool install .</code></pre>
+  <p class="cast-note">Everything else on this site &mdash; <code>report</code>, <code>adapters</code>, <code>status</code>, <code>self-audit</code>, <code>savings</code>, <code>break-even</code>, <code>synth</code>, <code>cost-per-token</code> &mdash; is in the released 0.3.0.</p>
 </div>
 
 <p class="cast-note"><code>adapters</code>, <code>report --compact</code>, then a full Copilot report with runway &mdash; the same commands as above, running for real.</p>
@@ -162,7 +186,10 @@ uv tool install .                 # or: pipx install .   /   pip install .</code
 
 <div class="escape-hatch">
   <h2>Nothing found?</h2>
-  <p>If <code>token-finops adapters</code> shows no data for any of your tools &mdash; you run something not on the supported list yet, or your tool simply hasn't written enough telemetry yet &mdash; you can still try the whole CLI on fake data in one command. See <a href="synth.html">synth</a>: it generates a complete, throwaway set of coding-agent telemetry so <code>report</code>, <code>status</code> and the rest have something real to read, without touching anything of yours.</p>
+  <p>Start with <code>token-finops doctor</code>: it goes through all nine adapters and says, for each one, whether it found data, found the tool but no usage yet, or found nothing at all &mdash; listing every path it probed and one thing you could do about it.</p>
+  <div class="player" id="player-07" data-cast="casts/07-doctor.cast"></div>
+  <p class="cast-note">Two tools installed, seven not. The hints are per-adapter, not generic: where that tool keeps its data, and which environment variable moves the search if yours lives somewhere else.</p>
+  <p>If the answer is simply that you run something not on the supported list yet, or your tool hasn't written enough telemetry yet, you can still try the whole CLI on fake data in one command. See <a href="synth.html">synth</a>: it generates a complete, throwaway set of coding-agent telemetry so <code>report</code>, <code>status</code> and the rest have something real to read, without touching anything of yours.</p>
 </div>
 
 <h2>See it run</h2>
@@ -172,6 +199,7 @@ uv tool install .                 # or: pipx install .   /   pip install .</code
   <li><a href="statusline.html">status line</a> &mdash; one-line status in plain, tmux, starship and waybar formats.</li>
   <li><a href="self-audit.html">self-audit (session cost)</a> &mdash; what a Claude Code session cost, broken down by model and by sub-agent.</li>
   <li><a href="savings.html">savings</a> &mdash; local hardware vs. cloud API pricing, and the break-even point.</li>
+  <li><a href="co2-research.html">CO<sub>2</sub> research</a> &mdash; what it actually takes to put a carbon number on an LLM query, why the published figures disagree by 8x, and where the compute physically runs.</li>
   <li><a href="synth.html">synth</a> &mdash; synthetic telemetry to try all of the above without touching your own data.</li>
   <li><a href="reference.html">reference</a> &mdash; JSON output shapes, environment-variable overrides, adapter caveats, and the roadmap.</li>
 </ul>

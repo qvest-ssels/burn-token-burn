@@ -21,6 +21,7 @@
       <a href="statusline.html">status line</a>
       <a href="self-audit.html">self-audit (session cost)</a>
       <a href="savings.html" aria-current="page">savings</a>
+      <a href="co2-research.html">CO<sub>2</sub> research</a>
       <a href="synth.html">synth</a>
       <a href="reference.html">reference</a>
     </nav>
@@ -59,7 +60,11 @@ $ token-finops savings --power solar-de-feed-in --utilization 0.8</code></pre>
   cloud:  ~   226 g   [ESTIMATE]  600 Wh/1M tok accelerator-side x PUE 1.13 x 334 g/kWh
   -&gt; local emits ~0.18x the cloud estimate per token (local is cleaner)
   !! The cloud figure is an ORDER-OF-MAGNITUDE ESTIMATE, not a measurement.</code></pre>
-<p>The local number is arithmetic on your box's wattage and a published grid-mix figure. The cloud number is reconstructed from published <em>per-query</em> energy estimates divided by an assumed response length, because no cloud AI provider publishes energy per token — it is honest to roughly a factor of three, and the output says so rather than hiding it in a footnote. On the default settings (German grid, US average) local emits <em>more</em> per token than the cloud estimate: a hyperscale datacentre batches work across many users and a box on your desk does not. Local wins on carbon mainly when it runs on your own panels. Neither figure counts embodied carbon or water. <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/CO2_ESTIMATE.md">docs/CO2_ESTIMATE.md</a> has every source and every caveat.</p>
+<p><code>--cloud-region</code> picks which grid the cloud tokens are assumed to burn on — <code>us-avg</code> (350 gCO<sub>2</sub>/kWh, the default), <code>us-virginia</code> (270), <code>us-ercot</code> (334) or <code>de-grid</code> (344), the last so you can compare cloud against local hardware on the <em>same</em> grid and isolate the hardware difference from the grid-mix one.</p>
+<p class="cast-note">The same comparison against two different grids: Northern Virginia, then a German solar tariff against Texas.</p>
+<div class="player" id="player-08" data-cast="casts/08-savings-co2.cast"></div>
+<p>The local number is arithmetic on your box's wattage and a published grid-mix figure. The cloud number is reconstructed from published <em>per-query</em> energy estimates divided by an assumed response length, because no cloud AI provider publishes energy per token — it is honest to roughly a factor of three, and the output says so rather than hiding it in a footnote. On the default settings (German grid, US average) local emits <em>more</em> per token than the cloud estimate: a hyperscale datacentre batches work across many users and a box on your desk does not. Local wins on carbon mainly when it runs on your own panels. Neither figure counts embodied carbon or water.</p>
+<p><strong>Where those numbers come from, and why they are this hard to pin down, is its own page: <a href="co2-research.html">the CO<sub>2</sub> research write-up</a></strong> — the published per-query energy figures and why they disagree by a factor of eight, the grid data that overturned the premise this feature started from, where the compute physically runs, and what a major cloud provider's own emissions disclosures now show.</p>
 
 <h2>Three honesty caveats</h2>
 <ul>
@@ -70,7 +75,8 @@ $ token-finops savings --power solar-de-feed-in --utilization 0.8</code></pre>
 
 <h2>Measure your own box</h2>
 <p>Hardware profiles and energy prices live in editable JSON, and every figure carries a source and a review date in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/sources.md">docs/sources.md</a> — if a number could not be sourced, it is marked as an estimate rather than quietly presented as fact.</p>
-<pre><code>$ token-finops savings --list                              # available hardware/model/tariff keys</code></pre>
+<pre><code>$ token-finops savings --list                              # available hardware/model/tariff/region keys</code></pre>
+<p class="cast-note"><code>--co2</code>, <code>--cloud-region</code> and <code>--own-hardware</code> landed after the 0.3.0 release and are not in the published wheel yet — see <a href="index.html">the install notes</a>. Everything else on this page is in 0.3.0.</p>
 <p>Editing your own wattmeter numbers into <code>savings/hardware_profiles.json</code> and <code>savings/energy.json</code> is an explicitly supported workflow, or point the CLI at your own copies without touching the packaged files:</p>
 <pre><code>export TOKEN_FINOPS_HARDWARE_JSON=~/my-hardware.json
 export TOKEN_FINOPS_ENERGY_JSON=~/my-energy.json</code></pre>
