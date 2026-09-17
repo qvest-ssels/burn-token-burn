@@ -345,8 +345,9 @@ def render_burn(r: dict, pricing_date: str, show_efficiency: bool = False) -> li
 # --------------------------------------------------------------------------- #
 # CLI glue
 # --------------------------------------------------------------------------- #
-def add_burn_parser(sub):
-    b = sub.add_parser("burn", help="plan equivalents (maxing multiplier), weekly/monthly tables, burn efficiency")
+def add_burn_parser(sub, parents=None):
+    b = sub.add_parser("burn", parents=parents or [],
+                       help="plan equivalents (maxing multiplier), weekly/monthly tables, burn efficiency")
     b.add_argument("--tool", action="append", default=None, help="restrict to tool(s)")
     b.add_argument("--since", choices=["1d", "7d", "30d", "90d", "365d", "all"], default="30d")
     b.add_argument("--session", default=None, help="Claude Code: restrict to one session id prefix")

@@ -125,8 +125,8 @@ def _rows_to_json(rows: list[dict]) -> list[dict]:
 # --------------------------------------------------------------------------- #
 # CLI glue
 # --------------------------------------------------------------------------- #
-def add_cost_per_token_parser(sub):
-    c = sub.add_parser("cost-per-token",
+def add_cost_per_token_parser(sub, parents=None):
+    c = sub.add_parser("cost-per-token", parents=parents or [],
                        help="$ per 1M tokens by model -- real list price, or a derived rate "
                             "for AI-credit-billed tools like Copilot")
     c.add_argument("--tool", action="append", default=None, help="restrict to tool(s)")

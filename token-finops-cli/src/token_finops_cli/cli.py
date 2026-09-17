@@ -30,6 +30,7 @@ from typing import Optional
 
 from .adapters import all_adapters
 from .adapters.base import registry
+from .core import config
 from .core.runway import binding_constraint, compute_runway
 from .report import (compact_line, fmt_days, fmt_dt, fmt_tokens, fmt_usd, render_by_model,
                      render_runway, render_sessions_table, render_summary, summarize)
@@ -65,10 +66,13 @@ def _report_rows(args):
     for ad in _adapters(getattr(args, "tool", None)):
         if not ad.available():
             continue
+        # `config.allowance()`/`config.cycle_day()` already fold in the CLI flags
+        # (installed by main() via set_cli_overrides), the env vars and config.json,
+        # in that order; None means "keep the adapter's own default".
         if ad.tool == "copilot":
-            policy = ad.default_policy(getattr(args, "budget", None), cycle_day=getattr(args, "cycle_day", 1))
+            policy = ad.default_policy(config.allowance("copilot"), cycle_day=config.cycle_day())
         else:
-            policy = ad.default_policy(getattr(args, "allowance", None))
+            policy = ad.default_policy(config.allowance(ad.tool))
         events = ad.events(since=None)
         quota = ad.quota()
         history = ad.quota_history() if hasattr(ad, "quota_history") else None
@@ -297,10 +301,13 @@ _ANSI_CRITICAL = "\033[31m"  # red
 
 
 def _pct_colour(used_percentage: float) -> str:
-    # thresholds match core.model.BudgetPolicy defaults (warn_at=0.75, critical_at=0.90)
-    if used_percentage >= 90:
+    # Same thresholds the runway engine uses (BudgetPolicy.warn_at/critical_at,
+    # 0.75/0.90 by default, overridable via config.json / TOKEN_FINOPS_*), so the
+    # statusline colour never disagrees with `report`'s status word.
+    warn, crit = config.thresholds()
+    if used_percentage >= crit * 100:
         return _ANSI_CRITICAL
-    if used_percentage >= 75:
+    if used_percentage >= warn * 100:
         return _ANSI_WARN
     return _ANSI_OK
 
@@ -309,15 +316,12 @@ _STATUSLINE_BAR_WIDTH = 10  # narrower than report's default 30 -- this shares a
 
 
 def _statusline_config() -> dict:
-    """Opt-in settings at ~/.token-finops/config.json (doesn't exist unless the user creates
-    it). Never raises: a missing/corrupt/non-dict file is silently treated as no settings."""
-    path = os.path.expanduser("~/.token-finops/config.json")
-    try:
-        with open(path, encoding="utf-8") as fh:
-            data = json.load(fh)
-    except (OSError, ValueError):
-        return {}
-    return data if isinstance(data, dict) else {}
+    """Backwards-compatible alias: the whole opt-in config file, which used to be read
+    here for the single `{"statusline": {"show_subagents": true}}` setting and is now
+    the shared settings file for budget thresholds, cycle overrides and `default_tool`
+    as well (see core/config.py). Same guarantees as before -- never raises, a missing
+    or corrupt file means "no settings"."""
+    return config.load_config()
 
 
 def _subagent_summary(transcript_path: str) -> Optional[str]:
@@ -419,23 +423,60 @@ def cmd_adapters(args) -> str:
 
 
 # --------------------------------------------------------------------------- #
+def budget_override_parser() -> argparse.ArgumentParser:
+    """The budget-policy overrides, as a shared parent parser.
+
+    These used to live on `report` alone (and a partial copy on `status`), so
+    `token-finops burn --budget 1500` died with argparse's "unrecognized arguments".
+    They are now attached to every subcommand that reads tool telemetry, and
+    `main()` installs them as the top tier of `core.config`'s precedence chain --
+    so whichever subcommand builds a `BudgetPolicy` during that run honours them,
+    and the flag keeps meaning the same thing everywhere.
+    """
+    p = argparse.ArgumentParser(add_help=False)
+    g = p.add_argument_group("budget overrides (CLI > $TOKEN_FINOPS_* > config.json > default)")
+    g.add_argument("--budget", type=float, default=None,
+                   help="Copilot monthly AI-unit allowance ($TOKEN_FINOPS_BUDGET, budget.allowance)")
+    g.add_argument("--allowance", type=float, default=None,
+                   help="allowance for non-Copilot tools, native unit ($TOKEN_FINOPS_ALLOWANCE)")
+    g.add_argument("--cycle-day", type=int, default=None,
+                   help="monthly cycle reset day, UTC ($TOKEN_FINOPS_CYCLE_DAY, budget.cycle_day; default 1)")
+    return p
+
+
+def apply_config_defaults(args) -> None:
+    """Fold the parsed CLI flags into `core.config` and apply the configured
+    `default_tool`. Called once from `main()`, before any subcommand runs.
+
+    An explicit `--tool` always wins: argparse leaves it at None when the user passed
+    none, which is exactly the case where a configured default may step in. A
+    configured tool no adapter answers to is ignored with a warning (see
+    `config.default_tool`) rather than yielding a silently empty report."""
+    config.set_cli_overrides(copilot_allowance=getattr(args, "budget", None),
+                             allowance=getattr(args, "allowance", None),
+                             cycle_day=getattr(args, "cycle_day", None))
+    if hasattr(args, "tool") and not getattr(args, "tool", None):
+        tool = config.default_tool(valid=registry)
+        if tool:
+            args.tool = [tool]
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="token-finops", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="command")
+    budget = budget_override_parser()
 
-    r = sub.add_parser("report", help="usage summary + runway per tool (default)")
+    r = sub.add_parser("report", parents=[budget], help="usage summary + runway per tool (default)")
     r.add_argument("--tool", action="append", choices=sorted(registry) or None, help="restrict to tool(s)")
-    r.add_argument("--budget", type=float, default=None, help="Copilot monthly AI-unit allowance")
-    r.add_argument("--cycle-day", type=int, default=1, help="Copilot cycle reset day (default 1, UTC)")
-    r.add_argument("--allowance", type=float, default=None, help="allowance for non-Copilot tools (native unit)")
     r.add_argument("--compact", "-c", action="store_true", help="one line per tool")
     r.add_argument("--watch", type=float, default=None, metavar="SECONDS")
     r.add_argument("--json", action="store_true")
     r.add_argument("--since", choices=SINCE_MAP.keys(), default="7d", help="usage summary window (default 7d)")
     r.add_argument("--db-path", default=None, help="Copilot session-store.db to read (overrides default)")
 
-    s = sub.add_parser("sessions", help="per-session table (Copilot: --session/--totals break reports)")
+    s = sub.add_parser("sessions", parents=[budget],
+                       help="per-session table (Copilot: --session/--totals break reports)")
     s.add_argument("--tool", action="append", choices=sorted(registry) or None)
     s.add_argument("--since", choices=SINCE_MAP.keys(), default="all")
     s.add_argument("--limit", type=int, default=20, help="max sessions to list (ignored with --session/--totals)")
@@ -456,7 +497,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("collect-statusline", help="Claude Code statusLine hook: persist rate_limits")
     sub.add_parser("adapters", help="list detected data sources")
 
-    doc = sub.add_parser("doctor",
+    doc = sub.add_parser("doctor", parents=[budget],
                          help="diagnose empty reports: per tool found/empty/missing + what to do next")
     doc.add_argument("--tool", action="append", choices=sorted(registry) or None,
                      help="restrict the diagnosis to tool(s)")
@@ -477,11 +518,11 @@ def build_parser() -> argparse.ArgumentParser:
     from .savings import add_savings_parsers
     add_savings_parsers(sub)
     from .status import add_status_parser
-    add_status_parser(sub)
+    add_status_parser(sub, parents=[budget])
     from .burn import add_burn_parser
-    add_burn_parser(sub)
+    add_burn_parser(sub, parents=[budget])
     from .cost_per_token import add_cost_per_token_parser
-    add_cost_per_token_parser(sub)
+    add_cost_per_token_parser(sub, parents=[budget])
     return p
 
 
@@ -498,7 +539,8 @@ def main(argv=None):
     _load()
     parser = build_parser()
     args = parser.parse_args(_normalize_argv(sys.argv[1:] if argv is None else argv))
-    handlers = {"report": cmd_report, "sessions": cmd_sessions, "self-audit": cmd_self_audit,
+    apply_config_defaults(args)
+    handlers ={"report": cmd_report, "sessions": cmd_sessions, "self-audit": cmd_self_audit,
                 "collect-statusline": cmd_collect_statusline, "adapters": cmd_adapters,
                 "synth": cmd_synth}
     if args.command == "burn":

@@ -137,10 +137,14 @@ class CopilotAdapter(BaseAdapter):
         finally:
             con.close()
 
-    def default_policy(self, allowance: Optional[float] = None, cycle_day: int = 1) -> BudgetPolicy:
+    def default_policy(self, allowance: Optional[float] = None,
+                       cycle_day: Optional[int] = None) -> BudgetPolicy:
+        # cycle_day=None means "not overridden here": BudgetPolicy's default factory
+        # then resolves $TOKEN_FINOPS_CYCLE_DAY / config.json budget.cycle_day / 1.
+        kw = {} if cycle_day is None else {"cycle_day": cycle_day}
         return BudgetPolicy(
             tool=self.tool, window_id="month", unit=Unit.AIU,
-            cycle=CycleKind.CALENDAR_MONTH_UTC, cycle_day=cycle_day,
+            cycle=CycleKind.CALENDAR_MONTH_UTC, **kw,
             allowance=DEFAULT_BUDGET_AIU if allowance is None else allowance,
             source_of_truth="local_sum",
         )
