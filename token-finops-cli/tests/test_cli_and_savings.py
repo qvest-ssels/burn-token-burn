@@ -520,14 +520,29 @@ def test_cmd_savings_co2_degrades_without_estimate_block(home, run_cli, monkeypa
 def test_cmd_savings_own_hardware_drops_capex(home, run_cli):
     out = run_cli("savings", "--own-hardware")
     assert "capex:             EXCLUDED (--own-hardware)" in out
-    assert "  local marginal:    $0.40 / 1M tok" in out
-    assert "LOCAL CHEAPER" in out
+    assert "running overhead:  +10% of energy cost = $0.04 / 1M tok" in out
+    assert "  hosting (local):   $0.44 / 1M tok" in out
+    assert "Licensing (cloud)" in out
+    assert "HOSTING CHEAPER" in out
     assert "sunk-cost view: no break-even to reach" in out
     assert "break-even utilisation" not in out
     lc = local_cost("mac-studio-m4-max-128gb", "qwen3-32b", include_capex=False)
     assert lc.capex_usd_per_mtok == 0.0
+    assert lc.management_usd_per_mtok == 0.0  # direct local_cost() call: no overhead unless requested
     assert lc.total_usd_per_mtok == lc.energy_usd_per_mtok
     assert lc.break_even_utilization(3.20) is None
+
+    lc_hosted = local_cost("mac-studio-m4-max-128gb", "qwen3-32b", include_capex=False, management_overhead=0.10)
+    assert lc_hosted.management_usd_per_mtok == pytest.approx(lc_hosted.energy_usd_per_mtok * 0.10)
+    assert lc_hosted.total_usd_per_mtok == pytest.approx(lc_hosted.energy_usd_per_mtok * 1.10)
+
+    lc_default_capex = local_cost("mac-studio-m4-max-128gb", "qwen3-32b", management_overhead=0.10)
+    assert lc_default_capex.management_usd_per_mtok == 0.0  # overhead only applies once capex is excluded
+
+
+def test_cmd_savings_management_overhead_flag(home, run_cli):
+    out = run_cli("savings", "--own-hardware", "--management-overhead", "0.25")
+    assert "running overhead:  +25% of energy cost" in out
 
 
 def test_cmd_savings_list_includes_cloud_regions(home, run_cli):

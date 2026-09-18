@@ -48,10 +48,11 @@ $ token-finops savings --power solar-de-feed-in --utilization 0.8</code></pre>
 <p class="cast-note">What to notice: utilisation dominates. The same hardware looks like a bad deal at 20 % and a good one at 80 %, because the purchase price is amortised over the tokens you actually generate. The electricity price matters too, which is why the tariff is a switch rather than a constant.</p>
 
 <h2>Already own the box?</h2>
-<p>Then its purchase price is a sunk cost, and amortising it per token answers a question you no longer have. <code>--own-hardware</code> drops capex entirely and compares the <em>marginal</em> cost of the next token — electricity against the API bill — which is the only number still open to a decision.</p>
+<p>Then its purchase price is a sunk cost, and amortising it per token answers a question you no longer have. <code>--own-hardware</code> drops capex entirely and reframes the comparison as <strong>hosting</strong> (electricity, plus a flat <code>--management-overhead</code> assumption for wear and occasional troubleshooting — 10&#37; by default, not a sourced figure) against <strong>licensing</strong> (the API/plan bill) — the only numbers still open to a decision.</p>
 <pre><code>$ token-finops savings --own-hardware --power solar-de-feed-in
   capex:             EXCLUDED (--own-hardware): $3,999 is sunk
-  local marginal:    $0.08 / 1M tok  -&gt; LOCAL CHEAPER (0.03x)</code></pre>
+  running overhead:  +10% of energy cost = $0.01 / 1M tok  [ASSUMPTION]
+  hosting (local):   $0.09 / 1M tok  -&gt; HOSTING CHEAPER (0.03x)</code></pre>
 
 <h2>Green IT: CO2 per 1M tokens</h2>
 <p>Optional, via <code>--co2</code>. It puts the local emissions figure next to an estimate for the cloud side, and is careful to show that the two are not the same kind of number:</p>
