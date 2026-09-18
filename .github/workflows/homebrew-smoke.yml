@@ -7,7 +7,10 @@ name: Homebrew formula smoke test
 # regression, before a human tries `brew install --build-from-source` and it just fails.
 #
 # Runs on push/PR when the formula changes (no PyPI network dependency beyond the formula's own
-# `url` download, which is the same download a real `brew install` does) plus manual dispatch.
+# `url` download, which is the same download a real `brew install` does), plus a weekly cron and
+# manual dispatch so drift with NO local diff still gets caught -- e.g. the pinned sdist getting
+# pulled from PyPI, a Homebrew/macOS-runner-image change breaking `brew audit`/`install`, or the
+# `depends_on "python@3.12"` formula drifting from what a fresh macos-latest runner ships.
 # `macos-latest` GitHub-hosted runners ship Homebrew preinstalled.
 
 on:
@@ -20,6 +23,8 @@ on:
     paths:
       - "contrib/homebrew/token-finops-cli.rb"
       - ".github/workflows/homebrew-smoke.yml"
+  schedule:
+    - cron: "17 7 * * 1"  # weekly, Monday 07:17 UTC -- offset from pypi-smoke.yml's 06:41
   workflow_dispatch:
 
 jobs:

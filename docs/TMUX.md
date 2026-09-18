@@ -67,13 +67,17 @@ Claude Code pushes into the status line — that is what makes `CC 61% 2h!` poss
 ```
 
 The line itself looks like `claude-sonnet-5 | 5h [####------]  40.0% | 7d [#---------]  12.0%`
-(green/yellow/red at the same 75 %/90 % thresholds as `report`). Opt in to a sub-agent count and
+(green/yellow/red at the same 75 %/90 % thresholds as `report` — move them with
+`budget.warn_at`/`budget.critical_at`, see [`CONFIG.md`](CONFIG.md)). Opt in to a sub-agent count and
 token total for the current session — `... | 2 agents · 8.4k tokens` — by creating
 `~/.token-finops/config.json`:
 
 ```json
 { "statusline": { "show_subagents": true } }
 ```
+
+That is one section of the shared settings file — budget thresholds, a default tool and
+allowance overrides live in the same place; [`CONFIG.md`](CONFIG.md) documents all of it.
 
 Off by default: it parses `<session>/subagents/agent-*.jsonl` on every refresh, which is extra
 disk I/O most setups don't need. Requires Claude Code's payload to carry `transcript_path` (it

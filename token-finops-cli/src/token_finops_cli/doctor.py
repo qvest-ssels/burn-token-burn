@@ -33,6 +33,7 @@ from datetime import datetime
 from typing import Optional
 
 from . import __version__
+from .adapters.base import registry
 from .report import fmt_dt
 
 # Per-tool copy. Each entry is (what the tool is, how to get usage into it).
@@ -225,12 +226,36 @@ def _wrap(label: str, text: str, width: int = 96) -> list[str]:
     return [f"      {label + ':':<8}{body[0]}"] + [indent + line for line in body[1:]]
 
 
+def _settings_block() -> list[str]:
+    """The effective budget settings, after CLI flags, `TOKEN_FINOPS_*` and
+    `config.json` have been folded together (see core/config.py). This is where a
+    user checks *why* a threshold or allowance is what it is -- and it is what makes
+    `doctor --budget N` / `doctor --cycle-day D` show their effect."""
+    from .core import config
+
+    path = config.config_path()
+    warn, crit = config.thresholds()
+    lines = [f"  config file: {_tilde(path)} "
+             f"({'loaded' if os.path.exists(path) else 'not present — all defaults'})",
+             f"      thresholds: WARN at {warn:.0%} of the window, CRITICAL at {crit:.0%}",
+             f"      cycle day:  {config.cycle_day()} (monthly-cycle tools, UTC)"]
+    tool = config.default_tool(valid=registry)
+    lines.append(f"      default tool: {tool}" if tool
+                 else "      default tool: (none — every detected tool is reported)")
+    overrides = [f"{t}={config.allowance(t):g}" for t in sorted(registry) if config.allowance(t) is not None]
+    if overrides:
+        lines.append(f"      allowance overrides: {', '.join(overrides)}")
+    lines.append("")
+    return lines
+
+
 def render(diags: list[Diagnosis]) -> str:
     lines = ["token-finops doctor — what `report` can and cannot see on this machine", ""]
     lines.append(f"  token-finops-cli {__version__}")
     lines.append(f"  Python {platform.python_version()} ({sys.executable})")
     lines.append(f"  platform {platform.system()} {platform.release()}")
     lines.append("")
+    lines.extend(_settings_block())
 
     for d in diags:
         head = f"  [{d.status}]".ljust(12) + f"{d.display_name} ({d.tool})"

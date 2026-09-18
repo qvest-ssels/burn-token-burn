@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Optional
 
+from . import config
+
 
 class Unit(str, enum.Enum):
     """The native unit a provider budgets in."""
@@ -107,10 +109,22 @@ class BudgetPolicy:
     cycle: CycleKind
     allowance: Optional[float] = None       # None = unlimited/unknown
     window_length: Optional[timedelta] = None   # for ROLLING
-    cycle_day: int = 1                      # for CALENDAR_MONTH_UTC
-    warn_at: float = 0.75
-    critical_at: float = 0.90
+    # The three fields below are user-configurable (`~/.token-finops/config.json`,
+    # `TOKEN_FINOPS_*`) -- see core/config.py. They are resolved here, at construction
+    # time, so every adapter's `default_policy()` picks the setting up without knowing
+    # it exists. Passing an explicit value still wins (that is how a CLI flag lands).
+    cycle_day: int = field(default_factory=config.cycle_day)   # for CALENDAR_MONTH_UTC
+    warn_at: float = field(default_factory=config.warn_at)
+    critical_at: float = field(default_factory=config.critical_at)
     source_of_truth: str = "local_sum"      # "local_sum" | "provider_pct" | "hybrid"
+
+    def __post_init__(self) -> None:
+        # A configured rolling-window length is a *fallback for the span we assume*,
+        # never a reset time: when a tool reports a real `resets_at` (Claude Code's
+        # statusline payload, Codex's rollout rate_limits) the runway engine keeps
+        # using that snapshot's timestamp -- see core/runway.py::_percent_runway.
+        if self.cycle == CycleKind.ROLLING:
+            self.window_length = config.window_length(self.tool, self.window_id, self.window_length)
 
 
 @dataclass
