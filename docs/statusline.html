@@ -21,6 +21,7 @@
       <a href="statusline.html" aria-current="page">status line</a>
       <a href="self-audit.html">self-audit (session cost)</a>
       <a href="savings.html">savings</a>
+      <a href="co2-research.html">CO<sub>2</sub> research</a>
       <a href="synth.html">synth</a>
       <a href="reference.html">reference</a>
     </nav>
@@ -57,6 +58,14 @@ $ token-finops status --fresh             # force a real re-read right now</code
 <p>Different mechanism, same cache directory: <code>collect-statusline</code> stores the rate-limit percentages Claude Code itself pushes into its status line, which is what makes a <code>CC</code> segment possible at all.</p>
 <pre><code>// ~/.claude/settings.json
 { "statusLine": { "type": "command", "command": "token-finops collect-statusline" } }</code></pre>
+
+<h2 id="agent-native">Letting the agent ask, instead of watching it yourself</h2>
+<p>A status line is passive: it tells <em>you</em> the runway, and you decide. The other half of the problem is the agent about to fan out six sub-agents on the most expensive model — it never looks at your tmux bar. So the same runway is also packaged as something the agent can call mid-task, before it spends:</p>
+<ul class="pagelist">
+  <li><strong>Claude Code</strong> — a <code>/runway</code> skill, in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/contrib/claude-code/runway">contrib/claude-code/runway/</a>. Copy the directory to <code>.claude/skills/runway/</code> in a project, or <code>~/.claude/skills/runway/</code> for every project.</li>
+  <li><strong>Codex CLI</strong> — the equivalent as a custom prompt, <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/contrib/codex/prompts/runway.md">contrib/codex/prompts/runway.md</a>. Drop it in <code>~/.codex/prompts/</code> and invoke it as <code>/prompts:runway</code>.</li>
+</ul>
+<p>Both wrap the same thing — <code>token-finops report --json</code>, read for the binding constraint. You can type <code>/runway</code> yourself, but the useful case is the description being written so the model invokes it on its own initiative before a large fan-out, and then says "you have 1.9 h of your 5 h window left; this will likely exhaust it" instead of finding out afterwards. The design reasoning, and what the equivalent would look like for the other agents, is in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/INTEGRATIONS.md">docs/INTEGRATIONS.md</a> §3.</p>
 
 <div class="planned">
   <h3>Planned, not shipped</h3>

@@ -37,6 +37,14 @@ A short, human-facing "what's outstanding" list. For the detailed agent-ready wo
 
 ## Open
 
+- [ ] **Investigate a rare `test_since_map` flake under random test ordering** — seen once
+  (985 passed, 1 failed) right after merging the configurable-budget-thresholds work
+  (`core/config.py`); passed in isolation and in 5+ subsequent full-suite runs with random
+  ordering, and with `-p no:randomly`. Likely a rare global-state leak (an env var or module
+  dict not fully reset) that only some random seeds happen to trigger. Not reproduced enough to
+  bisect yet — if it recurs, capture the `Using --randomly-seed=N` line from the failing run and
+  re-run with `--randomly-seed=N` to make it deterministic before investigating further.
+
 - [ ] **Recurring public CO2-estimate data as a "know-how" service** — instead of a one-time
   static CO2 research page, periodically re-run the CO2/energy estimate (via a scheduled GitHub
   Actions workflow, same cron pattern as `pypi-smoke.yml`/`homebrew-smoke.yml`) and publish the

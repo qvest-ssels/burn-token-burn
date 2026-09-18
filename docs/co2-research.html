@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CO2 research — token-finops</title>
+<meta name="description" content="Where token-finops' gCO2e-per-1M-tokens figures come from: the sourced working lives in CO2_ESTIMATE.md while this write-up is in progress.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="wordmark" href="index.html"><span class="prompt">$ </span>token-finops</a>
+    <nav aria-label="Site">
+      <a href="index.html">overview</a>
+      <a href="report.html">report</a>
+      <a href="statusline.html">status line</a>
+      <a href="self-audit.html">self-audit (session cost)</a>
+      <a href="savings.html">savings</a>
+      <a href="co2-research.html" aria-current="page">CO<sub>2</sub> research</a>
+      <a href="synth.html">synth</a>
+      <a href="reference.html">reference</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+
+<h1>CO<sub>2</sub> research</h1>
+<p class="subtitle">The long-form write-up is still being written. The underlying research is already done, sourced, and shipped &mdash; here is where to read it in the meantime.</p>
+
+<p>Putting a carbon number on an LLM query is harder than it looks. Energy per token is not published by any cloud AI provider, so it has to be reconstructed from per-query figures that were never meant to be divided that way &mdash; and the published figures disagree with each other by close to an order of magnitude. Datacentre overhead (PUE) and grid carbon intensity, by contrast, are both genuinely well sourced.</p>
+
+<p>That whole chain &mdash; every figure, every source, every confidence level, and the caveats that matter &mdash; is written up in full in the repository:</p>
+
+<ul class="pagelist">
+  <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/CO2_ESTIMATE.md">docs/CO2_ESTIMATE.md</a> &mdash; the complete sourced working: which energy-per-query estimates exist, why one of them anchors the figure and the others don't, the PUE figures the three largest providers publish, the grid carbon intensities per region, and an explicit statement of what the numbers are <em>not</em> (no embodied carbon, no water, no claim about any specific provider).</li>
+  <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/sources.md">docs/sources.md</a> &mdash; every price, tariff and grid figure used anywhere in this tool, each with its source and review date.</li>
+</ul>
+
+<h2>Or just run it</h2>
+<p><code>--co2</code> is opt-in. It puts the local emissions figure next to an estimate for the cloud side and labels the two differently on every line, because they are not the same kind of number: the local one is arithmetic on your own hardware's wattage, and the cloud one is an order-of-magnitude estimate that is honest to roughly a factor of three.</p>
+
+<pre><code>$ token-finops savings --co2 --cloud-region us-virginia
+$ token-finops savings --co2 --power solar-de-feed-in --cloud-region us-ercot</code></pre>
+
+<p>The <a href="savings.html">savings page</a> shows the output and the cost side of the same comparison.</p>
+
+<p class="cast-note"><code>--co2</code> and <code>--cloud-region</code> landed after the 0.3.0 release and are not in the published wheel yet &mdash; see <a href="index.html">the install notes</a>.</p>
+
+<footer>
+  <p>Recordings are asciicast v2 files committed in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/docs/casts">docs/casts/</a> — play them locally with <code>asciinema play &lt;file&gt;</code>. This page ships no analytics and no tracking.</p>
+</footer>
+
+</div>
+
+</body>
+</html>
