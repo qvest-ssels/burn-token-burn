@@ -1,0 +1,85 @@
+name: Parser / adapter drift
+description: An assistant changed its on-disk format and the adapter stopped seeing (or mis-reads) the data.
+title: "drift: <tool> — "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Schema drift is expected here, not exceptional (`AGENTS.md` rule 7): this
+        tool reads other tools' undocumented local files, and those files move.
+        Use this form when the *format* changed. For anything else broken, use
+        the plain bug report instead.
+
+
+        **Never paste real telemetry.** It contains your prompts, paths and
+        account data. Redact it, or reproduce against a synthetic home:
+        `token-finops synth --out ./tmp/fake-home --tools <tool> --print-env`.
+  - type: dropdown
+    id: adapter
+    attributes:
+      label: Adapter
+      options:
+        - copilot (GitHub Copilot CLI)
+        - claude_code (Claude Code)
+        - codex (OpenAI Codex CLI)
+        - gemini_cli (Gemini CLI)
+        - hermes (Hermes Agent)
+        - opencode (OpenCode / Kilo CLI)
+        - cline (Cline / Roo / Kilo, VS Code)
+        - aider (Aider)
+        - continue_dev (Continue.dev)
+        - not sure / something else
+    validations:
+      required: true
+  - type: input
+    id: tool-version
+    attributes:
+      label: Version of the assistant whose format drifted
+      description: >-
+        And, if you know it, the last version that still worked. This is the
+        single most useful field in the form.
+      placeholder: "Codex CLI 0.48.0 (0.44.0 was fine)"
+    validations:
+      required: true
+  - type: textarea
+    id: symptom
+    attributes:
+      label: What you see vs. what you expected
+      description: >-
+        Zero events? Events with the wrong model name? Token counts an order of
+        magnitude off? A runway that never moves?
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `token-finops doctor`
+      description: >-
+        Covers package version, Python, platform and which paths each adapter
+        probed. Trim absolute paths to `~/...` if you care about that.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Sanitized sample of the new format
+      description: >-
+        One or two records from the drifted file with prompts, file paths, IDs
+        and account data replaced — keep the *shape* (keys, nesting, value
+        types), throw away the content. Say which file it came from.
+      render: json
+    validations:
+      required: true
+  - type: checkboxes
+    id: hygiene
+    attributes:
+      label: Before submitting
+      options:
+        - label: The sample above contains no real prompt text, paths, tokens or account identifiers.
+          required: true
+        - label: >-
+            I checked `docs/ADAPTERS.md` — the verified field table there is the
+            source of truth for what the parser expects.
+          required: false

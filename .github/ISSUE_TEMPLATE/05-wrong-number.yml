@@ -1,0 +1,56 @@
+name: Wrong or stale number
+description: A price, quota, plan allowance, hardware or energy/CO2 figure is out of date, mis-sourced, or wrong.
+title: "data: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Prices and quotas change faster than this repo does, and the whole tool
+        is only as honest as the figures behind it. This form exists so that
+        correcting one is a two-minute job rather than a bug-report negotiation.
+
+
+        Every figure lives in exactly one of: `docs/sources.md`,
+        `token-finops-cli/src/token_finops_cli/savings/energy.json`,
+        `savings/hardware_profiles.json`, or the pricing tables in
+        `core/pricing.py`.
+  - type: input
+    id: where
+    attributes:
+      label: Which figure, and where does it live?
+      placeholder: "energy.json → grid intensity for `de` (0.38 kg/kWh)"
+    validations:
+      required: true
+  - type: input
+    id: current
+    attributes:
+      label: Current value
+    validations:
+      required: true
+  - type: input
+    id: proposed
+    attributes:
+      label: Value you believe is correct
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Primary source
+      description: >-
+        Link, publisher, publication date, and the specific table or figure
+        number if it's a report. Primary sources only — a blog post quoting a
+        vendor page is the vendor page's problem, not a source. If the best
+        available number is genuinely an estimate, say so and it ships labelled
+        as one.
+    validations:
+      required: true
+  - type: input
+    id: review-date
+    attributes:
+      label: When should this be re-checked?
+      description: Every figure carries a review date. A vendor price that moves quarterly gets a nearer one than a grid average.
+      placeholder: "2027-03"
+    validations:
+      required: false

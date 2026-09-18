@@ -1,0 +1,66 @@
+name: Feature request
+description: A new command, flag, output format or integration.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Asking for a *new assistant* to be supported? Use the **Support a new
+        assistant** form — it routes into the ADR that decision needs.
+
+
+        Two things this repo will not do, so they're not worth filing: network
+        calls that aren't behind an explicit `--online` flag (default runs must
+        work offline), and runtime dependencies (the package is standard library
+        only). Vendored third-party parsers are out too — see
+        `docs/landscape.md` for the tools we point at instead of re-implementing.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's the problem?
+      description: The situation you're in, not the solution you've already designed. What did you want to know that the tool wouldn't tell you?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would it look like?
+      description: Sketch the command and the output you'd want to see.
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: sources
+    attributes:
+      label: Sources for any number involved
+      description: >-
+        If your proposal involves a price, a quota, a hardware or energy figure:
+        link where it comes from and when it was published. Rule 6 — every number
+        has a source and a review date; anything uncited ships labelled as an
+        estimate. Leave blank if no numbers are involved.
+    validations:
+      required: false
+  - type: textarea
+    id: task-shape
+    attributes:
+      label: "Optional: shape it as a task"
+      description: >-
+        Most work here is done by coding agents picking tasks out of
+        `claude-tasks.md`, which wants a size and testable acceptance criteria.
+        Filling this in makes your request pickup-ready instead of a thing
+        someone has to first translate. Not required.
+      value: |
+        Size: S / M / L
+        Acceptance criteria:
+        - [ ]
+        - [ ]
+    validations:
+      required: false
+  - type: checkboxes
+    id: offer
+    attributes:
+      label: Would you implement it?
+      options:
+        - label: Yes, if the approach gets a thumbs-up first.
+          required: false

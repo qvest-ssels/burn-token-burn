@@ -1,0 +1,110 @@
+name: Support a new assistant
+description: "\"Please add support for <tool>\" — answer the ADR question set and it becomes an ADR."
+title: "assistant: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Support for an assistant is decided in an ADR (`docs/adr/`, one per
+        assistant) and the tier follows from the facts, not from how popular the
+        tool is: **full adapter** (tokens + a real runway), **usage-only**
+        (tokens/cost, no budget to compute a runway against), **reference-only**
+        (point at an existing tool because the local data is unreliable), or
+        **not feasible** (there is no local data).
+
+
+        The questions below are exactly the ADR question set. Answer what you
+        can — "unknown" is a fine answer and more useful than a guess. A filled
+        form is most of a `Proposed` ADR; an empty one is a wish.
+
+
+        Check [`docs/adr/README.md`](https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/README.md)
+        first: thirteen tools already have a verdict, including several that were
+        ruled out.
+  - type: input
+    id: tool
+    attributes:
+      label: Assistant
+      placeholder: "name + a link to its docs or repo"
+    validations:
+      required: true
+  - type: textarea
+    id: storage
+    attributes:
+      label: Where does it store usage telemetry locally?
+      description: >-
+        Path(s) and format (JSONL, SQLite, JSON, a Markdown log, …). If you have
+        checked and there is nothing on disk, say that — "not feasible" is a
+        real, useful outcome.
+    validations:
+      required: true
+  - type: textarea
+    id: fields
+    attributes:
+      label: Which fields carry tokens, model and timestamp?
+      description: >-
+        Field names and a sanitized sample record if you have one — shape only,
+        no prompt text or account data.
+      render: json
+    validations:
+      required: false
+  - type: dropdown
+    id: budget
+    attributes:
+      label: Does the provider enforce a budget unit?
+      description: The thing that runs out — requests/day, credits, a 5-hour window, a plan allowance.
+      options:
+        - "Yes — and it resets on a known cycle"
+        - "Yes, but I don't know how it resets"
+        - "No — bring-your-own-key, you just pay per token"
+        - "Unknown"
+    validations:
+      required: true
+  - type: dropdown
+    id: offline-quota
+    attributes:
+      label: Can remaining quota be known offline?
+      options:
+        - "Yes — the local files contain it, or it can be summed locally"
+        - "Only online, via an API"
+        - "No"
+        - "Unknown"
+    validations:
+      required: true
+  - type: dropdown
+    id: data-status
+    attributes:
+      label: Is the data source official or reverse-engineered?
+      description: >-
+        Official = the vendor documents it or deliberately writes it for you.
+        Reverse-engineered = you found it by looking. Both are acceptable; the
+        ADR records which, because it sets the drift expectation.
+      options:
+        - Official / documented
+        - Reverse-engineered (undocumented local file)
+        - Mixed
+        - Unknown
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Sources
+      description: >-
+        Links for any pricing, quota or plan-allowance number you mention above.
+        This repo's rule 6 is "every number has a source and a review date" — if
+        you cannot cite it, label it an estimate and say so.
+    validations:
+      required: true
+  - type: checkboxes
+    id: offer
+    attributes:
+      label: How far do you want to take this?
+      options:
+        - label: I'm willing to draft the ADR (`docs/adr/00NN-<tool>.md`, status *Proposed*).
+          required: false
+        - label: I'm willing to implement the adapter + its synthetic fixture and test.
+          required: false
+        - label: I can't do either, but I can test a build against the real tool.
+          required: false
