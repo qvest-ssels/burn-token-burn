@@ -37,6 +37,19 @@ A short, human-facing "what's outstanding" list. For the detailed agent-ready wo
 
 ## Open
 
+- [ ] **Recurring public CO2-estimate data as a "know-how" service** — instead of a one-time
+  static CO2 research page, periodically re-run the CO2/energy estimate (via a scheduled GitHub
+  Actions workflow, same cron pattern as `pypi-smoke.yml`/`homebrew-smoke.yml`) and publish the
+  refreshed numbers to the docs site as a standing public-service page — framed as ongoing
+  research/tracking, not just a one-off blog post. Needs: (a) the actual CO2 research page to
+  exist first (currently a placeholder pointing at `docs/CO2_ESTIMATE.md` — see the
+  `docs-refresh-and-co2-page` branch/PR), (b) a decision on what "periodically re-run" even means
+  here, since the underlying inputs (grid-mix gCO2/kWh, cloud PUE, energy-per-token estimates)
+  are slow-moving published figures re-sourced by hand, not something with a live API to poll —
+  likely means "re-check sources quarterly and bump `docs/sources.md`'s review dates," not a fully
+  automated pipeline. Explicitly parked — human said "the co2 can stay just dont continue atm" on
+  2026-09-18, so no active work until picked back up.
+
 - [ ] **New GitHub Pages subpage: Qwen Coder via Ollama, as a local sub-agent model** — write a
   docs subpage (`docs/qwen-ollama.md` or `.html`, linked from `docs/index.html`) covering
   installing Ollama on macOS and pulling a Qwen Coder model, then actually try it end-to-end in a
