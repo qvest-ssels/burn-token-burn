@@ -49,6 +49,33 @@ CI (`.github/workflows/ci.yml`) runs both on Python 3.10–3.13. Keep it green.
    the available scenarios (`steady`, `burst`, `exhausted`, `weekend`,
    `fresh`, `quiet`, `subagent-heavy`).
 
+## Filing an issue
+
+The issue chooser has five forms, and which one you pick matters more than
+usual here:
+
+- **Parser / adapter drift** — an assistant changed its on-disk format and
+  the adapter stopped reading it. Expected, not exceptional (`AGENTS.md`
+  rule 7). Needs the assistant's version and a *sanitized* sample of the
+  new shape — never real telemetry; `token-finops synth` exists for this.
+- **Bug report** — anything else broken.
+- **Support a new assistant** — asks the ADR question set (where telemetry
+  lives, what budget unit the provider enforces, whether quota is knowable
+  offline, official vs. reverse-engineered), so a filled form is most of a
+  *Proposed* ADR instead of a wish.
+- **Feature request** — optionally shaped as a `claude-tasks.md` entry
+  (size + acceptance criteria), which makes it pickup-ready for whoever —
+  or whatever — takes it.
+- **Wrong or stale number** — a price, quota, hardware or energy figure
+  that needs re-sourcing. Primary source and review date required, same
+  rule the repo holds itself to.
+
+Anything that isn't one of those: open a blank issue and write it down.
+There are no Discussions on this repo, so issues are the one inbox. Triage
+is one maintainer and the occasional coding agent — the built-in labels
+(`bug`, `enhancement`, `documentation`, `question`, `help wanted`) are all
+the process there is.
+
 ## Commit messages
 
 Imperative subject line, body explains *why* rather than *what*. When a
@@ -56,6 +83,9 @@ coding agent authored the change, keep the attribution trailers it adds
 (e.g. `Co-Authored-By:`, `Claude-Session:`) — do not strip them.
 
 ## Pull request checklist
+
+`.github/PULL_REQUEST_TEMPLATE.md` pre-fills this list into every PR, so
+you shouldn't have to copy it by hand:
 
 - [ ] `uv run pytest -q` passes.
 - [ ] `uv run ruff check .` passes.

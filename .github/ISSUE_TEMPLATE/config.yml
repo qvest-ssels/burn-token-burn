@@ -1,0 +1,15 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question, idea, or "is this even in scope?"
+    url: https://github.com/qvest-ssels/burn-token-burn/issues/new
+    about: >-
+      No form for these — open a blank issue and just write it down. Discussions
+      are not enabled on this repo; a plain issue is the one inbox.
+  - name: Docs, install instructions, terminal recordings
+    url: https://qvest-ssels.github.io/burn-token-burn/
+    about: Read this first — most "how do I" answers are already there.
+  - name: Why a tool gets the support it gets (ADRs)
+    url: https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/README.md
+    about: >-
+      One ADR per assistant, with the support tier and the reason for it. Check
+      whether your tool already has a verdict before asking for an adapter.

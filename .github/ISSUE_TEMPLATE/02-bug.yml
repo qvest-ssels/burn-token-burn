@@ -1,0 +1,62 @@
+name: Bug report
+description: Something in the CLI is wrong, crashes, or prints a number you can't believe.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        If an assistant changed its file format and the adapter stopped reading
+        it, use the **Parser / adapter drift** form instead — it asks for the
+        things that case actually needs.
+
+
+        Everything here runs offline against local files, so a reproduction is
+        usually possible with a synthetic home:
+        `token-finops synth --out ./tmp/fake-home --print-env`.
+  - type: textarea
+    id: command
+    attributes:
+      label: Command you ran
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: What you expected, and what happened instead
+      description: >-
+        Paste the output or the traceback. If it's a number you think is wrong,
+        say what you believe the right number is and how you arrived at it.
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `token-finops doctor`
+      description: Package version, Python, platform, per-adapter state. Trim paths if you like.
+      render: text
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How it was installed
+      options:
+        - pip / pipx / uv from PyPI
+        - Homebrew
+        - editable install from a git checkout
+        - other / not sure
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: >-
+        Ideally the `synth` scenario and flags that show it (`steady`, `burst`,
+        `exhausted`, `weekend`, `fresh`, `quiet`, `subagent-heavy` — see
+        `docs/SYNTH.md`). "Only happens against my real data" is an acceptable
+        answer; say so rather than guessing.
+    validations:
+      required: false
