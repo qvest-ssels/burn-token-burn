@@ -57,8 +57,11 @@ def test_build_parser_defaults_and_tool_choices(home):
     all_adapters()  # populate the registry that feeds --tool choices
     p = build_parser()
     r = p.parse_args(["report"])
+    # --cycle-day now defaults to None, not 1: None is "the user passed no flag", which
+    # is what lets $TOKEN_FINOPS_CYCLE_DAY / config.json budget.cycle_day step in. The
+    # effective default is still 1 (core.config.DEFAULT_CYCLE_DAY).
     assert (r.since, r.cycle_day, r.compact, r.json, r.watch, r.budget, r.allowance, r.tool) == \
-        ("7d", 1, False, False, None, None, None, None)
+        ("7d", None, False, False, None, None, None, None)
     r = p.parse_args(["report", "--tool", "copilot", "--tool", "claude_code", "-c"])
     assert r.tool == ["copilot", "claude_code"] and r.compact
     with pytest.raises(SystemExit):

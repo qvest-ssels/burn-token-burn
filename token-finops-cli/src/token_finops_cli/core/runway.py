@@ -130,7 +130,15 @@ def _status(used_fraction: Optional[float], runway_days: Optional[float],
 def _percent_runway(policy: BudgetPolicy, now: datetime, quota: QuotaSnapshot,
                     history: Optional[list[QuotaSnapshot]]) -> Runway:
     """Rolling percent windows (Claude Code, Codex): the provider tells us
-    used% and reset time; burn can only come from consecutive snapshots."""
+    used% and reset time; burn can only come from consecutive snapshots.
+
+    Precedence note: `quota.resets_at` is *real* data the tool itself recorded
+    (Claude Code's statusline payload, Codex's rollout `rate_limits`), so it always
+    decides when the window ends. `policy.window_length` -- which a user may override
+    via `budget.window_hours` / `$TOKEN_FINOPS_WINDOW_HOURS` -- only says how long the
+    window is assumed to be, a span no provider reports; it is used to place the
+    window *start* (and therefore pace), never to move a known reset time.
+    """
     length = policy.window_length or timedelta(hours=5)
     reset = quota.resets_at
     if reset is not None and reset <= now:

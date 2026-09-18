@@ -214,8 +214,9 @@ def render(snapshot: dict, fmt: str, tool_filter: Optional[list[str]] = None, sh
 # --------------------------------------------------------------------------- #
 # CLI glue
 # --------------------------------------------------------------------------- #
-def add_status_parser(sub):
-    s = sub.add_parser("status", help="one-line status for tmux/starship/waybar/… (cached; --fresh to rescan)")
+def add_status_parser(sub, parents=None):
+    s = sub.add_parser("status", parents=parents or [],
+                       help="one-line status for tmux/starship/waybar/… (cached; --fresh to rescan)")
     s.add_argument("--format", "-f", choices=sorted(RENDERERS), default="plain")
     s.add_argument("--tool", action="append", default=None, help="restrict to tool(s)")
     s.add_argument("--all", action="store_true", help="include UNLIMITED (usage-only, no allowance) tools")
@@ -223,9 +224,7 @@ def add_status_parser(sub):
     s.add_argument("--max-age", type=int, default=300, metavar="SECONDS",
                    help="rescan if the cache is older than this (default 300; 0 = always)")
     s.add_argument("--cache-file", default=None, help="override ~/.token-finops/last.json")
-    s.add_argument("--budget", type=float, default=None, help="Copilot allowance for a fresh scan")
-    s.add_argument("--cycle-day", type=int, default=1)
-    s.add_argument("--allowance", type=float, default=None)
+    # --budget / --allowance / --cycle-day come from cli.budget_override_parser()
 
 
 def cmd_status(args) -> str:

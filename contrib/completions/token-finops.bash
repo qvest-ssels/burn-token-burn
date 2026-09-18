@@ -67,17 +67,17 @@ _token_finops_completions() {
     local opts
     case "$cmd" in
         report)  opts="--tool --budget --cycle-day --allowance --compact -c --watch --json --since --db-path" ;;
-        sessions) opts="--tool --since --limit --session --gap-minutes --totals --db-path" ;;
+        sessions) opts="--tool --budget --cycle-day --allowance --since --limit --session --gap-minutes --totals --db-path" ;;
         self-audit) opts="--session --config-dir --json" ;;
         savings) opts="--hardware --model --power --utilization --lifetime-years --output-share --own-hardware --co2 --cloud-region --list" ;;
         break-even) opts="--hardware --model --power --lifetime-years --replaceable-tiers --tool --since" ;;
         collect-statusline|adapters) opts="" ;;
-        doctor)  opts="--tool" ;;
+        doctor)  opts="--tool --budget --cycle-day --allowance" ;;
         synth)   opts="--out --tools --days --scenario --seed --print-env" ;;
         status)  opts="--format -f --tool --all --fresh --max-age --cache-file --budget --cycle-day --allowance" ;;
-        burn)    opts="--tool --since --session --plan --plans --by --history --record --efficiency --nerdy
+        burn)    opts="--tool --budget --cycle-day --allowance --since --session --plan --plans --by --history --record --efficiency --nerdy
                        --rate --discount --history-file --json" ;;
-        cost-per-token) opts="--tool --since --json" ;;
+        cost-per-token) opts="--tool --budget --cycle-day --allowance --since --json" ;;
         *)       opts="" ;;
     esac
     COMPREPLY=($(compgen -W "$opts -h --help" -- "$cur"))

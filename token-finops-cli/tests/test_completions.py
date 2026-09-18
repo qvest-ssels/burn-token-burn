@@ -136,3 +136,49 @@ def test_tool_choices_match_the_adapter_registry():
         text = _read(path)
         for tool in sorted(registry):
             assert tool in text, f"adapter `{tool}` missing from --tool completions in {os.path.basename(path)}"
+
+
+# --------------------------------------------------------------------------- #
+# The shared budget-override flags
+# --------------------------------------------------------------------------- #
+def _budget_subcommands() -> list[str]:
+    """Every subcommand that argparse says accepts `--budget` (they all come from
+    cli.budget_override_parser(), so this list grows by itself)."""
+    all_adapters()
+    parser = build_parser()
+    action = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))
+    return sorted(name for name, sub in action.choices.items()
+                  if any("--budget" in (a.option_strings or []) for a in sub._actions))
+
+
+BUDGET_SUBCOMMANDS = _budget_subcommands()
+
+
+def test_the_budget_overrides_are_shared_across_subcommands():
+    # report used to be the only one; the flags now come from a shared parent parser
+    assert len(BUDGET_SUBCOMMANDS) >= 6, BUDGET_SUBCOMMANDS
+    assert {"report", "status", "burn"} <= set(BUDGET_SUBCOMMANDS)
+
+
+@pytest.mark.parametrize("name", BUDGET_SUBCOMMANDS)
+@pytest.mark.parametrize("flag", ["--budget", "--cycle-day", "--allowance"])
+def test_completion_scripts_offer_the_budget_overrides(name, flag):
+    """A flag argparse accepts but no shell completes is exactly the drift this
+    module exists to catch -- the previous gap was `burn --budget`."""
+    for path in (BASH, ZSH, FISH):
+        block = _subcommand_block(_read(path), name, path)
+        assert flag in block, f"`{name} {flag}` missing from {os.path.basename(path)}"
+
+
+def _subcommand_block(text: str, name: str, path: str) -> str:
+    """The region of a completion script that describes one subcommand's flags."""
+    if path == FISH:
+        lines = [ln for ln in text.splitlines()
+                 if re.search(rf"__fish_seen_subcommand_from [\w\s-]*\b{re.escape(name)}\b", ln)]
+        # fish spells long options `-l budget`; normalise so one assertion fits all shells
+        return re.sub(r"-l ([\w-]+)", r"--\1", "\n".join(lines))
+    if path == BASH:
+        body = text.rsplit('case "$cmd" in', 1)[1]
+        return re.split(r"\n\s+[\w|-]+\)", body.split(f"{name})", 1)[1], maxsplit=1)[0]
+    body = text.rsplit("case $words[1] in", 1)[1]
+    return re.split(r"\n\s+;;", body.split(f"\n                {name})", 1)[1], maxsplit=1)[0]

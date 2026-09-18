@@ -68,6 +68,9 @@ _token-finops() {
                     ;;
                 sessions)
                     _arguments \
+                        '--budget=[Copilot monthly AI-unit allowance]:units:' \
+                        '--cycle-day=[monthly cycle reset day (UTC)]:day:' \
+                        '--allowance=[allowance for non-Copilot tools]:units:' \
                         '*--tool=[restrict to tool(s)]:tool:_token_finops_tool_arg' \
                         '--since=[window]:window:(1d 7d 30d all)' \
                         '--limit=[max sessions to list]:n:' \
@@ -114,6 +117,9 @@ _token-finops() {
                     ;;
                 doctor)
                     _arguments \
+                        '--budget=[Copilot monthly AI-unit allowance]:units:' \
+                        '--cycle-day=[monthly cycle reset day (UTC)]:day:' \
+                        '--allowance=[allowance for non-Copilot tools]:units:' \
                         '*--tool=[restrict the diagnosis to tool(s)]:tool:_token_finops_tool_arg' \
                         '(-h --help)'{-h,--help}'[show help and exit]'
                     ;;
@@ -142,6 +148,9 @@ _token-finops() {
                     ;;
                 burn)
                     _arguments \
+                        '--budget=[Copilot monthly AI-unit allowance]:units:' \
+                        '--cycle-day=[monthly cycle reset day (UTC)]:day:' \
+                        '--allowance=[allowance for non-Copilot tools]:units:' \
                         '*--tool=[restrict to tool(s)]:tool:_token_finops_tool_arg' \
                         '--since=[window]:window:(1d 7d 30d 90d 365d all)' \
                         '--session=[Claude Code: one session id prefix]:session:' \
@@ -159,6 +168,9 @@ _token-finops() {
                     ;;
                 cost-per-token)
                     _arguments \
+                        '--budget=[Copilot monthly AI-unit allowance]:units:' \
+                        '--cycle-day=[monthly cycle reset day (UTC)]:day:' \
+                        '--allowance=[allowance for non-Copilot tools]:units:' \
                         '*--tool=[restrict to tool(s)]:tool:_token_finops_tool_arg' \
                         '--since=[window]:window:(1d 7d 30d 90d 365d all)' \
                         '--json[machine-readable output]' \

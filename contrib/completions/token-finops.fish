@@ -62,6 +62,9 @@ complete -c token-finops -n '__fish_seen_subcommand_from report' -l since -x -a 
 complete -c token-finops -n '__fish_seen_subcommand_from report' -l db-path -r -F -d 'Copilot session-store.db'
 
 # ----------------------------------------------------------------- sessions
+complete -c token-finops -n '__fish_seen_subcommand_from sessions' -l budget -x -d 'Copilot monthly AI-unit allowance'
+complete -c token-finops -n '__fish_seen_subcommand_from sessions' -l cycle-day -x -d 'monthly cycle reset day (UTC)'
+complete -c token-finops -n '__fish_seen_subcommand_from sessions' -l allowance -x -d 'allowance for non-Copilot tools'
 complete -c token-finops -n '__fish_seen_subcommand_from sessions' -l tool -x -a "$__tf_tools" -d 'restrict to tool(s)'
 complete -c token-finops -n '__fish_seen_subcommand_from sessions' -l since -x -a '1d 7d 30d all' -d 'window'
 complete -c token-finops -n '__fish_seen_subcommand_from sessions' -l limit -x -d 'max sessions to list'
@@ -93,6 +96,9 @@ complete -c token-finops -n '__fish_seen_subcommand_from break-even' -l tool -x 
 complete -c token-finops -n '__fish_seen_subcommand_from break-even' -l since -x -a '30d 90d all' -d 'window'
 
 # ----------------------------------------------------------------- doctor
+complete -c token-finops -n '__fish_seen_subcommand_from doctor' -l budget -x -d 'Copilot monthly AI-unit allowance'
+complete -c token-finops -n '__fish_seen_subcommand_from doctor' -l cycle-day -x -d 'monthly cycle reset day (UTC)'
+complete -c token-finops -n '__fish_seen_subcommand_from doctor' -l allowance -x -d 'allowance for non-Copilot tools'
 complete -c token-finops -n '__fish_seen_subcommand_from doctor' -l tool -x -a "$__tf_tools" -d 'restrict the diagnosis to tool(s)'
 
 # ----------------------------------------------------------------- synth
@@ -115,6 +121,9 @@ complete -c token-finops -n '__fish_seen_subcommand_from status' -l cycle-day -x
 complete -c token-finops -n '__fish_seen_subcommand_from status' -l allowance -x -d 'allowance for non-Copilot tools'
 
 # ----------------------------------------------------------------- burn
+complete -c token-finops -n '__fish_seen_subcommand_from burn' -l budget -x -d 'Copilot monthly AI-unit allowance'
+complete -c token-finops -n '__fish_seen_subcommand_from burn' -l cycle-day -x -d 'monthly cycle reset day (UTC)'
+complete -c token-finops -n '__fish_seen_subcommand_from burn' -l allowance -x -d 'allowance for non-Copilot tools'
 complete -c token-finops -n '__fish_seen_subcommand_from burn' -l tool -x -a "$__tf_tools" -d 'restrict to tool(s)'
 complete -c token-finops -n '__fish_seen_subcommand_from burn' -l since -x -a '1d 7d 30d 90d 365d all' -d 'window'
 complete -c token-finops -n '__fish_seen_subcommand_from burn' -l session -x -d 'Claude Code: one session id prefix'
@@ -130,6 +139,9 @@ complete -c token-finops -n '__fish_seen_subcommand_from burn' -l history-file -
 complete -c token-finops -n '__fish_seen_subcommand_from burn' -l json -d 'machine-readable output'
 
 # ----------------------------------------------------------------- cost-per-token
+complete -c token-finops -n '__fish_seen_subcommand_from cost-per-token' -l budget -x -d 'Copilot monthly AI-unit allowance'
+complete -c token-finops -n '__fish_seen_subcommand_from cost-per-token' -l cycle-day -x -d 'monthly cycle reset day (UTC)'
+complete -c token-finops -n '__fish_seen_subcommand_from cost-per-token' -l allowance -x -d 'allowance for non-Copilot tools'
 complete -c token-finops -n '__fish_seen_subcommand_from cost-per-token' -l tool -x -a "$__tf_tools" -d 'restrict to tool(s)'
 complete -c token-finops -n '__fish_seen_subcommand_from cost-per-token' -l since -x -a '1d 7d 30d 90d 365d all' -d 'window'
 complete -c token-finops -n '__fish_seen_subcommand_from cost-per-token' -l json -d 'machine-readable output'

@@ -21,6 +21,42 @@ _TOOL_ENV = (
     "TOKEN_FINOPS_ENERGY_JSON", "TOKEN_FINOPS_HARDWARE_JSON", "XDG_DATA_HOME", "APPDATA",
 )
 
+# User settings (core/config.py). Unlike the adapter roots above these are read on
+# *every* BudgetPolicy construction, so they must be neutralised for the whole suite,
+# not just for tests that take the `home` fixture -- otherwise a developer who has a
+# real ~/.token-finops/config.json would get different thresholds than CI.
+_CONFIG_ENV = (
+    "TOKEN_FINOPS_CONFIG", "TOKEN_FINOPS_WARN_AT", "TOKEN_FINOPS_CRITICAL_AT",
+    "TOKEN_FINOPS_DEFAULT_TOOL", "TOKEN_FINOPS_CYCLE_DAY", "TOKEN_FINOPS_BUDGET",
+    "TOKEN_FINOPS_ALLOWANCE", "TOKEN_FINOPS_WINDOW_HOURS",
+)
+
+
+@pytest.fixture(autouse=True)
+def isolated_config(tmp_path, monkeypatch):
+    """Point every test at a config file that does not exist, drop the settings env
+    vars, and clear the process-level CLI overrides / warn-once memory."""
+    from token_finops_cli.core import config
+
+    for var in _CONFIG_ENV:
+        monkeypatch.delenv(var, raising=False)
+    monkeypatch.setenv("TOKEN_FINOPS_CONFIG", str(tmp_path / "no-such-config.json"))
+    config.reset()
+    yield
+    config.reset()
+
+
+@pytest.fixture
+def write_config(tmp_path, monkeypatch):
+    """Write a `~/.token-finops/config.json` for this test and point the CLI at it."""
+    def _write(data: dict) -> str:
+        path = tmp_path / "token-finops-config.json"
+        path.write_text(json.dumps(data), encoding="utf-8")
+        monkeypatch.setenv("TOKEN_FINOPS_CONFIG", str(path))
+        return str(path)
+
+    return _write
+
 
 @pytest.fixture
 def home(tmp_path, monkeypatch):
@@ -39,6 +75,11 @@ def home(tmp_path, monkeypatch):
     # point it at a directory that does not exist.
     monkeypatch.setenv("TOKEN_FINOPS_AIDER_DIRS", str(h / "no-aider"))
     monkeypatch.setenv("TOKEN_FINOPS_CLINE_DIRS", str(h / "no-cline"))
+    # Inside a throwaway HOME the settings file can resolve the normal way again:
+    # `$HOME/.token-finops/config.json` is now a tmp path, so a test may write it
+    # there and exercise the real default location (the `isolated_config` fixture's
+    # TOKEN_FINOPS_CONFIG guard only exists for tests that have no fake HOME).
+    monkeypatch.delenv("TOKEN_FINOPS_CONFIG", raising=False)
 
     from token_finops_cli.adapters import claude_code
     from token_finops_cli.core import pricing
