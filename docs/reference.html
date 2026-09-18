@@ -18,6 +18,7 @@
       <a href="statusline.html">status line</a>
       <a href="self-audit.html">self-audit (session cost)</a>
       <a href="savings.html">savings</a>
+      <a href="co2-research.html">CO<sub>2</sub> research</a>
       <a href="synth.html">synth</a>
       <a href="reference.html" aria-current="page">reference</a>
     </nav>
@@ -29,6 +30,12 @@
 <h1>reference</h1>
 <p class="subtitle">For: power users with a specific question, whose answer today is scattered across the CLI README, root README, and a handful of design docs. This page signposts, it doesn't duplicate.</p>
 <p>Every answer here already lives in the repository; this page is the index. Where a command's <code>--json</code> shape is shown in full, it's on that command's own page — links below.</p>
+
+<h2>Diagnosing an empty report</h2>
+<p><code>doctor</code> walks all nine adapters and classifies each one — has data, installed but no usage yet, or not found — printing every path it probed, whether that path exists, whether an override variable is active, and one concrete hint per tool.</p>
+<pre><code>$ token-finops doctor                  # all adapters
+$ token-finops doctor --tool codex     # just one</code></pre>
+<p class="cast-note">The recording is on the <a href="index.html">overview page</a>. <code>doctor</code> is newer than the 0.3.0 release — see <a href="index.html">the install notes</a>.</p>
 
 <h2>JSON output shapes</h2>
 <ul class="pagelist">
@@ -53,6 +60,25 @@
   <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0011-windsurf.md">0011 Windsurf (reference-only)</a></li>
   <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/adr/0012-ollama-and-local-models.md">0012 Ollama and local models (reference-only)</a></li>
 </ul>
+
+<h2><code>savings</code> flags</h2>
+<p>Full detail, and the reasoning behind every figure, is on the <a href="savings.html">savings page</a> and the <a href="co2-research.html">CO<sub>2</sub> research page</a>. <code>token-finops savings --list</code> prints the valid values for every enumerated flag below.</p>
+<table class="adapter-table">
+<tr><th>Flag</th><th>What it does</th></tr>
+<tr><td><code>--hardware KEY</code></td><td>Which box to price. 8 profiles, from <code>mac-mini-m4-pro-64gb</code> to <code>rtx-5090-workstation</code>, incl. <code>macbook-pro-16-m4-max-48gb</code>.</td></tr>
+<tr><td><code>--model KEY</code></td><td>Which local model, and therefore which cloud tier it is compared against (haiku- / sonnet- / opus-class).</td></tr>
+<tr><td><code>--power KEY</code></td><td>Electricity tariff: grid or PV, German or US. PV is priced at the feed-in tariff you forgo, not at zero.</td></tr>
+<tr><td><code>--utilization F</code></td><td>Fraction of 24/7 the box actually runs inference. Dominates the result, because capex amortises over tokens actually produced.</td></tr>
+<tr><td><code>--own-hardware</code></td><td>Drop capex entirely — the box is already bought, so compare the <em>marginal</em> cost of the next token (electricity) against the API bill.</td></tr>
+<tr><td><code>--co2</code></td><td>Add the gCO<sub>2</sub>e-per-1M-tokens block: the <code>[computed]</code> local figure next to the <code>[ESTIMATE]</code> cloud one, with the confidence line and basis spelled out.</td></tr>
+<tr><td><code>--cloud-region KEY</code></td><td>Which grid the cloud tokens are assumed to burn on, for the <code>--co2</code> estimate only: <code>us-avg</code> (350 g/kWh, default), <code>us-virginia</code> (270), <code>us-ercot</code> (334), <code>de-grid</code> (344).</td></tr>
+<tr><td><code>--lifetime-years N</code> · <code>--output-share F</code></td><td>Amortisation window; share of tokens that are output rather than input (affects the cloud price, which bills them differently).</td></tr>
+<tr><td><code>--list</code></td><td>Print every valid hardware / model / tariff / cloud-region key with its figure and source.</td></tr>
+</table>
+<p class="cast-note"><code>--co2</code>, <code>--cloud-region</code> and <code>--own-hardware</code> are newer than the 0.3.0 release — see <a href="index.html">the install notes</a>.</p>
+
+<h2>Shell tab-completion</h2>
+<p>Static bash, zsh and fish completion scripts live in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/contrib/completions">contrib/completions/</a> — subcommand names plus each subcommand's flags, including the enumerated values of <code>--tool</code>, <code>--since</code>, <code>--format</code>, <code>--scenario</code> and the <code>savings</code> keys above. No third-party dependency and no shell startup cost; per-shell install instructions are in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/INSTALL.md#shell-tab-completion-optional">docs/INSTALL.md</a>.</p>
 
 <h2>Environment-variable overrides</h2>
 <p>Every adapter reads its data root from an override variable before falling back to the tool's real default location. None of these are required — they exist to point the CLI at a different install, a synthetic fixture tree (see <a href="synth.html">synth</a>), or a non-default <code>$HOME</code>.</p>
@@ -88,8 +114,8 @@
     <li><strong>T-08 / T-09 / T-10</strong> editor plugins: Neovim, VS Code status bar, Emacs</li>
     <li><strong>T-11</strong> desktop notifications at WARN/CRITICAL</li>
     <li><strong>T-12</strong> Prometheus textfile exporter</li>
-    <li><strong>T-05</strong> PyPI trusted publishing + the 0.3.0 release itself (see the <a href="index.html">homepage's install note</a>)</li>
   </ul>
+  <p class="cast-note">Shipped since this list was last written: <strong>T-04</strong> the agent-native <code>/runway</code> surface (see <a href="statusline.html#agent-native">status line</a>), and <strong>T-05</strong> the 0.3.0 PyPI release &mdash; <code>pip install token-finops-cli</code> now gets the 9-adapter CLI.</p>
 </div>
 
 <footer>
