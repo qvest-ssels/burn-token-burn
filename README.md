@@ -1,8 +1,14 @@
 # token-finops
 
+[![PyPI](https://img.shields.io/pypi/v/token-finops-cli.svg)](https://pypi.org/project/token-finops-cli/)
+[![Python versions](https://img.shields.io/pypi/pyversions/token-finops-cli.svg)](https://pypi.org/project/token-finops-cli/)
+[![License](https://img.shields.io/pypi/l/token-finops-cli.svg)](LICENSE)
+
 **Read-only, local-first token usage and budget-runway tracker for AI coding agents — plus an honest local-vs-cloud savings estimator.**
 
 > "Somebody burned the whole team's Copilot budget. Nobody could send a request for the rest of the month. (It wasn't me — but I couldn't have proven it.)"
+
+*(For the bigger picture — [Is AI Profitable?](https://isaiprofitable.com/) — this tool only answers the question at your own desk.)*
 
 `token-finops` grew out of [`token-finops-cli`](https://github.com/oh-my-agent-code/token-finops-cli), a 600-line stdlib script that reads GitHub Copilot CLI's local telemetry and answers one question: *at my current burn rate, does my monthly budget last until the reset?* This repository generalises that "runway" idea to every coding agent that leaves telemetry on your disk, and adds the question people ask next: *would a Mac Studio in the corner be cheaper?*
 
