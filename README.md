@@ -161,9 +161,10 @@ $ token-finops savings --hardware mac-studio-m4-max-128gb --model qwen3-32b --ut
 $ token-finops savings --power solar-de-feed-in --utilization 0.8
   local total:       $2.20 / 1M tok    -> LOCAL CHEAPER (0.69x)
 
-$ token-finops savings --own-hardware          # the box is already bought: marginal cost only
+$ token-finops savings --own-hardware          # the box is already bought: hosting vs. licensing
   capex:             EXCLUDED (--own-hardware): $3,999 is sunk
-  local marginal:    $0.40 / 1M tok  -> LOCAL CHEAPER (0.13x)
+  running overhead:  +10% of energy cost = $0.04 / 1M tok  [ASSUMPTION -- not a sourced figure]
+  hosting (local):   $0.44 / 1M tok  -> HOSTING CHEAPER (0.14x)
 
 $ token-finops break-even --hardware mac-studio-m4-max-128gb
   replaceable cloud usage (haiku/sonnet-class): 35.5M tokens = $14.94 API-equivalent

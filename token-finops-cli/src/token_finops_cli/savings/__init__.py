@@ -55,6 +55,7 @@ class LocalCost:
     eur_per_kwh: float
     eur_per_usd: float
     include_capex: bool = True
+    management_overhead: float = 0.0   # only meaningful when include_capex is False -- see --own-hardware
 
     @property
     def hours_per_mtok(self) -> float:
@@ -95,8 +96,20 @@ class LocalCost:
         return None if g is None else self.kwh_per_mtok * g
 
     @property
+    def management_usd_per_mtok(self) -> float:
+        """Flat percentage of energy cost, standing in for wear/maintenance/occasional
+        troubleshooting on hardware you already own. This is an ASSUMPTION, not a sourced
+        figure -- there is no citable per-token maintenance-cost dataset -- so it is always
+        printed alongside its own line rather than folded silently into the total. Only
+        meaningful once capex is off the table (--own-hardware); a capex-amortized total
+        already spreads the box's own upkeep-adjacent risk across its purchase price."""
+        if self.include_capex:
+            return 0.0
+        return self.energy_usd_per_mtok * self.management_overhead
+
+    @property
     def total_usd_per_mtok(self) -> float:
-        return self.energy_usd_per_mtok + self.capex_usd_per_mtok
+        return self.energy_usd_per_mtok + self.capex_usd_per_mtok + self.management_usd_per_mtok
 
     def break_even_utilization(self, cloud_usd_per_mtok: float) -> Optional[float]:
         """Utilisation at which local == cloud (None if energy alone already costs more,
@@ -110,7 +123,7 @@ class LocalCost:
 
 def local_cost(hardware: str, model: str, tariff: str = "grid-de-household",
                utilization: float = 0.2, lifetime_years: float = 3.0,
-               include_capex: bool = True) -> LocalCost:
+               include_capex: bool = True, management_overhead: float = 0.0) -> LocalCost:
     hw = hardware_profiles()
     en = energy()
     h = hw["hardware"][hardware]
@@ -122,7 +135,7 @@ def local_cost(hardware: str, model: str, tariff: str = "grid-de-household",
                      load_w=float(h["load_w"]), price_usd=float(h["price_usd"]),
                      lifetime_years=lifetime_years, utilization=utilization, tariff=tariff,
                      eur_per_kwh=float(t["eur_per_kwh"]), eur_per_usd=float(en["eur_per_usd"]),
-                     include_capex=include_capex)
+                     include_capex=include_capex, management_overhead=management_overhead)
 
 
 def cloud_blended_usd_per_mtok(tier: str, output_share: float = 0.15) -> float:
@@ -193,6 +206,10 @@ def add_savings_parsers(sub):
     s.add_argument("--output-share", type=float, default=0.15, help="share of output tokens in the cloud blend")
     s.add_argument("--own-hardware", action="store_true",
                    help="you already own the box: treat its price as sunk and compare marginal (energy-only) cost")
+    s.add_argument("--management-overhead", type=float, default=0.10,
+                   help="with --own-hardware: flat fraction of energy cost added as a running-cost "
+                        "assumption (wear, maintenance, occasional troubleshooting) -- default 0.10 (10%%); "
+                        "not a sourced figure, always shown on its own line")
     s.add_argument("--co2", action="store_true",
                    help="green-IT block: local gCO2/1M tok (measured tariff) vs an ESTIMATED cloud figure")
     s.add_argument("--cloud-region", default=None,
@@ -255,7 +272,8 @@ def cmd_savings(args) -> str:
         return "\n".join(lines)
     own = bool(getattr(args, "own_hardware", False))
     lc = local_cost(args.hardware, args.model, args.power, args.utilization, args.lifetime_years,
-                    include_capex=not own)
+                    include_capex=not own,
+                    management_overhead=getattr(args, "management_overhead", 0.10) if own else 0.0)
     tier = hw["models"][args.model]["quality_tier"]
     cloud = cloud_blended_usd_per_mtok(tier, args.output_share)
     lines = [f"Local inference: {hw['hardware'][args.hardware]['label']} + {hw['models'][args.model]['label']}"]
@@ -266,20 +284,25 @@ def cmd_savings(args) -> str:
     if own:
         lines.append(f"  capex:             EXCLUDED (--own-hardware): ${lc.price_usd:,.0f} is sunk, "
                      "so only the marginal cost of the next token counts")
+        lines.append(f"  running overhead:  +{lc.management_overhead*100:.0f}% of energy cost = ${lc.management_usd_per_mtok:.2f} / 1M tok"
+                     "  [ASSUMPTION -- wear/maintenance, not a sourced figure; --management-overhead to change]")
     else:
         lines.append(f"  capex:             ${lc.price_usd:,.0f} over {lc.lifetime_years:.0f} y at {lc.utilization*100:.0f}% utilisation"
                      f" = ${lc.capex_usd_per_hour:.3f}/h -> ${lc.capex_usd_per_mtok:.2f} / 1M tok")
-    label = "local marginal:   " if own else "local total:      "
+    label = "hosting (local):  " if own else "local total:      "
     lines.append(f"  {label} ${lc.total_usd_per_mtok:.2f} / 1M tok")
     lines.append("")
-    lines.append(f"Cloud comparison ({tier}-class, {args.output_share*100:.0f}% output tokens): ${cloud:.2f} / 1M tok  ({en['cloud_tiers_usd_per_mtok'][tier]['label']})")
+    cloud_label = "Licensing (cloud)" if own else "Cloud comparison"
+    lines.append(f"{cloud_label} ({tier}-class, {args.output_share*100:.0f}% output tokens): ${cloud:.2f} / 1M tok  ({en['cloud_tiers_usd_per_mtok'][tier]['label']})")
     ratio = lc.total_usd_per_mtok / cloud if cloud else float("inf")
-    verdict = "LOCAL CHEAPER" if ratio < 1 else "CLOUD CHEAPER"
-    lines.append(f"  -> local is {ratio:.2f}x the cloud price: {verdict}")
     if own:
+        verdict = "HOSTING CHEAPER" if ratio < 1 else "LICENSING CHEAPER"
+        lines.append(f"  -> hosting is {ratio:.2f}x the licensing price: {verdict}")
         lines.append("  -> sunk-cost view: no break-even to reach, the box is already bought; "
-                     "this is purely electricity vs. the API bill")
+                     f"this is electricity + {lc.management_overhead*100:.0f}% running overhead vs. the API/plan bill")
     else:
+        verdict = "LOCAL CHEAPER" if ratio < 1 else "CLOUD CHEAPER"
+        lines.append(f"  -> local is {ratio:.2f}x the cloud price: {verdict}")
         be = lc.break_even_utilization(cloud)
         if be is None:
             lines.append("  -> energy alone already exceeds the cloud price; no utilisation makes this box win")
