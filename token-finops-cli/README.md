@@ -248,6 +248,38 @@ fixture tree, or a non-default `$HOME`.
 | `TOKEN_FINOPS_HARDWARE_JSON` | Override the `savings` hardware-profiles JSON | packaged `hardware_profiles.json` |
 | `TOKEN_FINOPS_ENERGY_JSON` | Override the `savings` energy/tariff JSON | packaged `energy.json` |
 
+## Settings
+
+The variables above say *where the data is*. A second, smaller set says *how you want it
+judged* — budget thresholds, the monthly cycle day, per-tool allowances, and a default
+tool so you need not type `--tool claude_code` every time. Each has a `config.json` twin
+in `~/.token-finops/config.json`, and one precedence rule applies to all of them:
+
+```
+explicit CLI flag  >  TOKEN_FINOPS_* env var  >  config.json  >  hardcoded default
+```
+
+| Variable | `config.json` key | Default |
+|---|---|---|
+| `TOKEN_FINOPS_WARN_AT` | `budget.warn_at` | `0.75` |
+| `TOKEN_FINOPS_CRITICAL_AT` | `budget.critical_at` | `0.90` |
+| `TOKEN_FINOPS_CYCLE_DAY` | `budget.cycle_day` | `1` |
+| `TOKEN_FINOPS_BUDGET` | `budget.allowance.copilot` | per adapter |
+| `TOKEN_FINOPS_ALLOWANCE` | `budget.allowance.<tool>` | per adapter |
+| `TOKEN_FINOPS_WINDOW_HOURS` | `budget.window_hours` | per adapter |
+| `TOKEN_FINOPS_DEFAULT_TOOL` | `default_tool` | none (all detected tools) |
+| `TOKEN_FINOPS_CONFIG` | — | `~/.token-finops/config.json` |
+
+```bash
+TOKEN_FINOPS_WARN_AT=0.5 token-finops report   # try a stricter threshold for one run
+token-finops doctor                            # print the settings actually in effect
+```
+
+Invalid values are reported once on stderr and fall back to the default rather than
+aborting the run. Full schema, precedence details, and the rule that provider-reported
+data (a real `resets_at`, a real `used%`) is never overridden by configuration:
+[`../docs/CONFIG.md`](../docs/CONFIG.md).
+
 ## Documentation and design rules
 
 This package is one component of the `token-finops` repository. For the

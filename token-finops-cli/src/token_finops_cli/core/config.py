@@ -26,8 +26,11 @@ Schema (every key optional)::
       }
     }
 
-**Invalid values never abort the run.** A bad value is reported once on stderr and
-the documented default is used instead. Rationale: `token-finops` is a read-only
+**Invalid values never abort the run.** A bad value is reported once on stderr and then
+skipped: resolution carries on down the precedence chain to the next tier that has an
+opinion, ending at the hardcoded default. (So a bad env var falls back to the user's
+`config.json` value if there is one -- a broken setting never promotes itself past a
+working one.) Rationale: `token-finops` is a read-only
 observability tool that people wire into statuslines, tmux status bars and Claude
 Code hooks, where it is re-executed on every prompt. A hard failure there would
 take out the user's shell prompt over a typo in an optional settings file; a loud
@@ -132,15 +135,18 @@ def _budget(key: str) -> Any:
 # --------------------------------------------------------------------------- #
 # Generic resolution
 # --------------------------------------------------------------------------- #
-def _sources(cli_key: Optional[str], env_name: Optional[str], cfg_value: Any):
-    """(label, raw) for each tier that actually carries a value, highest first."""
+def _sources(cli_key: Optional[str], env_name: Optional[str], cfg_value: Any,
+             cfg_label: str = "", cli_flag: str = ""):
+    """(label, raw) for each tier that actually carries a value, highest first. The
+    label names the tier in the user's own vocabulary, so a warning says *which*
+    of the four places the bad value came from."""
     out = []
     if cli_key is not None and _cli.get(cli_key) is not None:
-        out.append((f"--{cli_key.replace('_', '-')}", _cli[cli_key]))
+        out.append((cli_flag or f"--{cli_key.replace('_', '-')}", _cli[cli_key]))
     if env_name and os.environ.get(env_name) not in (None, ""):
         out.append((f"${env_name}", os.environ[env_name]))
     if cfg_value is not None:
-        out.append((f"config.json budget.{cli_key or env_name}", cfg_value))
+        out.append((f"config.json {cfg_label}", cfg_value))
     return out
 
 
@@ -170,13 +176,13 @@ def thresholds() -> tuple[float, float]:
     a `warn_at` above `critical_at` is nonsense even when both values are individually
     in range -- in that case *both* fall back so the pair stays coherent."""
     warn = DEFAULT_WARN_AT
-    for label, raw in _sources(None, ENV_WARN_AT, _budget("warn_at")):
+    for label, raw in _sources(None, ENV_WARN_AT, _budget("warn_at"), "budget.warn_at"):
         val = _as_float(label, "warn_at", raw, lo=0.0, hi=1.0)
         if val is not None:
             warn = val
             break
     crit = DEFAULT_CRITICAL_AT
-    for label, raw in _sources(None, ENV_CRITICAL_AT, _budget("critical_at")):
+    for label, raw in _sources(None, ENV_CRITICAL_AT, _budget("critical_at"), "budget.critical_at"):
         val = _as_float(label, "critical_at", raw, lo=0.0, hi=1.0)
         if val is not None:
             crit = val
@@ -200,7 +206,7 @@ def critical_at() -> float:
 # Cycle day (CALENDAR_MONTH_UTC)
 # --------------------------------------------------------------------------- #
 def cycle_day() -> int:
-    for label, raw in _sources("cycle_day", ENV_CYCLE_DAY, _budget("cycle_day")):
+    for label, raw in _sources("cycle_day", ENV_CYCLE_DAY, _budget("cycle_day"), "budget.cycle_day"):
         try:
             val = int(raw)
         except (TypeError, ValueError):
@@ -228,7 +234,8 @@ def allowance(tool: str) -> Optional[float]:
         cfg = cfg.get(tool)
     elif not isinstance(cfg, (int, float)) or isinstance(cfg, bool):
         cfg = None
-    for label, raw in _sources(cli_key, env_name, cfg):
+    for label, raw in _sources(cli_key, env_name, cfg, f"budget.allowance[{tool}]",
+                              "--budget" if tool == "copilot" else "--allowance"):
         val = _as_float(label, f"allowance[{tool}]", raw, lo=0.0, hi=float("1e15"))
         if val is not None:
             return val

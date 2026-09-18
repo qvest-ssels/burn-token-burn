@@ -75,6 +75,11 @@ def home(tmp_path, monkeypatch):
     # point it at a directory that does not exist.
     monkeypatch.setenv("TOKEN_FINOPS_AIDER_DIRS", str(h / "no-aider"))
     monkeypatch.setenv("TOKEN_FINOPS_CLINE_DIRS", str(h / "no-cline"))
+    # Inside a throwaway HOME the settings file can resolve the normal way again:
+    # `$HOME/.token-finops/config.json` is now a tmp path, so a test may write it
+    # there and exercise the real default location (the `isolated_config` fixture's
+    # TOKEN_FINOPS_CONFIG guard only exists for tests that have no fake HOME).
+    monkeypatch.delenv("TOKEN_FINOPS_CONFIG", raising=False)
 
     from token_finops_cli.adapters import claude_code
     from token_finops_cli.core import pricing

@@ -81,6 +81,14 @@ token-finops report --json | jq .
 
 See `docs/SYNTH.md` for the full generator documentation, including which on-disk paths and table/file formats each adapter writes.
 
+These point adapters at *data*. The separate set of **settings** variables
+(`TOKEN_FINOPS_WARN_AT`, `TOKEN_FINOPS_CRITICAL_AT`, `TOKEN_FINOPS_CYCLE_DAY`,
+`TOKEN_FINOPS_BUDGET`, `TOKEN_FINOPS_ALLOWANCE`, `TOKEN_FINOPS_WINDOW_HOURS`,
+`TOKEN_FINOPS_DEFAULT_TOOL`, `TOKEN_FINOPS_CONFIG`) and their `~/.token-finops/config.json`
+twins are documented in `docs/CONFIG.md`. The test suite neutralises all of them via the
+autouse `isolated_config` fixture in `tests/conftest.py`, so a developer's own settings can
+never change a test result — use the `write_config` fixture to exercise them deliberately.
+
 ## Debugging one adapter
 
 1. Generate synthetic data for that tool only:
