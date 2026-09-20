@@ -53,7 +53,7 @@ const PAGES = [
   { path: "statusline.html", players: ["player-02"] },
   { path: "self-audit.html", players: ["player-03"] },
   { path: "savings.html", players: ["player-04", "player-08"] },
-  { path: "co2-research.html", players: [] },
+  { path: "co2-research.html", players: ["player-08"] },
   { path: "synth.html", players: ["player-05"] },
   { path: "reference.html", players: [] },
 ];
