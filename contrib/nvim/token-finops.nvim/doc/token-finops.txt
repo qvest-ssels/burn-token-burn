@@ -1,0 +1,63 @@
+*token-finops.txt*   Read-only Neovim frontend for token-finops's cache file
+
+==============================================================================
+CONTENTS                                                *token-finops-contents*
+
+    Intro .......................... |token-finops-intro|
+    Setup .......................... |token-finops-setup|
+    Commands ....................... |token-finops-commands|
+    Statusline ..................... |token-finops-statusline|
+    Health check ................... |token-finops-health|
+
+==============================================================================
+INTRO                                                      *token-finops-intro*
+
+token-finops.nvim reads `~/.token-finops/last.json`, the cache written by
+`token-finops status` (see the `token-finops-cli` project, contrib/tmux/ for
+the analogous tmux integration). It never invokes the CLI itself and never
+rescans your assistants' telemetry — keep the cache warm with the refresh
+timer in `contrib/refresh/` (systemd user timer / launchd agent / cron).
+
+==============================================================================
+SETUP                                                      *token-finops-setup*
+
+>lua
+    require("token-finops").setup({
+      -- cache_path = vim.fn.expand("~/.token-finops/last.json"), -- default
+      -- stale_after_seconds = 600,                                -- default
+    })
+<
+
+`setup()` is optional; every function works with the defaults.
+
+==============================================================================
+COMMANDS                                                *token-finops-commands*
+
+                                                                *:TokenFinops*
+:TokenFinops        Open a floating window with the full per-tool table
+                     (tool, used%, runway, status, window). Press `q` or
+                     <Esc> to close.
+
+==============================================================================
+STATUSLINE                                            *token-finops-statusline*
+
+`require("token-finops").statusline()` returns a short string like
+`"CC 61% 2h!"` for the binding-constraint tool, or `""` when there is no
+cache/binding tool yet. lualine example: >lua
+
+    require("lualine").setup({
+      sections = {
+        lualine_x = { require("token-finops").statusline, "encoding" },
+      },
+    })
+<
+
+==============================================================================
+HEALTH CHECK                                              *token-finops-health*
+
+`:checkhealth token-finops` reports whether the cache file exists, parses,
+has a supported `schema_version`, and is fresh; and whether `token-finops`
+is on $PATH (informational — this plugin does not need it, the refresh
+timer does).
+
+ vim:tw=78:ts=8:ft=help:norl:

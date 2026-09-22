@@ -64,9 +64,13 @@ follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a ta
 
 ## Next
 
-- [ ] **T-08 Neovim plugin `token-finops.nvim`** — branch `feat/nvim` — model: Sonnet — M
-  Lua module reading `~/.token-finops/last.json` (never runs a rescan), lualine/heirline component,
-  `:TokenFinops` floating window with the per-tool table, health check. `docs/INTEGRATIONS.md` §2.
+- [x] **T-08 Neovim plugin `token-finops.nvim`** — branch `feature/agentic/nvim-plugin` — model: Sonnet — M —
+  done: `contrib/nvim/token-finops.nvim/` — Lua module reads `~/.token-finops/last.json` (never
+  rescans), lualine component (`require("token-finops").statusline()`; heirline gets a one-line
+  snippet in the README since it just wants the same function), `:TokenFinops` floating window
+  with the per-tool table, `:checkhealth token-finops`. Verified with `luac -p` on every file and a
+  headless `nvim --headless` smoke script (`test/smoke.lua`) against a synthetic fixture, including
+  missing/corrupt/wrong-`schema_version` cache paths.
 
 - [ ] **T-09 VS Code status-bar extension** — branch `feat/vscode` — model: Sonnet — M
   Status-bar item from `status --format json`, click → detail webview; ships under `contrib/vscode/`

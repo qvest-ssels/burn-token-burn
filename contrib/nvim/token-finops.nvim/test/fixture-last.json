@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-14T12:00:00+00:00",
+  "tools": [
+    {
+      "tool": "claude_code",
+      "display_name": "Claude Code",
+      "window": "5h",
+      "unit": "percent",
+      "used": 0.61,
+      "allowance": null,
+      "used_fraction": 0.61,
+      "time_fraction": 0.5,
+      "pace_ratio": 1.2,
+      "burn_per_day_avg": 0.1,
+      "burn_per_day_ema": 0.12,
+      "runway_days": 0.08,
+      "days_left": 0.08,
+      "resets_at": null,
+      "status": "WARN",
+      "notes": ""
+    },
+    {
+      "tool": "codex",
+      "display_name": "Codex",
+      "window": "5h",
+      "unit": "percent",
+      "used": 0.17,
+      "allowance": null,
+      "used_fraction": 0.17,
+      "time_fraction": 0.5,
+      "pace_ratio": 0.34,
+      "burn_per_day_avg": 0.02,
+      "burn_per_day_ema": 0.02,
+      "runway_days": 3.0,
+      "days_left": 3.0,
+      "resets_at": null,
+      "status": "OK",
+      "notes": ""
+    }
+  ],
+  "binding": {
+    "tool": "claude_code",
+    "display_name": "Claude Code",
+    "window": "5h",
+    "runway_days": 0.08,
+    "used_fraction": 0.61,
+    "status": "WARN"
+  }
+}
