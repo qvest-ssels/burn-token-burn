@@ -34,6 +34,15 @@ Everything is Python ≥ 3.10, **standard library only**, and never writes to an
 
 Usage-only tools get a runway too when you pass `--allowance <USD per 30 days>`.
 
+**Optional live quota (`--online`, off by default).** `report`/`status` can ask four providers
+for their own current number instead of inferring it locally — Copilot, Claude Code (the OAuth
+usage endpoint), Gemini CLI and OpenRouter (for Hermes). Nothing is fetched unless you pass the
+flag; credentials you already have are read, never written; responses are cached for 180 s in
+`~/.token-finops/online-cache.json`; and **any** failure — no network, no credential, a 429, a
+changed response shape — falls back silently to the offline path, so `--online` on a plane
+prints exactly what a plain run prints. Three of the four endpoints are reverse-engineered:
+see [`docs/sources.md`](docs/sources.md) and ADRs 0001/0002/0004/0005.
+
 Heterogeneous units are **never summed**. Each tool gets its own runway; the report tells you which one is the *binding constraint* — the one that runs out first.
 
 ```

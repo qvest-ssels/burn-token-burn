@@ -46,6 +46,36 @@ def isolated_config(tmp_path, monkeypatch):
     config.reset()
 
 
+class NetworkCallAttempted(BaseException):
+    """Raised by the `no_network` guard below. Deliberately *not* an `Exception`
+    so no production `except Exception:` can hide it (see `online.online_quota`)."""
+
+
+@pytest.fixture(autouse=True)
+def no_network(tmp_path, monkeypatch):
+    """Two guarantees for the whole suite, not just the `--online` tests (T-03).
+
+    1. `urllib.request.urlopen` raises. CI must never make a real request, so a
+       fetcher that slips past its stub fails loudly instead of quietly hitting
+       (and getting rate-limited by) a live endpoint. Tests that exercise the
+       online path re-patch it with their own stub.
+    2. The online response cache is redirected into `tmp_path`, so nothing can
+       write to a developer's real `~/.token-finops/` (AGENTS.md: never touch
+       `$HOME`), and no stale entry from a previous run leaks into a test.
+    """
+    import urllib.request
+
+    def _blocked(*args, **kwargs):
+        # BaseException on purpose: `online.online_quota()` swallows every
+        # `Exception` to fail closed, which would also swallow this guard and
+        # turn a real network call into a silent pass.
+        raise NetworkCallAttempted("the test suite must not make real network calls "
+                                   "-- stub urllib.request.urlopen in the test")
+
+    monkeypatch.setattr(urllib.request, "urlopen", _blocked)
+    monkeypatch.setenv("TOKEN_FINOPS_ONLINE_CACHE", str(tmp_path / "online-cache.json"))
+
+
 @pytest.fixture
 def write_config(tmp_path, monkeypatch):
     """Write a `~/.token-finops/config.json` for this test and point the CLI at it."""

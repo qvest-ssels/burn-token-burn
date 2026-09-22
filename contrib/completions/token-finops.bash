@@ -66,7 +66,7 @@ _token_finops_completions() {
 
     local opts
     case "$cmd" in
-        report)  opts="--tool --budget --cycle-day --allowance --compact -c --watch --json --since --db-path" ;;
+        report)  opts="--tool --budget --cycle-day --allowance --compact -c --watch --json --since --db-path --online" ;;
         sessions) opts="--tool --budget --cycle-day --allowance --since --limit --session --gap-minutes --totals --db-path" ;;
         self-audit) opts="--session --config-dir --json" ;;
         savings) opts="--hardware --model --power --utilization --lifetime-years --output-share --own-hardware --co2 --cloud-region --list" ;;
@@ -74,7 +74,7 @@ _token_finops_completions() {
         collect-statusline|adapters) opts="" ;;
         doctor)  opts="--tool --budget --cycle-day --allowance" ;;
         synth)   opts="--out --tools --days --scenario --seed --print-env" ;;
-        status)  opts="--format -f --tool --all --fresh --max-age --cache-file --budget --cycle-day --allowance" ;;
+        status)  opts="--format -f --tool --all --fresh --max-age --cache-file --budget --cycle-day --allowance --online" ;;
         burn)    opts="--tool --budget --cycle-day --allowance --since --session --plan --plans --by --history --record --efficiency --nerdy
                        --rate --discount --history-file --json" ;;
         cost-per-token) opts="--tool --budget --cycle-day --allowance --since --json" ;;

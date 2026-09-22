@@ -13,8 +13,18 @@ follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a ta
 
 ## Ready now
 
-- [ ] **T-03 `--online` quota fetchers** — branch `feat/online-quota` — model: Opus for design, Sonnet for code — M
-  Optional live quota, never on by default, each behind its ADR note, cached ≥ 180 s in
+- [x] **T-03 `--online` quota fetchers** — branch `feature/agentic/online-quota-fetchers` — model: Opus — M — done:
+  all four fetchers shipped in `token_finops_cli/online.py` (stdlib `urllib` only), `--online` added to
+  `report` and `status` (off by default; on `status` it implies a rescan, since the `last.json` cache was
+  built with the previous run's quota source). A successful fetch promotes that run's `source_of_truth`
+  from `local_sum` to `hybrid` so the provider's number decides used% while local events still drive the
+  burn rate. Every failure path — no flag, no credential, no network, 429, non-JSON, drifted shape —
+  returns to the offline path silently; verified by diffing a real `--online` run behind a refused
+  connection against the plain offline run (byte-identical, exit 0). Responses *and* failures are cached
+  180 s. `tests/test_online.py` stubs `urllib.request.urlopen`, and an autouse `no_network` guard in
+  `conftest.py` makes any un-stubbed call raise a `BaseException` (so `online_quota`'s fail-closed
+  `except Exception` cannot hide a real request) for the whole suite.
+  Original spec: optional live quota, never on by default, each behind its ADR note, cached ≥ 180 s in
   `~/.token-finops/online-cache.json`, hard-fail closed to the offline path on any error:
   Copilot `GET https://api.github.com/copilot_internal/user` (token from `gh auth token` or
   `GITHUB_TOKEN`); Anthropic `GET https://api.anthropic.com/api/oauth/usage` (header

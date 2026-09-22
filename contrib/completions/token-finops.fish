@@ -60,6 +60,7 @@ complete -c token-finops -n '__fish_seen_subcommand_from report' -l watch -x -d 
 complete -c token-finops -n '__fish_seen_subcommand_from report' -l json -d 'machine-readable output'
 complete -c token-finops -n '__fish_seen_subcommand_from report' -l since -x -a '1d 7d 30d all' -d 'usage summary window'
 complete -c token-finops -n '__fish_seen_subcommand_from report' -l db-path -r -F -d 'Copilot session-store.db'
+complete -c token-finops -n '__fish_seen_subcommand_from report' -l online -d 'opt-in: live provider quota (cached 180s, offline fallback)'
 
 # ----------------------------------------------------------------- sessions
 complete -c token-finops -n '__fish_seen_subcommand_from sessions' -l budget -x -d 'Copilot monthly AI-unit allowance'
@@ -119,6 +120,7 @@ complete -c token-finops -n '__fish_seen_subcommand_from status' -l cache-file -
 complete -c token-finops -n '__fish_seen_subcommand_from status' -l budget -x -d 'Copilot allowance for a fresh scan'
 complete -c token-finops -n '__fish_seen_subcommand_from status' -l cycle-day -x -d 'Copilot cycle reset day'
 complete -c token-finops -n '__fish_seen_subcommand_from status' -l allowance -x -d 'allowance for non-Copilot tools'
+complete -c token-finops -n '__fish_seen_subcommand_from status' -l online -d 'opt-in: live provider quota (implies a rescan)'
 
 # ----------------------------------------------------------------- burn
 complete -c token-finops -n '__fish_seen_subcommand_from burn' -l budget -x -d 'Copilot monthly AI-unit allowance'

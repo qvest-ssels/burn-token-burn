@@ -72,11 +72,37 @@ non-functional for that store but not crashing the overall scan.
   Anthropic pricing only (narrower than our multi-provider handling).
 - **tokscale** — broader multi-tool coverage including Hermes.
 
+## Online quota (T-03, 2026-09-22)
+
+The OpenRouter key API is now wired up behind `--online`: `GET
+openrouter.ai/api/v1/key` with an API key read from
+`$OPENROUTER_API_KEY`/`$OPENROUTER_KEY` or, failing that,
+`${HERMES_HOME:-~/.hermes}/config.json` (read-only, as everywhere else).
+The response's `data{usage, limit, limit_remaining}` becomes a
+`QuotaSnapshot` with `used_units`/`limit_units` in dollars,
+`window_id="30d"` and `source="openrouter_key"`. `limit: null` — a key
+with no credit cap, which is common — yields real `used_units` but
+`used_fraction=None`, i.e. "here is the spend, there is no budget to be a
+fraction of", rather than a fabricated denominator.
+
+This is the one endpoint of the four that is **officially documented**,
+so it is the least likely to drift; it is nevertheless held to the same
+rules as the reverse-engineered three (opt-in only, cached >= 180 s in
+`~/.token-finops/online-cache.json`, silent fallback to the local sum on
+any error), because a key without read scope or an offline laptop must
+not turn a usage report into an error. The decision above is unchanged:
+this is a *provider* budget surfaced through Hermes, not a Hermes-native
+runway.
+
 ## Open questions
 
 - Should we surface a per-provider runway (e.g. OpenRouter dollars) as a
   first-class row in the cross-tool roll-up, or only as a detail view
   given it's provider-, not agent-, level budget?
+- The key API also returns `usage_daily`/`usage_weekly`/`usage_monthly` on
+  some accounts. Would a real monthly figure beat the 30-day sliding
+  window default, and should the window follow whichever field the
+  account actually has?
 - Is a 30-day sliding window the right default cycle for OpenRouter usage
   absent a documented cycle, or should we only report `used_units`
   without a cycle at all?
