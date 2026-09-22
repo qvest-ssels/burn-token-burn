@@ -14,7 +14,7 @@ delete old rows — move them to "Done" below instead, so the history stays legi
 
 | Session | Branch | Task | Touches | Status |
 |---|---|---|---|---|
-| Claude Sonnet 5 (local) | `feature/agentic/emacs-plugin` | T-10: Emacs `token-finops.el` — read-only mode-line segment (binding constraint, timer-refreshed) + `*token-finops*` transient buffer (`tabulated-list-mode`) over `~/.token-finops/last.json`; never shells out to `token-finops` | `contrib/emacs/` (new), `docs/INTEGRATIONS.md` §2, `claude-tasks.md` | in progress |
+| Claude Sonnet 5 (local) | `feature/agentic/emacs-plugin` | T-10: Emacs `token-finops.el` — read-only mode-line segment (binding constraint, timer-refreshed) + `*token-finops*` transient buffer (`tabulated-list-mode`) over `~/.token-finops/last.json`; never shells out to `token-finops` | `contrib/emacs/` (new), `docs/INTEGRATIONS.md` §2, `claude-tasks.md` | PR opened (#31) |
 | Claude Opus 5 (local) | `feature/agentic/co2-research-page` | Replace the `co2-research.html` placeholder from PR #23 with the real long-form page: the energy-per-query source table and why the published figures span 600-4,700 Wh/1M, PUE, the grid-mix result that overturned the feature's original premise, an inline-SVG schematic map of major hyperscale regions (no mapping library), and a sourced section on the Aug 2025 Google per-query paper as a worked example of per-query efficiency rising while totals rise. Every figure grounded in `docs/CO2_ESTIMATE.md`; no new primary research committed | `docs/co2-research.html`, `docs/style.css` (map / confidence-tag / pull-quote styles), `docs/test-pages.mjs` | PR opened |
 
 ## Done
