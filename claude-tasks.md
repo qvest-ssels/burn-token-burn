@@ -72,8 +72,8 @@ follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a ta
   Status-bar item from `status --format json`, click → detail webview; ships under `contrib/vscode/`
   with its own package.json; reaches the Cline/Roo/Kilo audience (ADR-0007).
 
-- [ ] **T-10 Emacs `token-finops.el`** — branch `feat/emacs` — model: Sonnet — S
-  Mode-line segment + transient buffer over the cache file.
+- [x] **T-10 Emacs `token-finops.el`** — branch `feature/agentic/emacs-plugin` — model: Sonnet — S
+  Mode-line segment + transient buffer over the cache file. Shipped as `contrib/emacs/`.
 
 - [ ] **T-11 Desktop notifications at WARN/CRIT** — branch `feat/notify` — model: Sonnet — S
   `token-finops status --notify` → `notify-send` / `terminal-notifier` / PowerShell toast when the

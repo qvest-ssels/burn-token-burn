@@ -69,11 +69,14 @@ LazyVim and NvChad need nothing of their own** — they are Neovim configuration
 same Lua module through their normal plugin spec. Saying that explicitly avoids four fake
 "integrations" in the README.
 
-**Emacs** — good fit, and the community expects an idiomatic package. Two pieces: a `mode-line`
-(or `doom-modeline` segment) showing the binding constraint, and `token-finops.el` providing a
-transient/magit-style buffer (`M-x token-finops`) with per-tool detail and `g` to refresh.
-Emacs can run the process asynchronously via `make-process`. **Doom and Spacemacs consume the
-same package**; no separate work.
+**Emacs** — shipped: [`contrib/emacs/token-finops.el`](../contrib/emacs/README.md). A
+`token-finops-mode` global minor mode adds the binding-constraint segment to the mode-line,
+refreshed on a `run-with-timer` (default 45s) that only re-reads the cache file — same
+read-only, never-rescan contract as the tmux integration. `M-x token-finops-show` (alias
+`M-x token-finops`) opens a `*token-finops*` `tabulated-list-mode` buffer with per-tool detail
+and `g` to refresh. **Doom and Spacemacs consume the same package**; no separate work. Not
+published to MELPA (manual `load-file`/`use-package :load-path` install, see the package's
+README) — that would be a separate human/account-owner action.
 
 **Vim (non-neo)** — degraded but trivial: `statusline` with `%{system('cat ~/.token-finops/last-line.txt')}`
 or a timer in Vim 8. Cached data only; document as a recipe.
