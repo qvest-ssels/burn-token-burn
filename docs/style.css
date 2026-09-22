@@ -134,6 +134,50 @@ td:first-child { white-space: nowrap; }
 .copy-btn:hover { color: var(--fg); border-color: var(--accent); }
 .cast-note.expected { font-family: var(--mono); white-space: pre-wrap; opacity: .8; }
 .cast-note.os-note { margin-top: -.2rem; }
+/* --- schematic datacentre map (inline SVG, no mapping library) ---------- */
+figure { margin: 0 0 1.5rem; }
+figure figcaption { color: var(--muted); font-size: .85rem; margin-top: .6rem; }
+.map-wrap {
+  overflow-x: auto;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+  padding: .75rem;
+}
+.dcmap { display: block; width: 100%; min-width: 620px; height: auto; }
+.dcmap-grid line { stroke: var(--border); stroke-width: .75; }
+.dcmap-equator { stroke: var(--border); stroke-width: 1.25; stroke-dasharray: 5 5; }
+.dcmap-land path { fill: #20242e; stroke: #333a48; stroke-width: 1; }
+.dcmap-sites circle { fill: var(--accent); fill-opacity: .5; stroke: var(--accent); stroke-width: 1.5; }
+.dcmap-sites circle.t1 { fill-opacity: .85; }
+.dcmap-sites text {
+  font-family: var(--mono); font-size: 11px; fill: var(--muted);
+  paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round;
+}
+.dcmap-sites text.t1 { fill: var(--fg); font-weight: 600; }
+
+/* --- confidence tags --------------------------------------------------- */
+.conf {
+  font-family: var(--mono); font-size: .72rem; text-transform: uppercase;
+  letter-spacing: .06em; border: 1px solid var(--border); border-radius: 3px;
+  padding: .1rem .4rem; margin-left: .5rem; vertical-align: .12em; color: var(--muted);
+  white-space: nowrap;
+}
+.conf-high { color: var(--accent); border-color: var(--accent); }
+.conf-low { color: #e0a44c; border-color: #6b5227; }
+
+.keyfig {
+  background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  border-radius: 6px; padding: 1rem 1.25rem; margin: 0 0 1.5rem;
+}
+.keyfig p:last-child { margin-bottom: 0; }
+
+/* --- pull quotes (sourced criticism) ----------------------------------- */
+.quote {
+  border-left: 2px solid var(--border); padding: .1rem 0 .1rem 1rem;
+  margin: 0 0 1.25rem; color: var(--fg);
+}
+.quote p { font-style: italic; margin: 0 0 .4rem; }
+.quote cite { font-style: normal; color: var(--muted); font-size: .85rem; }
+
 footer { margin-top: 4rem; border-top: 1px solid var(--border); padding-top: 1.25rem; color: var(--muted); font-size: .875rem; }
 blockquote { margin: 0 0 1rem; padding-left: 1rem; border-left: 2px solid var(--border); color: var(--muted); font-style: italic; }
 @media (max-width: 600px) { .wrap { padding: 2rem 1rem 3rem; } h1 { font-size: 1.5rem; } }

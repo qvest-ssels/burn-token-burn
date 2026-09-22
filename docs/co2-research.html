@@ -3,9 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CO2 research — token-finops</title>
-<meta name="description" content="Where token-finops' gCO2e-per-1M-tokens figures come from: the sourced working lives in CO2_ESTIMATE.md while this write-up is in progress.">
+<title>How much CO2 does an LLM query actually emit? — token-finops</title>
+<meta name="description" content="The published energy-per-query figures for LLM inference disagree by a factor of eight, and the most-quoted one is circular. A sourced walk through where each number comes from, which grid the tokens burn on, and how much of the answer is honestly unknowable.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.17.0/dist/bundle/asciinema-player.css">
 <link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.17.0/dist/bundle/asciinema-player.min.js" defer></script>
+<script src="player.js" defer></script>
 </head>
 <body>
 
@@ -27,27 +30,335 @@
 
 <div class="wrap">
 
-<h1>CO<sub>2</sub> research</h1>
-<p class="subtitle">The long-form write-up is still being written. The underlying research is already done, sourced, and shipped &mdash; here is where to read it in the meantime.</p>
+<h1>How much CO<sub>2</sub> does an LLM query actually emit?</h1>
+<p class="subtitle">The published figures disagree by a factor of eight, the most-quoted one is a 2023 commentary about a model nobody runs any more, and the single best measurement can't be used at all. Here is the whole chain, with its error bars visible.</p>
 
-<p>Putting a carbon number on an LLM query is harder than it looks. Energy per token is not published by any cloud AI provider, so it has to be reconstructed from per-query figures that were never meant to be divided that way &mdash; and the published figures disagree with each other by close to an order of magnitude. Datacentre overhead (PUE) and grid carbon intensity, by contrast, are both genuinely well sourced.</p>
+<p>It looks like it should be a simple question. Energy per token, times the overhead of the building, times how dirty the local grid is. Three numbers, one multiplication.</p>
 
-<p>That whole chain &mdash; every figure, every source, every confidence level, and the caveats that matter &mdash; is written up in full in the repository:</p>
+<p>Two of those three are genuinely well sourced. The first one — the one that does most of the work — is published by nobody, and has to be reconstructed from figures that were never meant to be divided the way we need to divide them. This page walks the whole chain and shows exactly where the confidence drains out of it, because the interesting part of this research was not the answer but discovering which parts of the question are answerable at all.</p>
 
-<ul class="pagelist">
-  <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/CO2_ESTIMATE.md">docs/CO2_ESTIMATE.md</a> &mdash; the complete sourced working: which energy-per-query estimates exist, why one of them anchors the figure and the others don't, the PUE figures the three largest providers publish, the grid carbon intensities per region, and an explicit statement of what the numbers are <em>not</em> (no embodied carbon, no water, no claim about any specific provider).</li>
-  <li><a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/sources.md">docs/sources.md</a> &mdash; every price, tariff and grid figure used anywhere in this tool, each with its source and review date.</li>
+<p>Everything below is drawn from <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/CO2_ESTIMATE.md">docs/CO2_ESTIMATE.md</a>, which carries the full working and a review date for every figure.</p>
+
+<div class="keyfig">
+  <p><strong>The whole calculation, for the cloud side:</strong></p>
+  <pre><code>gCO2e per 1M cloud tokens  =  Wh_per_Mtok_accelerator  x  PUE  x  gCO2/kWh_grid
+                           =  600 Wh                   x  1.13 x  350 g/kWh  (us-avg)
+                           ~  237 g</code></pre>
+  <p>Roughly <strong>240 grams of CO<sub>2</sub>e per million tokens</strong> on the US average grid. Now here is why you should not trust that to better than a factor of three &mdash; and why it is still worth printing.</p>
+</div>
+
+<h2>Step 1: energy per token <span class="conf conf-low">low confidence</span></h2>
+
+<p><strong>No cloud AI provider &mdash; Anthropic, OpenAI, Google, AWS &mdash; publishes energy per token.</strong> What exists instead is a handful of published <em>per-query</em> figures. Turning one of those into a per-token number means dividing by an assumed response length, and that assumption swings the answer more than anything else in the chain.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Source</th><th>Published figure</th><th>Output tokens/query</th><th>Per 1M tokens</th></tr></thead>
+<tbody>
+<tr><td><strong>Epoch AI</strong> (7 Feb 2025)<br><em>How much energy does ChatGPT use?</em></td><td>~0.3 Wh/query (GPT-4o)</td><td><strong>500, stated</strong></td><td><strong>600 Wh</strong> &larr; used here</td></tr>
+<tr><td><strong>Google</strong> (21 Aug 2025)<br><em>Measuring the environmental impact of delivering AI at Google Scale</em></td><td>0.24 Wh, 0.03 gCO<sub>2</sub>e, 0.26 mL water (median Gemini Apps text prompt)</td><td>not disclosed</td><td><em>underivable</em></td></tr>
+<tr><td><strong>Jegham et al.</strong><br><em>How Hungry is AI?</em></td><td>0.423 &plusmn; 0.085 Wh/query (GPT-4o, short)</td><td>300, stated</td><td>~1,410 Wh</td></tr>
+<tr><td><strong>Luccioni et al.</strong> (FAccT '24)<br><em>Power Hungry Processing</em></td><td>0.047 kWh / 1000 inferences</td><td><strong>10</strong></td><td>~4,700 Wh</td></tr>
+<tr><td><strong>de Vries</strong>, Joule (2023)<br><em>The growing energy footprint of AI</em></td><td>"at most 2.9 Wh" per request</td><td>n/a</td><td>&mdash;</td></tr>
+<tr><td><strong>IEA</strong>, <em>Energy and AI</em> (Apr 2025)</td><td>~0.3 Wh small text model; ~5 Wh Llama 3.3 70B; ~115 Wh video gen</td><td>n/a</td><td>&mdash;</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Read that last column again: <strong>600, 1,410 and 4,700 Wh for the same nominal thing.</strong> That is not measurement noise. It is four groups measuring four different activities and calling them all "a query".</p>
+
+<h3>Why Epoch AI anchors the estimate</h3>
+<p>The figure used is <strong>600 Wh per 1M output tokens</strong>: Epoch AI's 0.3 Wh per query divided by <em>the 500 output tokens per query that Epoch itself assumes</em>. Using a source's own stated denominator is the only honest way to divide a per-query figure — and Epoch is the only source in that table which publishes the denominator at all. Their figure is a bottom-up model: a 200B-parameter mixture-of-experts model with 100B active parameters, served on H100s at 10% utilisation.</p>
+
+<h3>The best measurement in the table is the one that can't be used</h3>
+<p>Google's 0.24 Wh is the only <strong>production-measured</strong> figure here; everything else is a model or a lab benchmark. It is still unusable for this purpose, for two independent reasons. The paper publishes no token counts, so there is no honest way to convert it to a per-token number. And the figure already includes datacentre overhead, so applying a PUE multiplier on top of it would double-count — a further argument for anchoring on Epoch's explicitly accelerator-side estimate. That paper turns out to be worth a section of its own; see <a href="#the-google-paper">below</a>.</p>
+
+<h3>Why the most-quoted number in this field is the worst one</h3>
+<p>If you have seen a figure for this at all, it was probably <strong>2.9 Wh per ChatGPT request</strong>. It comes from de Vries (Joule, 2023) — a <em>Commentary</em>, not peer-reviewed research, built top-down from a 2023 SemiAnalysis estimate of GPT-3.5-era serving. The IEA's <em>Electricity 2024</em> then repeated it <em>citing de Vries</em>. So "the IEA says 2.9 Wh" is not independent corroboration of anything; it is the same 2023 estimate laundered through a second citation. Circular sourcing is endemic in this topic and worth watching for.</p>
+
+<p>Luccioni et al. deserves the opposite warning. It is among the most-cited papers in the space, and its "0.047 kWh per 1000 inferences" is measured at <strong>10 output tokens per inference</strong>, on A100s, without production batching. That works out to ~4,700 Wh/1M — nearly 8x the figure used here — and it is very widely quoted without that ten-token caveat attached.</p>
+
+<h3>Everything that is still soft</h3>
+<ul>
+  <li><strong>The response length is an assumption</strong>, even when it is the source's own. Epoch notes the <em>observed</em> mean is 261 tokens, not 500 — using that would roughly double the per-token figure.</li>
+  <li><strong>Jegham et al. is 2.4x higher.</strong> The defensible range is therefore <strong>600&ndash;1,500 Wh/1M</strong>, and this tool uses the bottom of it. If anything, the cloud side is flattered.</li>
+  <li><strong>Reasoning models are far worse.</strong> Jegham puts o3 at ~2.8x GPT-4o per query, and a poorly-batched self-hosted DeepSeek-R1 at ~45x. None of that is modelled.</li>
+  <li><strong>Decode dominates; prefill is cheap.</strong> These are really per-<em>output</em>-token figures, compared here against a blended input+output count — conservative again.</li>
+  <li><strong>Model size is unknown.</strong> Haiku-class and Opus-class tokens do not cost the same, and no provider breaks this out.</li>
 </ul>
 
-<h2>Or just run it</h2>
-<p><code>--co2</code> is opt-in. It puts the local emissions figure next to an estimate for the cloud side and labels the two differently on every line, because they are not the same kind of number: the local one is arithmetic on your own hardware's wattage, and the cloud one is an order-of-magnitude estimate that is honest to roughly a factor of three.</p>
+<p>This is why the number is deliberately round — 600, not 587 — and why the tool prints <code>Confidence: LOW</code> beside it.</p>
+
+<h2>Step 2: PUE, the one input that behaves <span class="conf conf-high">well sourced</span></h2>
+
+<p>Power Usage Effectiveness is total facility power divided by IT power: the cooling and distribution overhead on top of the chips. Unlike energy per token, the three largest cloud providers publish fleet-wide figures directly.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Provider</th><th>PUE</th><th>Period</th></tr></thead>
+<tbody>
+<tr><td>Google</td><td><strong>1.09</strong></td><td>CY2025 trailing twelve months</td></tr>
+<tr><td>AWS</td><td><strong>1.14</strong></td><td>CY2025 global</td></tr>
+<tr><td>Microsoft</td><td><strong>1.17</strong></td><td>FY25 (Jul 2024&ndash;Jun 2025)</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>1.13</strong> is the midpoint, and this is the least uncertain input in the whole chain — the spread between providers barely moves the result. Two things are still worth knowing. The widely-quoted Microsoft figure of 1.18 is <strong>stale</strong>: that is their first-ever 2022 disclosure, not a current number. And the industry-wide average is far worse than any of these — the Uptime Institute's 2026 survey puts it at <strong>1.52</strong> — but hyperscale AI serving does not run in an average facility, so the hyperscale figures are the right ones here. All three exclude or obscure leased colocation capacity, and the reporting periods are not like-for-like.</p>
+
+<h2>Step 3: which grid do the tokens burn on? <span class="conf conf-high">well sourced</span></h2>
+
+<p>The third input is the carbon intensity of the electricity, which depends entirely on <em>where</em> the datacentre is. So it is worth knowing where the compute physically sits.</p>
+
+<figure>
+  <div class="map-wrap">
+    <svg class="dcmap" viewBox="0 0 1000 354" role="img" xmlns="http://www.w3.org/2000/svg"
+         aria-labelledby="dcmap-title dcmap-desc">
+      <title id="dcmap-title">Major hyperscale cloud regions worldwide</title>
+      <desc id="dcmap-desc">A schematic equirectangular world map marking 25 major hyperscale cloud datacentre locations published by AWS, Microsoft Azure, Google Cloud and Meta. The densest clusters are Northern Virginia in the eastern United States, Frankfurt in western Europe, and Tokyo in east Asia. Every marked location is listed with its providers in the table below this map.</desc>
+      <g class="dcmap-grid">
+        <line x1="57.1" y1="0" x2="57.1" y2="354.3"/>
+        <line x1="142.9" y1="0" x2="142.9" y2="354.3"/>
+        <line x1="228.6" y1="0" x2="228.6" y2="354.3"/>
+        <line x1="314.3" y1="0" x2="314.3" y2="354.3"/>
+        <line x1="400.0" y1="0" x2="400.0" y2="354.3"/>
+        <line x1="485.7" y1="0" x2="485.7" y2="354.3"/>
+        <line x1="571.4" y1="0" x2="571.4" y2="354.3"/>
+        <line x1="657.1" y1="0" x2="657.1" y2="354.3"/>
+        <line x1="742.9" y1="0" x2="742.9" y2="354.3"/>
+        <line x1="828.6" y1="0" x2="828.6" y2="354.3"/>
+        <line x1="914.3" y1="0" x2="914.3" y2="354.3"/>
+        <line x1="1000.0" y1="0" x2="1000.0" y2="354.3"/>
+        <line x1="0" y1="325.7" x2="1000" y2="325.7"/>
+        <line x1="0" y1="268.6" x2="1000" y2="268.6"/>
+        <line x1="0" y1="211.4" x2="1000" y2="211.4"/>
+        <line x1="0" y1="154.3" x2="1000" y2="154.3"/>
+        <line x1="0" y1="97.1" x2="1000" y2="97.1"/>
+        <line x1="0" y1="40.0" x2="1000" y2="40.0"/>
+      </g>
+      <line class="dcmap-equator" x1="0" y1="211.4" x2="1000" y2="211.4"/>
+      <g class="dcmap-land">
+        <path d="M5.7 22.9 L28.6 8.6 L82.9 11.4 L128.6 11.4 L171.4 14.3 L214.3 5.7 L242.9 11.4 L262.9 2.9 L300.0 22.9 L314.3 45.7 L328.6 62.9 L325.7 77.1 L297.1 82.9 L285.7 91.4 L274.3 100.0 L268.6 111.4 L254.3 122.9 L257.1 140.0 L248.6 128.6 L228.6 128.6 L208.6 137.1 L208.6 148.6 L185.7 154.3 L174.3 145.7 L160.0 131.4 L151.4 117.1 L137.1 105.7 L131.4 88.6 L128.6 71.4 L111.4 57.1 L85.7 42.9 L57.1 42.9 L34.3 51.4 L22.9 40.0 L5.7 22.9 Z"/>
+        <path d="M222.9 168.6 L242.9 182.9 L262.9 188.6 L280.0 177.1 L308.6 182.9 L337.1 197.1 L342.9 211.4 L360.0 217.1 L385.7 228.6 L377.1 248.6 L371.4 271.4 L348.6 282.9 L334.3 308.6 L320.0 320.0 L308.6 328.6 L291.4 354.3 L297.1 368.6 L280.0 360.0 L274.3 340.0 L277.1 317.1 L282.9 297.1 L285.7 262.9 L268.6 251.4 L254.3 228.6 L257.1 211.4 L262.9 194.3 L245.7 182.9 L222.9 168.6 Z"/>
+        <path d="M457.1 108.6 L460.0 85.7 L482.9 80.0 L491.4 65.7 L508.6 57.1 L514.3 45.7 L500.0 42.9 L520.0 25.7 L542.9 11.4 L571.4 11.4 L614.3 17.1 L657.1 11.4 L700.0 2.9 L771.4 -8.6 L814.3 2.9 L857.1 2.9 L885.7 11.4 L942.9 14.3 L977.1 22.9 L994.3 25.7 L951.4 40.0 L937.1 62.9 L894.3 82.9 L871.4 88.6 L857.1 111.4 L834.3 125.7 L828.6 148.6 L794.3 151.4 L785.7 182.9 L771.4 194.3 L765.7 171.4 L751.4 154.3 L737.1 148.6 L714.3 168.6 L705.7 188.6 L691.4 154.3 L680.0 142.9 L657.1 140.0 L648.6 140.0 L628.6 125.7 L614.3 108.6 L588.6 108.6 L577.1 122.9 L582.9 131.4 L608.6 177.1 L631.4 177.1 L602.9 217.1 L600.0 257.1 L580.0 285.7 L565.7 305.7 L542.9 311.4 L528.6 291.4 L522.9 260.0 L520.0 228.6 L511.4 214.3 L511.4 200.0 L471.4 197.1 L437.1 168.6 L437.1 151.4 L457.1 125.7 L468.6 108.6 L457.1 108.6 Z"/>
+        <path d="M808.6 274.3 L811.4 291.4 L817.1 308.6 L854.3 302.9 L880.0 311.4 L888.6 320.0 L902.9 322.9 L914.3 317.1 L922.9 291.4 L911.4 271.4 L891.4 242.9 L874.3 245.7 L857.1 242.9 L842.9 251.4 L822.9 268.6 L808.6 274.3 Z"/>
+        <path d="M857.1 120.0 L871.4 114.3 L885.7 108.6 L891.4 97.1 L888.6 82.9 L882.9 91.4 L874.3 105.7 L860.0 117.1 L857.1 120.0 Z"/>
+        <path d="M471.4 68.6 L477.1 60.0 L480.0 51.4 L471.4 45.7 L468.6 54.3 L471.4 62.9 L471.4 68.6 Z"/>
+        <path d="M457.1 62.9 L468.6 62.9 L468.6 54.3 L457.1 54.3 L457.1 62.9 Z"/>
+        <path d="M980.0 328.6 L985.7 317.1 L994.3 320.0 L985.7 328.6 L971.4 342.9 L962.9 342.9 L980.0 328.6 Z"/>
+      </g>
+      <g class="dcmap-sites">
+        <circle class="t1" cx="264.3" cy="99.9" r="6.5"/>
+        <text class="t1" x="275.8" y="103.9" text-anchor="start">N. Virginia</text>
+        <circle class="t2" cx="248.6" cy="97.3" r="4.0"/>
+        <text class="t2" x="248.6" y="71.3" text-anchor="middle">Columbus</text>
+        <circle class="t2" cx="235.3" cy="91.8" r="4.0"/>
+        <text class="t2" x="226.3" y="93.8" text-anchor="end">Chicago</text>
+        <circle class="t2" cx="218.2" cy="92.6" r="4.0"/>
+        <text class="t2" x="209.2" y="104.6" text-anchor="end">Iowa</text>
+        <circle class="t2" cx="135.2" cy="81.4" r="4.0"/>
+        <text class="t2" x="126.2" y="85.4" text-anchor="end">Oregon</text>
+        <circle class="t2" cx="137.4" cy="104.7" r="4.0"/>
+        <text class="t2" x="128.4" y="108.7" text-anchor="end">N. California</text>
+        <circle class="t2" cx="165.5" cy="115.9" r="4.0"/>
+        <text class="t2" x="156.5" y="135.9" text-anchor="end">Phoenix</text>
+        <circle class="t2" cx="209.1" cy="117.8" r="4.0"/>
+        <text class="t2" x="209.1" y="129.8" text-anchor="middle">Dallas</text>
+        <circle class="t2" cx="244.6" cy="115.0" r="4.0"/>
+        <text class="t2" x="253.6" y="125.0" text-anchor="start">Atlanta</text>
+        <circle class="t2" cx="352.5" cy="278.7" r="4.0"/>
+        <text class="t2" x="361.5" y="282.7" text-anchor="start">Sao Paulo</text>
+        <circle class="t2" cx="467.8" cy="59.0" r="4.0"/>
+        <text class="t2" x="458.8" y="57.0" text-anchor="end">Dublin</text>
+        <circle class="t2" cx="485.3" cy="64.3" r="4.0"/>
+        <text class="t2" x="476.3" y="74.3" text-anchor="end">London</text>
+        <circle class="t2" cx="499.7" cy="61.8" r="4.0"/>
+        <text class="t2" x="499.7" y="47.8" text-anchor="middle">Amsterdam</text>
+        <circle class="t1" cx="510.5" cy="68.3" r="6.5"/>
+        <text class="t1" x="522.0" y="76.3" text-anchor="start">Frankfurt</text>
+        <circle class="t2" cx="492.4" cy="71.8" r="4.0"/>
+        <text class="t2" x="483.4" y="85.8" text-anchor="end">Paris</text>
+        <circle class="t2" cx="475.1" cy="95.9" r="4.0"/>
+        <text class="t2" x="466.1" y="99.9" text-anchor="end">Madrid</text>
+        <circle class="t2" cx="510.1" cy="76.1" r="4.0"/>
+        <text class="t2" x="519.1" y="94.1" text-anchor="start">Zurich</text>
+        <circle class="t2" cx="534.3" cy="38.1" r="4.0"/>
+        <text class="t2" x="543.3" y="42.1" text-anchor="start">Sweden</text>
+        <circle class="t2" cx="643.6" cy="139.4" r="4.0"/>
+        <text class="t2" x="652.6" y="143.4" text-anchor="start">Dubai</text>
+        <circle class="t2" cx="693.9" cy="156.9" r="4.0"/>
+        <text class="t2" x="684.9" y="160.9" text-anchor="end">Mumbai</text>
+        <circle class="t2" cx="782.3" cy="207.6" r="4.0"/>
+        <text class="t2" x="782.3" y="197.6" text-anchor="middle">Singapore</text>
+        <circle class="t2" cx="811.9" cy="147.7" r="4.0"/>
+        <text class="t2" x="820.9" y="151.7" text-anchor="start">Hong Kong</text>
+        <circle class="t2" cx="848.5" cy="104.1" r="4.0"/>
+        <text class="t2" x="839.5" y="102.1" text-anchor="end">Seoul</text>
+        <circle class="t1" cx="884.8" cy="109.5" r="6.5"/>
+        <text class="t1" x="896.3" y="119.5" text-anchor="start">Tokyo</text>
+        <circle class="t2" cx="917.7" cy="308.2" r="4.0"/>
+        <text class="t2" x="926.7" y="312.2" text-anchor="start">Sydney</text>
+      </g>
+    </svg>
+  </div>
+  <figcaption>Schematic orientation only &mdash; coastlines are deliberately coarse and markers are city centroids, not facility locations. Places are drawn from the four largest providers' own published region lists (<a href="https://aws.amazon.com/about-aws/global-infrastructure/">AWS</a>, <a href="https://datacenters.microsoft.com/globe/explore/">Microsoft Azure</a>, <a href="https://cloud.google.com/about/locations">Google Cloud</a>, <a href="https://datacenters.atmeta.com/">Meta</a>); the map does not claim which provider is in which place. It is context for the grid question below, not an input to any number the CLI prints.</figcaption>
+</figure>
+
+<p><code>--cloud-region</code> picks which grid the estimate assumes:</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Key</th><th>gCO<sub>2</sub>/kWh</th><th>What it is</th></tr></thead>
+<tbody>
+<tr><td><code>us-avg</code> (default)</td><td><strong>350</strong></td><td>US national average. EPA <strong>eGRID2023 rev2</strong> (published 12 Jun 2025, data year 2023): CO<sub>2</sub>e total output rate 770.884 lb/MWh = 349.7 g/kWh. EIA's Electricity Profile for data year 2024 gives 785 lb/MWh = 356 g/kWh. eGRID2024 had not been released as of Sept 2026.</td></tr>
+<tr><td><code>us-virginia</code></td><td><strong>270</strong></td><td>Northern Virginia, "Data Center Alley" — eGRID subregion SRVC. EIA's Virginia state profile (2024) gives 286 g/kWh. <strong>~20&ndash;30% cleaner than the national average</strong>, driven by ~28&ndash;40% nuclear and only ~1.9% coal.</td></tr>
+<tr><td><code>us-ercot</code></td><td><strong>334</strong></td><td>Texas / ERCOT — eGRID subregion ERCT. EIA's Texas state profile (2024) gives 373 g/kWh. Gas supplies ~50% of generation, but wind+solar supply ~28.5%.</td></tr>
+<tr><td><code>de-grid</code></td><td><strong>344</strong></td><td>German grid mix, so you can compare cloud against local hardware <em>on the same grid</em> and isolate the hardware-efficiency difference from the grid-mix difference.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>The result that overturned the premise</h2>
+
+<p>This feature was originally framed around a comparison everybody finds intuitive: the clean European power mix versus the gas-burning US AI industry. <strong>The published grid data does not support that story, and after checking it the story was dropped rather than told.</strong></p>
+
+<ul>
+  <li><strong>Northern Virginia — the densest concentration of AI datacentres on earth — is roughly 20&ndash;30% <em>cleaner</em> than the US average</strong>, because Dominion's mix is heavily nuclear and almost coal-free.</li>
+  <li><strong>ERCOT, the genuinely gas-heavy case, still lands at or slightly below the US average</strong>, because Texas wind and solar supply more than a quarter of it.</li>
+  <li><strong>Germany at 344 g/kWh is now within noise of the US national average at 350</strong>, having decarbonised sharply: 379 in 2023 &rarr; 353 in 2024 &rarr; 344 in 2025.</li>
+</ul>
+
+<p>So there is no "dirty American gas versus clean European grid" result to report, and the tool does not report one. There is deliberately <strong>no <code>us-gas-heavy</code> region key</strong>, because inventing a 450 g/kWh "representative gas-heavy datacentre grid" — which an earlier draft of this research did — would have meant asserting a conclusion the data contradicts. Deleting it was the single most useful outcome of the exercise.</p>
+
+<p>One real caveat on Virginia, pointing the other way: it <strong>imports ~30% of the electricity it consumes</strong> from the dirtier western PJM pool (eGRID subregion RFCW, ~416 g/kWh). The 270 figure is generation-based; a consumption-based figure would be materially higher.</p>
+
+<h2 id="the-google-paper">A worked example of why this is hard: Google's own numbers</h2>
+
+<p>In August 2025 Google published the only production-measured per-query figure in this field, and the argument that broke out around it is the single best illustration of every trap on this page. It is worth walking through, because the disagreement is not about arithmetic — it is about what you are allowed to leave out.</p>
+
+<p><em>Measuring the environmental impact of delivering AI at Google Scale</em> reports a median Gemini Apps text prompt at <strong>0.24 Wh, 0.03 gCO<sub>2</sub>e and 0.26 mL of water</strong>, alongside a large claimed year-on-year efficiency improvement. The author list is not junior — it includes David Patterson, Jeff Dean, Amin Vahdat and James Manyika.</p>
+
+<p>Two facts about its status matter before any of the numbers do. It exists <strong>only as arXiv v1 and has never been submitted for peer review</strong>; a Google spokesperson told <em>The Verge</em> the company was open to doing so in future. And the accompanying blog post carries its own footnote: <em>"The data and claims have not been verified by an independent third-party."</em></p>
+
+<h3>Market-based versus location-based: a 3.7x fork in the road</h3>
+
+<p>The substantive criticism is about carbon accounting convention — the same class of problem as the combustion-versus-lifecycle mismatch described further down, and just as capable of moving an answer by multiples.</p>
+
+<ul>
+  <li><strong>Location-based</strong> accounting uses the actual carbon intensity of the grid the datacentre draws from.</li>
+  <li><strong>Market-based</strong> accounting nets off renewable energy the company has contracted for elsewhere.</li>
+</ul>
+
+<p>For 2024 Google's stated net <strong>market-based</strong> factor was <strong>94 gCO<sub>2</sub>e/kWh</strong>, against a <strong>location-based 345 gCO<sub>2</sub>e/kWh</strong>. <em>MIT Technology Review</em> characterised the effect as making Google's per-unit emissions roughly one-third of those on the average grid where it operates. The headline 0.03 gCO<sub>2</sub>e per prompt rests on the smaller of those two numbers.</p>
+
+<div class="quote">
+  <p>"They're just hiding the critical information&hellip; This really spreads the wrong message to the world."</p>
+  <cite>Shaolei Ren, UC Riverside, on the accounting choices &mdash; <a href="https://www.theverge.com/report/763080/google-ai-gemini-water-energy-emissions-study">The Verge</a>, 21 Aug 2025</cite>
+</div>
+
+<p>Ren, who regards the location-based figure as the ground truth, put it more bluntly to <em>The Register</em>: <em>"Their practice doesn't follow the minimum standard we expect for any paper, let alone one from Google."</em> His water criticism is structural rather than rhetorical — he argues Google compared its own on-site-only water figure against competitors' totals, which include power-plant water.</p>
+
+<div class="quote">
+  <p>"You only see the tip of the iceberg, basically."</p>
+  <cite>Alex de Vries-Gao, Digiconomist, on the excluded indirect water &mdash; <a href="https://www.theverge.com/report/763080/google-ai-gemini-water-energy-emissions-study">The Verge</a>, 21 Aug 2025</cite>
+</div>
+
+<h3>The median hides the expensive queries</h3>
+
+<p>A median is not an average, and Jeff Dean acknowledged the gap directly: summarising a whole book is, in his words, <em>"the kind of thing that will probably take more energy than the median prompt."</em> Sasha Luccioni — whose own paper appears in the table above — cautioned that the figure <em>"is not a replacement or proxy for standardized comparisons."</em> This is the same problem that makes the other per-query figures incomparable, restated inside a single paper.</p>
+
+<h3>Per-query efficiency up, total emissions up</h3>
+
+<p>Here is the part that matters most for reading <em>any</em> efficiency claim in this field, and the reason this section exists at all.</p>
+
+<p>Per-query efficiency improving and total emissions rising are not contradictory — they are the expected outcome when volume grows faster than efficiency. <em>The Verge</em>'s reporting notes Google's ambition-based emissions grew <strong>11% year on year and 51% since 2019</strong>. The efficiency paper is silent on this: <strong>Google acknowledges the rising totals in its Environmental Report, never in the paper or the accompanying blog post.</strong> That distinction is worth preserving precisely — the company is not concealing the trend, it is reporting the two facts in two different documents, and only one of them got a press cycle.</p>
+
+<p>The number that would let an outsider reconcile them is total query volume, and that is the number Google declines to give:</p>
+
+<div class="quote">
+  <p>"We're not comfortable revealing that for various reasons&hellip; the company wants users to be thinking about the energy usage per prompt."</p>
+  <cite>Jeff Dean, on total query volume &mdash; <a href="https://www.technologyreview.com/2025/08/21/1122288/google-gemini-ai-energy/">MIT Technology Review</a>, 21 Aug 2025</cite>
+</div>
+
+<p>De Vries-Gao's summary of that gap: <em>"If you look at the total numbers that Google is posting, it's actually really bad&hellip; this is not telling the complete story."</em></p>
+
+<p>None of this makes 0.24 Wh wrong. It is still the best-instrumented figure anyone has published, and this page treats it as such. It does mean that a per-query number, however well measured, answers a narrower question than it appears to — which is exactly why the estimator prints a per-token figure with its convention stated on the same line, and why it does not try to tell you whether your usage is "good".</p>
+
+<h2>A convention mismatch that will bite you</h2>
+
+<p>If you take one practical thing from this page, make it this one. Grid carbon figures come in two incompatible conventions, and mixing them silently changes your answer by tens of percent:</p>
+
+<ul>
+  <li><strong>Direct combustion</strong> — what national inventories publish, and what the eGRID and UBA figures above use. Counts what comes out of the stack.</li>
+  <li><strong>Lifecycle</strong> — counts construction, fuel extraction and decommissioning too. There is no combustion to measure for a solar panel, so PV figures are necessarily lifecycle.</li>
+</ul>
+
+<p>The estimator's own numbers inherit this mismatch, and say so rather than hiding it: the grid tariffs are combustion-based while the PV tariffs are lifecycle, which slightly <em>understates</em> the grid side. The lifecycle-consistent German figure is <strong>406 gCO<sub>2</sub>eq/kWh</strong>, not 344. For a strict apples-to-apples solar-versus-grid comparison, use 406 against 40.</p>
+
+<p>The same trap applies to consumption-based lifecycle providers such as Electricity Maps, which typically run <strong>20&ndash;50% above</strong> eGRID's combustion-only generation-based rates; their figure for Germany in 2025 is 335 gCO<sub>2</sub>eq/kWh. <strong>Do not compare figures across those two conventions</strong> — it is the easiest way to manufacture a 50% effect out of nothing.</p>
+
+<h2>What these numbers are not</h2>
+
+<ul>
+  <li><strong>Not embodied carbon.</strong> Neither side counts manufacturing. A MacBook Pro's embodied emissions are on the order of a few hundred kg CO<sub>2</sub>e — for a lightly-used box that can dwarf its operational emissions over three years, and it is entirely absent from both columns.</li>
+  <li><strong>Not water.</strong> Datacentre water consumption is a real and separate impact, not modelled here.</li>
+  <li><strong>Not a claim about any specific provider.</strong> Nothing in the estimator is an Anthropic, OpenAI, Google or AWS figure. Do not quote it as one.</li>
+  <li><strong>Not a licence to greenwash in either direction.</strong> On default settings a desktop Mac Studio on the German grid emits roughly <strong>1.4x</strong> the cloud estimate per token — because a hyperscale datacentre batches work across many users and a box on your desk does not. Local inference wins on carbon mainly when it runs on your own PV, not by default.</li>
+</ul>
+
+<h2>Why publish a weak number at all?</h2>
+
+<p>Because the alternative is worse. Without a cloud figure, the tool printed a local CO<sub>2</sub> number with nothing to compare it against — which invites the reader to assume the cloud side is either zero or enormous, depending on their priors. A labelled order-of-magnitude figure with visible error bars is more honest than a conspicuous blank, <em>as long as it never pretends to be a measurement</em>.</p>
+
+<p>That is what the <code>[ESTIMATE]</code> tag, the <code>Confidence: LOW</code> line, and the basis line printed under every figure are for. The same repository applies the same treatment to the one other number it cannot source cleanly — GitHub Copilot's effective $/token, which nobody publishes — rendering it as a <em>derived</em> rate with a marker and a legend rather than quietly presenting it as a price.</p>
+
+<h2>Try it yourself</h2>
+
+<p><code>--co2</code> is <strong>opt-in</strong>. Without it, <code>savings</code> prints only the local figure it always printed, plus a pointer to the flag. That is deliberate — the cloud number is weak enough that it should be something you ask for, not something the tool volunteers.</p>
 
 <pre><code>$ token-finops savings --co2 --cloud-region us-virginia
 $ token-finops savings --co2 --power solar-de-feed-in --cloud-region us-ercot</code></pre>
 
-<p>The <a href="savings.html">savings page</a> shows the output and the cost side of the same comparison.</p>
+<div class="player" id="player-08" data-cast="casts/08-savings-co2.cast"></div>
+<p class="cast-note">The two figures are tagged differently on every line, not in a footnote: <code>[computed]</code> for the local side, <code>[ESTIMATE]</code> for the cloud side.</p>
 
-<p class="cast-note"><code>--co2</code> and <code>--cloud-region</code> landed after the 0.3.0 release and are not in the published wheel yet &mdash; see <a href="index.html">the install notes</a>.</p>
+<p>All three inputs live in <code>savings/energy.json</code> under <code>cloud_inference_co2_estimate</code>, so you can replace any of them without touching code:</p>
+
+<pre><code>$ token-finops savings --list          # every hardware/model/tariff/region key
+$ export TOKEN_FINOPS_ENERGY_JSON=./my-energy.json</code></pre>
+
+<p>If you have a better-sourced per-token energy figure — especially a provider-published one — replace <code>wh_per_mtok_it</code> and its <code>_source</code> string and open a pull request. Every number in this repository carries a source and a review date; this one carries the honest admission that its source is an inference from somebody else's per-query estimate.</p>
+
+<p class="cast-note"><code>--co2</code> and <code>--cloud-region</code> landed after the 0.3.0 release and are not in the published wheel yet — see <a href="index.html">the install notes</a>. The <a href="savings.html">savings page</a> covers the cost side of the same comparison.</p>
+
+<h2>Sources</h2>
+
+<h3>Energy per query</h3>
+<ul class="pagelist">
+  <li><a href="https://epoch.ai/gradient-updates/how-much-energy-does-chatgpt-use">Epoch AI — <em>How much energy does ChatGPT use?</em></a> (7 Feb 2025)</li>
+  <li><a href="https://arxiv.org/abs/2508.15734">Google — <em>Measuring the environmental impact of delivering AI at Google Scale</em></a> (arXiv:2508.15734v1, 21 Aug 2025; not peer-reviewed)</li>
+  <li><a href="https://arxiv.org/abs/2505.09598">Jegham et al. — <em>How Hungry is AI?</em></a> (arXiv:2505.09598) — cite the version; the headline moved 0.43&rarr;0.42 between v1 and v6</li>
+  <li><a href="https://arxiv.org/abs/2311.16863">Luccioni et al. — <em>Power Hungry Processing</em></a> (FAccT '24, arXiv:2311.16863)</li>
+  <li><a href="https://doi.org/10.1016/j.joule.2023.09.004">de Vries — <em>The growing energy footprint of AI</em></a> (Joule, 2023 — a Commentary, not peer-reviewed)</li>
+  <li><a href="https://www.iea.org/reports/energy-and-ai">IEA — <em>Energy and AI</em></a> (Apr 2025)</li>
+</ul>
+
+<h3>Reporting on the Google paper</h3>
+<ul class="pagelist">
+  <li><a href="https://www.theverge.com/report/763080/google-ai-gemini-water-energy-emissions-study">The Verge</a> — Justine Calma, 21 Aug 2025 (Ren, de Vries-Gao)</li>
+  <li><a href="https://www.theregister.com/2025/08/22/googles_gemini_water/">The Register</a> — Tobias Mann, 22 Aug 2025 (Ren on the water comparison)</li>
+  <li><a href="https://www.technologyreview.com/2025/08/21/1122288/google-gemini-ai-energy/">MIT Technology Review</a> — Casey Crownhart, 21 Aug 2025 (Dean on query volume; market-based accounting)</li>
+</ul>
+
+<h3>Grid, PUE and tariffs</h3>
+<ul class="pagelist">
+  <li><a href="https://www.epa.gov/system/files/documents/2025-06/summary_tables_rev2.pdf">EPA eGRID2023 rev2 summary tables</a> (published 12 Jun 2025, data year 2023)</li>
+  <li><a href="https://www.eia.gov/electricity/state/virginia/">EIA Virginia state electricity profile</a> &middot; <a href="https://www.eia.gov/electricity/state/texas/">EIA Texas state electricity profile</a></li>
+  <li><a href="https://www.umweltbundesamt.de/system/files/medien/11850/publikationen/2026-03/16_2026_CC.pdf">Umweltbundesamt CC 16/2026</a> (Mar 2026) — German grid carbon intensity series</li>
+  <li><a href="https://datacenters.google/efficiency/">Google datacentre efficiency (PUE)</a> &middot; <a href="https://sustainability.aboutamazon.com/products-services/aws-cloud">AWS</a> &middot; <a href="https://datacenters.microsoft.com/sustainability/efficiency/">Microsoft</a></li>
+</ul>
+
+<p>The full working, including every figure's review date and the ones that were rejected, is in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/CO2_ESTIMATE.md">docs/CO2_ESTIMATE.md</a>. Every price, tariff and grid figure used anywhere in this tool is listed with its source in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/sources.md">docs/sources.md</a>.</p>
 
 <footer>
   <p>Recordings are asciicast v2 files committed in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/docs/casts">docs/casts/</a> — play them locally with <code>asciinema play &lt;file&gt;</code>. This page ships no analytics and no tracking.</p>
