@@ -42,7 +42,25 @@ follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a ta
   `hardware_profiles.json` assigns `quality_tier` (haiku/sonnet/opus) by hand. Fetch the
   Artificial Analysis intelligence index for the listed open models, store index values with a date
   in the JSON, derive the tier from index bands, document the bands in `docs/guide/04`. Keep the
-  "it's an assumption" caveat.
+  "it's an assumption" caveat. **Deferred until after T-11** (2026-09-22).
+
+  Partial research from a paused 2026-09-22 attempt, saved so the lookup isn't redone from scratch:
+  - Use **Artificial Analysis Intelligence Index v4.3.2** (as of 2026-09-22) — a much harsher scale
+    than older v3-era scores (current leader GPT-5.6 Sol ~58.9, Claude Fable 5.1 ~53). Don't mix
+    v3/v4 numbers when deriving band cutoffs.
+  - Confirmed v4.3.2 values so far: `gpt-oss-120b` (high) = 12, `llama-3-3-instruct-70b` = 8
+    (AA-flagged as *estimated*), `qwen3-6-27b` (Reasoning) = 21.
+  - Still missing: Qwen3 8B, Qwen3 32B, Qwen3 235B-A22B, and clean v4.3.2 figures for
+    current-gen Claude Haiku/Sonnet/Opus as calibration anchors (search snippets returned a mix of
+    index versions and AA-flagged estimates — verify against per-model or comparison pages).
+  - Working retrieval trick: `artificialanalysis.ai/models/comparisons/<slug-a>-vs-<slug-b>` pages
+    render real numeric scores + index version; the main `/models` leaderboard doesn't survive
+    markdown conversion. `qwen3-32b-reasoning` 404s as a slug — the real Qwen slugs need discovery
+    first (site map or domain-restricted search).
+  - Heads up for whoever picks this up: `llama-3-3-instruct-70b` (8) scoring *below*
+    `gpt-oss-120b` (12) while both are currently hand-assigned `sonnet`-tier suggests a literal
+    index-derived mapping will demote at least one model — the user-visible `savings`/
+    `cost-per-token` behavior change the original spec asks to flag.
 
 - [x] **T-15 self-audit across compaction** — branch `fix/self-audit-compaction` — model: Sonnet — S
   When Claude Code compacts context it starts a new transcript for the same session id (and Cowork
@@ -72,9 +90,16 @@ follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a ta
   headless `nvim --headless` smoke script (`test/smoke.lua`) against a synthetic fixture, including
   missing/corrupt/wrong-`schema_version` cache paths.
 
-- [ ] **T-09 VS Code status-bar extension** — branch `feat/vscode` — model: Sonnet — M
-  Status-bar item from `status --format json`, click → detail webview; ships under `contrib/vscode/`
-  with its own package.json; reaches the Cline/Roo/Kilo audience (ADR-0007).
+- [x] **T-09 VS Code status-bar extension** — branch `feature/agentic/vscode-extension` — model: Sonnet — M
+  Shipped `contrib/vscode/` as a standalone extension (`package.json`, `extension.js`): status-bar
+  item reads `~/.token-finops/last.json` directly on a 45s timer (no process-spawn per tick, same
+  pattern as `contrib/tmux`/`contrib/nvim`), click → detail webview rendering the full per-tool
+  table; a rate-limited "Refresh Now" command shells out `token-finops status --fresh` on demand.
+  Plain JavaScript, not TypeScript (no build step needed to run via Extension Development Host —
+  see the README's "Why plain JavaScript" section). `node`/`npm` were available but packaging
+  (`@vscode/vsce`) and Marketplace publishing were not attempted without asking first, so the
+  extension is unverified in a real VS Code instance — see `contrib/vscode/README.md` for the
+  "Verification status" note.
 
 - [ ] **T-10 Emacs `token-finops.el`** — branch `feat/emacs` — model: Sonnet — S
   Mode-line segment + transient buffer over the cache file.
