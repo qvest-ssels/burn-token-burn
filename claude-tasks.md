@@ -86,9 +86,16 @@ follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a ta
   Lua module reading `~/.token-finops/last.json` (never runs a rescan), lualine/heirline component,
   `:TokenFinops` floating window with the per-tool table, health check. `docs/INTEGRATIONS.md` §2.
 
-- [ ] **T-09 VS Code status-bar extension** — branch `feat/vscode` — model: Sonnet — M
-  Status-bar item from `status --format json`, click → detail webview; ships under `contrib/vscode/`
-  with its own package.json; reaches the Cline/Roo/Kilo audience (ADR-0007).
+- [x] **T-09 VS Code status-bar extension** — branch `feature/agentic/vscode-extension` — model: Sonnet — M
+  Shipped `contrib/vscode/` as a standalone extension (`package.json`, `extension.js`): status-bar
+  item reads `~/.token-finops/last.json` directly on a 45s timer (no process-spawn per tick, same
+  pattern as `contrib/tmux`/`contrib/nvim`), click → detail webview rendering the full per-tool
+  table; a rate-limited "Refresh Now" command shells out `token-finops status --fresh` on demand.
+  Plain JavaScript, not TypeScript (no build step needed to run via Extension Development Host —
+  see the README's "Why plain JavaScript" section). `node`/`npm` were available but packaging
+  (`@vscode/vsce`) and Marketplace publishing were not attempted without asking first, so the
+  extension is unverified in a real VS Code instance — see `contrib/vscode/README.md` for the
+  "Verification status" note.
 
 - [ ] **T-10 Emacs `token-finops.el`** — branch `feat/emacs` — model: Sonnet — S
   Mode-line segment + transient buffer over the cache file.
