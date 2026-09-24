@@ -146,6 +146,26 @@ follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a ta
 
 ## Done (keep for history)
 
+- [x] **T-21 CI budget-guardrail GitHub Action** — branch `feature/agentic/budget-check-action` —
+  model: Sonnet — S — **design-and-build task, not pre-specified**: this idea came out of a
+  design-consult pass ("the 'actually helps developers' move — personal dashboard to team
+  guardrail") and was speced and implemented in the same PR, not picked from an existing entry
+  here. Shipped a reusable composite Action, `.github/actions/budget-check/` (`action.yml` +
+  `check_budget.py`, stdlib-only), that a team references from their own repo
+  (`owner/repo/.github/actions/budget-check@ref`) to comment on a PR — and optionally fail the
+  job (`fail-on-exceed: true`, default `false`) — when a coding-agent session's usage exceeds a
+  configured `budget-usd`. Deliberately does **not** scan telemetry on the runner itself (it
+  doesn't exist there); instead it reads an already-exported `self-audit --json` (primary shape:
+  sums `by_model[*].usd`) or `report --json` (sums only `unit == "usd"` rows; non-USD rows like
+  Copilot's AIU are listed for context, never coerced into a dollar figure) payload that a real
+  session produced and got onto the runner via a committed file, a build artifact, or this repo's
+  own `PULL_REQUEST_TEMPLATE.md` self-audit paste-block convention. Verified: `action.yml` and an
+  example workflow YAML parse (`yaml.safe_load`); `check_budget.py` exercised directly against
+  synthetic fixtures covering under-/over-budget for both JSON shapes plus malformed-JSON and
+  unrecognised-shape failure modes (exit 2). **Not verified**: a live GitHub Actions run (the PR
+  comment step, the fail-on-exceed job-failure path) — no way to exercise that without a real
+  workflow trigger. `docs/INTEGRATIONS.md` §3.1 and the tier table in §5.5 point at it.
+
 - [x] **T-02 Copilot synth scale** — `build_synthetic_db`'s per-event `total_nano_aiu` rescaled
   from ~900 AIU/request (~300x too hot -- a real account averages ~1.5 AIU/request) to ~3
   AIU/request, so `synth --scenario steady` now reads sensibly against real plan sizes: 22.5% of
