@@ -42,11 +42,18 @@ follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a ta
   argparse parser, so a flag the CLI does not have fails CI. Codex's newer "skills" successor is
   documented-but-unstable, so only the verifiable prompt form shipped (`docs/INTEGRATIONS.md` §3).
 
-- [ ] **T-05 PyPI trusted publishing + v0.3.0 release** — branch `release/0.3.0` — model: Sonnet — S
-  Verify `.github/workflows/release.yml` works from the `token-finops-cli/` subdirectory (artifact
-  paths), add a `CHANGELOG.md` link check, bump nothing (already 0.3.0). Human step: configure PyPI
-  trusted publisher for `tronicum/burn-token-burn` → project `token-finops-cli`, then
-  `git tag v0.3.0 && git push --tags`. Acceptance: dry-run `uv build` in CI on the PR.
+- [x] **T-05 PyPI trusted publishing + release** — done differently than spec'd: rather than
+  registering a new trusted publisher for `tronicum/burn-token-burn` (never had one), discovered
+  the real, already-working trusted-publisher relationship lives on the *separate* standalone
+  `oh-my-agent-code/token-finops-cli` repo (where `token-finops-cli/` here is subtree-split from,
+  and where the original 0.1.0/0.2.0 releases actually came from). v0.3.0 shipped from there
+  2026-09-14 (real PyPI: `pip install token-finops-cli` gets the 9-adapter tool). v0.4.0 prep is
+  merged to this repo's `main`; the subtree-split + PR is open at
+  `oh-my-agent-code/token-finops-cli#2`, pending human merge + tag. One real bug found and fixed
+  along the way: a subtree-split branch never contains `.github/workflows/` (lives at this
+  monorepo's root, not inside `token-finops-cli/`), so a naive merge into the standalone repo
+  silently *deletes* its workflows — now worked around by carrying them forward explicitly on
+  each release branch before merging.
 
 - [ ] **T-07 Quality-tier mapping from Artificial Analysis** — branch `savings/quality-tiers` — model: Opus — M
   `hardware_profiles.json` assigns `quality_tier` (haiku/sonnet/opus) by hand. Fetch the

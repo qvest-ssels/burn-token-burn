@@ -37,13 +37,16 @@ A short, human-facing "what's outstanding" list. For the detailed agent-ready wo
 
 ## Open
 
-- [ ] **Investigate a rare `test_since_map` flake under random test ordering** — seen once
-  (985 passed, 1 failed) right after merging the configurable-budget-thresholds work
-  (`core/config.py`); passed in isolation and in 5+ subsequent full-suite runs with random
-  ordering, and with `-p no:randomly`. Likely a rare global-state leak (an env var or module
-  dict not fully reset) that only some random seeds happen to trigger. Not reproduced enough to
-  bisect yet — if it recurs, capture the `Using --randomly-seed=N` line from the failing run and
-  re-run with `--randomly-seed=N` to make it deterministic before investigating further.
+- [ ] **Investigate a rare `test_since_map` flake** — seen once (985 passed, 1 failed) right
+  after merging the configurable-budget-thresholds work (`core/config.py`); passed in isolation
+  and in 5+ subsequent full-suite runs. Correction: the original note here blamed "random test
+  ordering" and suggested capturing a `--randomly-seed` — but `pytest-randomly` is not installed
+  in this repo (`token-finops-cli/pyproject.toml`'s dev deps are just `pytest>=8.0` and
+  `ruff>=0.6`), so there is no seed and test order is actually fixed. The real cause is more
+  likely a rare global-state leak (an env var or module dict not fully reset by a preceding test)
+  that only shows up under specific timing/ordering from `-k`/`-n` flags or CI parallelism, not a
+  random seed. Not reproduced enough to bisect yet — if it recurs, note the exact command/flags
+  used and the full `pytest -q` output before investigating further.
 
 - [ ] **Recurring public CO2-estimate data as a "know-how" service** — instead of a one-time
   static CO2 research page, periodically re-run the CO2/energy estimate (via a scheduled GitHub
@@ -85,29 +88,22 @@ A short, human-facing "what's outstanding" list. For the detailed agent-ready wo
 
 ## Remote / release housekeeping
 
-- [ ] **Reconfigure PyPI trusted publishing for the new repo.** `.github/workflows/release.yml`
-  uses OIDC trusted publishing tied to `owner/repo/workflow`. Now that `origin` is
-  `qvest-ssels/burn-token-burn` (see below), releasing from there requires registering a new
-  trusted publisher on the PyPI project settings for `token-finops-cli` — this is a PyPI-side
-  change only a project owner can make, not scriptable from here.
-- [ ] **Decide the release path**: tag `v0.3.x` from `qvest-ssels/burn-token-burn` once trusted
-  publishing is reconfigured, or keep releasing from `upstream` (tronicum/burn-token-burn) and use
-  qvest-ssels purely as a mirror/fork. Current state: `origin` = qvest-ssels (primary, just
-  created, only `main` pushed, no tags), `upstream` = tronicum (original, has the real PyPI
-  release history).
-- [ ] **T-05 PyPI trusted publishing + release** (from `claude-tasks.md`) — still open regardless
-  of which repo ends up as the release source.
+- [x] **PyPI trusted publishing + release** — resolved: the real, already-working trusted
+  publisher lives on the separate standalone `oh-my-agent-code/token-finops-cli` repo (not
+  `tronicum/burn-token-burn`, which never had one). `token-finops-cli/` here is subtree-split into
+  that repo for each release. v0.3.0 shipped from there 2026-09-14; v0.4.0 prep is merged to this
+  repo's `main`, subtree-split PR open at `oh-my-agent-code/token-finops-cli#2` pending human
+  merge + tag. See `claude-tasks.md`'s T-05 entry for the full detail, including the
+  `.github/workflows/` subtree-split gotcha found along the way.
 
-## From the existing backlog (`claude-tasks.md`) — top picks
+## From the existing backlog (`claude-tasks.md`) — remaining
 
-- [ ] T-03 `--online` live quota fetchers (Copilot/Anthropic/Gemini/OpenRouter)
-- [ ] T-04 Claude Code `/runway` skill
 - [ ] T-07 Quality-tier mapping from Artificial Analysis
-- [ ] T-15 self-audit across context-compaction boundaries
-- [ ] T-16 Claude Desktop / Cowork coverage doc
-- [ ] T-08/T-09/T-10 editor integrations (Neovim, VS Code, Emacs)
-- [ ] T-11 desktop notifications, T-12 Prometheus exporter
-- [ ] T-13 re-record casts on each release (now 6 casts, not 5)
-- [ ] T-14 PRs to awesome-lists
+- [ ] T-13 re-record casts on each release (now 6 casts, not 5) — gate on 0.4.0 wheel being live
+  on PyPI
+- [ ] T-14 PRs to awesome-lists — text prepared, not submitted (external-repo action, needs
+  explicit human go-ahead)
 
-See `claude-tasks.md` for full acceptance criteria and branch names on each.
+T-03, T-04, T-08/T-09/T-10, T-11, T-12, T-15, T-16, and the budget-check GitHub Action are done —
+see `claude-tasks.md`'s Done section. See `claude-tasks.md` for full acceptance criteria and
+branch names on remaining items.
