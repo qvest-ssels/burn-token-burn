@@ -92,9 +92,13 @@ follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a ta
 
 ## Next
 
-- [ ] **T-08 Neovim plugin `token-finops.nvim`** — branch `feat/nvim` — model: Sonnet — M
-  Lua module reading `~/.token-finops/last.json` (never runs a rescan), lualine/heirline component,
-  `:TokenFinops` floating window with the per-tool table, health check. `docs/INTEGRATIONS.md` §2.
+- [x] **T-08 Neovim plugin `token-finops.nvim`** — branch `feature/agentic/nvim-plugin` — model: Sonnet — M —
+  done: `contrib/nvim/token-finops.nvim/` — Lua module reads `~/.token-finops/last.json` (never
+  rescans), lualine component (`require("token-finops").statusline()`; heirline gets a one-line
+  snippet in the README since it just wants the same function), `:TokenFinops` floating window
+  with the per-tool table, `:checkhealth token-finops`. Verified with `luac -p` on every file and a
+  headless `nvim --headless` smoke script (`test/smoke.lua`) against a synthetic fixture, including
+  missing/corrupt/wrong-`schema_version` cache paths.
 
 - [x] **T-09 VS Code status-bar extension** — branch `feature/agentic/vscode-extension` — model: Sonnet — M
   Shipped `contrib/vscode/` as a standalone extension (`package.json`, `extension.js`): status-bar
@@ -107,8 +111,8 @@ follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a ta
   extension is unverified in a real VS Code instance — see `contrib/vscode/README.md` for the
   "Verification status" note.
 
-- [ ] **T-10 Emacs `token-finops.el`** — branch `feat/emacs` — model: Sonnet — S
-  Mode-line segment + transient buffer over the cache file.
+- [x] **T-10 Emacs `token-finops.el`** — branch `feature/agentic/emacs-plugin` — model: Sonnet — S
+  Mode-line segment + transient buffer over the cache file. Shipped as `contrib/emacs/`.
 
 - [ ] **T-11 Desktop notifications at WARN/CRIT** — branch `feat/notify` — model: Sonnet — S
   `token-finops status --notify` → `notify-send` / `terminal-notifier` / PowerShell toast when the
