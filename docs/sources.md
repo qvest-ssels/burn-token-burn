@@ -37,11 +37,22 @@
 | Llama-GENBA-10B | Trilingual DE/EN/Bavarian, 164B training tokens (LRZ + Cerebras) | https://www.lrz.de/en/news/detail/lrz-develops-10b-language-model | 2026-09-04 |
 | llama.cpp Apple Silicon performance | Benchmark data available | https://github.com/ggml-org/llama.cpp/discussions/4167 | 2026-09-04 |
 
-## Reverse-engineered endpoints (may break without notice)
+## Live quota endpoints (`--online` only)
 
-- **Copilot**: `GET api.github.com/copilot_internal/user`
-- **Anthropic**: `GET api.anthropic.com/api/oauth/usage` (header: `anthropic-beta: oauth-2025-04-20`, heavily rate limited)
-- **Gemini**: `POST cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota`
-- **Codex**: `GET chatgpt.com/backend-api/codex/usage`
+Reviewed 2026-09-22 (T-03). Three of the four are reverse-engineered,
+unversioned, and may break without notice; the OpenRouter one is official.
 
-**Note**: token-finops does not call any of these endpoints by default.
+| Tool | Request | Credential (read-only) | Response field used | `QuotaSnapshot.source` | Status |
+|------|---------|------------------------|---------------------|------------------------|--------|
+| Copilot | `GET api.github.com/copilot_internal/user` | `$GITHUB_TOKEN`/`$GH_TOKEN`, else `gh auth token` | `quota_snapshots.chat.percent_remaining`, `quota_reset_date` | `copilot_online` | RE, but self-used by the Copilot CLI and mirrored by GitHub's SDK as `account.getQuota` — [ADR-0001](adr/0001-github-copilot-cli.md) |
+| Claude Code | `GET api.anthropic.com/api/oauth/usage` (header `anthropic-beta: oauth-2025-04-20`) | `~/.claude/.credentials.json` | `five_hour`/`seven_day` utilisation + `resets_at` | `claude_oauth_usage` | RE, heavily 429-rate-limited — [ADR-0002](adr/0002-claude-code.md) |
+| Gemini CLI | `POST cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota` | `${GEMINI_CLI_HOME:-~/.gemini}/oauth_creds.json` | `buckets[].remainingFraction` (emptiest bucket wins), `resetTime` | `gemini_online` | RE, Google-internal — [ADR-0004](adr/0004-gemini-cli.md) |
+| Hermes (OpenRouter) | `GET openrouter.ai/api/v1/key` | `$OPENROUTER_API_KEY`, else `${HERMES_HOME:-~/.hermes}/config.json` | `data{usage, limit, limit_remaining}` | `openrouter_key` | **Official**: https://openrouter.ai/docs/api-reference/limits — [ADR-0005](adr/0005-hermes-agent.md) |
+| Codex | `GET chatgpt.com/backend-api/codex/usage` | — | — | — | RE; **not implemented** — Codex already writes `rate_limits` into its own rollout files, so the offline path is authoritative (ADR-0003) |
+
+**Note**: token-finops calls none of these unless `--online` is passed to
+`report`/`status`. Responses (and failures) are cached >= 180 s in
+`~/.token-finops/online-cache.json`; any error falls back silently to the
+offline path. Credentials are read to build one `Authorization` header and
+are never written, refreshed, logged or cached. Implementation and the full
+rationale: `token-finops-cli/src/token_finops_cli/online.py`.

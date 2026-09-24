@@ -2,6 +2,7 @@
 
     token-finops report   [--tool copilot|claude_code|codex|gemini_cli|hermes] [--compact] [--watch N] [--json]
                           [--budget N] [--cycle-day D]           # Copilot allowance / cycle
+                          [--online]                             # opt-in live quota (never on by default)
     token-finops sessions [--tool T] [--since 7d] [--limit 20]
     token-finops self-audit [--session ID|latest] [--config-dir ~/.claude]  # Claude Code, incl. sub-agents
     token-finops savings  ...                                     # see savings/local_estimator.py
@@ -75,6 +76,23 @@ def _report_rows(args):
             policy = ad.default_policy(config.allowance(ad.tool))
         events = ad.events(since=None)
         quota = ad.quota()
+        # --online (T-03, opt-in): a live provider-reported quota replaces the offline
+        # one *only on success*. Every failure -- no flag, no credentials, no network,
+        # a 429, a drifted response shape -- leaves `quota` exactly as the offline path
+        # computed it, so `--online` on a disconnected machine prints an ordinary
+        # report rather than an error (see online.online_quota).
+        if getattr(args, "online", False):
+            from .online import online_quota
+            live = online_quota(ad.tool)
+            if live is not None:
+                quota = live
+                # A live snapshot is the provider's own number, so it outranks the local
+                # sum for "how much is left" while local events still drive the burn rate
+                # ("hybrid"). Only flipped for this run, and only on a successful fetch --
+                # the offline default (`local_sum` for Copilot/Gemini/Hermes) is untouched
+                # whenever the fetch fails.
+                if policy.source_of_truth == "local_sum" and live.used_fraction is not None:
+                    policy.source_of_truth = "hybrid"
         history = ad.quota_history() if hasattr(ad, "quota_history") else None
         rows.append((ad, compute_runway(events, policy, quota=quota, quota_history=history), events))
     return rows
@@ -474,6 +492,9 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--json", action="store_true")
     r.add_argument("--since", choices=SINCE_MAP.keys(), default="7d", help="usage summary window (default 7d)")
     r.add_argument("--db-path", default=None, help="Copilot session-store.db to read (overrides default)")
+    r.add_argument("--online", action="store_true",
+                   help="opt-in: ask the provider for the live quota (Copilot/Claude/Gemini/OpenRouter), "
+                        "cached 180s; falls back to the offline path on any error")
 
     s = sub.add_parser("sessions", parents=[budget],
                        help="per-session table (Copilot: --session/--totals break reports)")

@@ -64,6 +64,7 @@ _token-finops() {
                         '--json[machine-readable output]' \
                         '--since=[usage summary window]:window:(1d 7d 30d all)' \
                         '--db-path=[Copilot session-store.db to read]:file:_files' \
+                        '--online[opt-in: live provider quota, cached 180s, offline fallback]' \
                         '(-h --help)'{-h,--help}'[show help and exit]'
                     ;;
                 sessions)
@@ -144,6 +145,7 @@ _token-finops() {
                         '--budget=[Copilot allowance for a fresh scan]:units:' \
                         '--cycle-day=[Copilot cycle reset day]:day:' \
                         '--allowance=[allowance for non-Copilot tools]:units:' \
+                        '--online[opt-in: live provider quota, implies a rescan]' \
                         '(-h --help)'{-h,--help}'[show help and exit]'
                     ;;
                 burn)

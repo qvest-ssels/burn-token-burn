@@ -161,7 +161,7 @@ Ordering: alphabetical within the subsection.
 Name: token-finops-cli
 URL: https://github.com/qvest-ssels/burn-token-burn
 Author: qvest-ssels
-Description: A stdlib-only CLI that reads local telemetry from Claude Code and 8 other coding-agent tools to report token-usage budget runway, plus a local-vs-cloud cost savings estimator. Runs entirely locally with no network calls.
+Description: A stdlib-only CLI that reads local telemetry from Claude Code and 8 other coding-agent tools to report token-usage budget runway, plus a local-vs-cloud cost savings estimator. Runs entirely locally; no network calls unless you opt in with --online.
 ```
 
 ### Contribution process — materially different from the other lists
@@ -265,7 +265,7 @@ categories — our entry would likely also appear there right after merge.
 ### Drafted entry
 
 ```
-- [token-finops-cli](https://github.com/qvest-ssels/burn-token-burn) - Stdlib-only CLI that reads local telemetry from Gemini CLI and 8 other coding-agent tools to report token-usage budget runway, with a local-vs-cloud cost savings estimator. No network calls, no cloud dependency.
+- [token-finops-cli](https://github.com/qvest-ssels/burn-token-burn) - Stdlib-only CLI that reads local telemetry from Gemini CLI and 8 other coding-agent tools to report token-usage budget runway, with a local-vs-cloud cost savings estimator. No network calls by default (live quota is opt-in), no cloud dependency.
 ```
 
 ### Contribution rules (CONTRIBUTING.md, in full — the lightest of all five lists)

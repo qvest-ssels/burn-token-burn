@@ -224,12 +224,20 @@ def add_status_parser(sub, parents=None):
     s.add_argument("--max-age", type=int, default=300, metavar="SECONDS",
                    help="rescan if the cache is older than this (default 300; 0 = always)")
     s.add_argument("--cache-file", default=None, help="override ~/.token-finops/last.json")
+    s.add_argument("--online", action="store_true",
+                   help="opt-in: ask the provider for the live quota (implies a rescan; the response "
+                        "itself is cached 180s in ~/.token-finops/online-cache.json). Falls back to "
+                        "the offline path on any error")
     # --budget / --allowance / --cycle-day come from cli.budget_override_parser()
 
 
 def cmd_status(args) -> str:
     path = args.cache_file or CACHE_FILE
-    snap = None if args.fresh else read_cache(path)
+    # `--online` only means something on a rescan: the cached `last.json` was built
+    # from whatever quota source the *previous* run used. It therefore implies
+    # `--fresh` -- the 180 s online-response cache (online.py) is what keeps a
+    # polled status bar from hammering a rate-limited endpoint, not this file.
+    snap = None if (args.fresh or getattr(args, "online", False)) else read_cache(path)
     if snap is not None and args.max_age and (stale_seconds(snap) or 0) > args.max_age:
         snap = None
     if snap is None:

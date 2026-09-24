@@ -70,11 +70,37 @@ raising an error.
 - **token-finops-cli** itself — this *is* the source we are porting; we
   keep it as the canonical upstream reference in `docs/landscape.md`.
 
+## Online cross-check (T-03, 2026-09-22)
+
+The open question below is now answered: **yes, as an opt-in flag.**
+`token-finops report|status --online` calls `GET
+api.github.com/copilot_internal/user` with a token read (never written)
+from `$GITHUB_TOKEN`/`$GH_TOKEN` or `gh auth token`, and turns
+`quota_snapshots.chat.percent_remaining` into a `QuotaSnapshot` with
+`source="copilot_online"` (distinct from the offline local sum) plus
+`quota_reset_date` as the reset. On success that run's
+`source_of_truth` is promoted `local_sum` -> `hybrid`: GitHub's own
+percentage decides "how much is left", local events still drive the burn
+rate. Implementation: `token_finops_cli/online.py` (stdlib `urllib`).
+
+The endpoint stays unversioned and self-used-by-the-CLI rather than
+documented, so the adoption is hedged three ways: it never fires without
+the explicit flag, the response is cached >= 180 s in
+`~/.token-finops/online-cache.json`, and every failure (no token, no
+network, non-2xx, non-JSON, drifted shape) falls back silently to the
+offline path — a `--online` run on a disconnected machine prints
+byte-identical output to a run without the flag. Copilot is the one tool
+here where the offline runway is already authoritative, so this is a
+cross-check, not a dependency.
+
 ## Open questions
 
-- Should we adopt the RE `copilot_internal/user` endpoint as an optional
+- ~~Should we adopt the RE `copilot_internal/user` endpoint as an optional
   `--online` cross-check, given it is unversioned but self-used by the
-  official CLI?
+  official CLI?~~ Answered by T-03 (see above): yes, opt-in and fail-closed.
+- Should a large divergence between the online percentage and the local sum
+  be surfaced as a note (it would be evidence for the compaction-token
+  undercount above) rather than silently replacing the local number?
 - How does an Enterprise contract with a non-standard cycle day interact
   with the hardcoded 1st-of-month reset — expose `--cycle-day` as in the
   original?

@@ -130,7 +130,8 @@ real telemetry anywhere. See `docs/SYNTH.md` in the repo root for scenarios
 
 `token-finops-cli` still reads `~/.copilot/session-store.db`
 (`assistant_usage_events`) directly — no external API calls, nothing
-leaves your machine, the DB is opened read-only.
+leaves your machine, the DB is opened read-only. (The one exception is
+opt-in and never on by default: `--online`, below.)
 
 ```bash
 token-finops report --tool copilot                  # 7-day summary + runway (default window)
@@ -247,6 +248,28 @@ fixture tree, or a non-default `$HOME`.
 | `CONTINUE_GLOBAL_DIR` | Continue.dev sessions root | `~/.continue` |
 | `TOKEN_FINOPS_HARDWARE_JSON` | Override the `savings` hardware-profiles JSON | packaged `hardware_profiles.json` |
 | `TOKEN_FINOPS_ENERGY_JSON` | Override the `savings` energy/tariff JSON | packaged `energy.json` |
+| `TOKEN_FINOPS_ONLINE_CACHE` | Where `--online` caches provider responses | `~/.token-finops/online-cache.json` |
+
+## Live quota: `--online` (opt-in)
+
+```bash
+token-finops report --online            # ask the provider instead of inferring locally
+token-finops status --online            # same, and implies a rescan
+```
+
+Off by default — without the flag nothing leaves your machine. With it, four providers are
+queried for their own current number: Copilot (`copilot_internal/user`), Claude Code
+(`api.anthropic.com/api/oauth/usage`), Gemini CLI (`retrieveUserQuota`) and OpenRouter
+(`/api/v1/key`, for Hermes). Credentials you already have — `gh auth token`/`$GITHUB_TOKEN`,
+`~/.claude/.credentials.json`, `~/.gemini/oauth_creds.json`, `$OPENROUTER_API_KEY` — are read
+to build one request header and are never written, refreshed or cached.
+
+It **fails closed**: no network, no credential, a 429, an endpoint that changed shape — all of
+it falls back silently to the normal offline report, with no error and no traceback. Responses
+and failures are cached for 180 s (`~/.token-finops/online-cache.json`), which is what keeps a
+polled status bar from getting rate-limited. Three of the four endpoints are
+reverse-engineered and unversioned: `../docs/sources.md` has the table, the ADRs have the
+reasoning.
 
 ## Settings
 

@@ -77,9 +77,36 @@ Malformed files are skipped without raising.
 - **gemini-cost-tracker**, **geminiusage** — narrower single-tool trackers,
   listed in `docs/landscape.md`.
 
+## Online quota (T-03, 2026-09-22)
+
+The "clearly-labeled TODO" above is now an opt-in flag. `token-finops
+report|status --online` sends `POST
+cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota` with a bearer
+token read from `${GEMINI_CLI_HOME:-~/.gemini}/oauth_creds.json` and maps
+the response to a `QuotaSnapshot` with `source="gemini_online"`. Several
+buckets can come back (per-model, per-tier); the **emptiest** one wins
+(`used_fraction = 1 - min(remainingFraction)`), which is the same
+binding-constraint rule the cross-tool roll-up uses, and `resetTime`
+becomes the reset — the first real answer to the undocumented-reset-
+timezone problem below, straight from Google rather than inferred.
+
+Two deliberate limits. (1) The token is **read as-is and never
+refreshed**: refreshing would mean writing back into Gemini CLI's own
+credential store, which ground rule 1 forbids, so an expired token simply
+401s and the run falls back to the offline requests/day runway. (2) The
+endpoint is Google-internal, undocumented and unversioned, so it never
+fires without `--online`, is cached >= 180 s in
+`~/.token-finops/online-cache.json`, and fails closed on anything
+unexpected. The offline requests/day runway stays the default and the
+only thing a plain `report` uses.
+
 ## Open questions
 
 - What timezone does Google actually use for the daily reset, and can it
-  be inferred empirically from `retrieveUserQuota.resetTime` samples?
+  be inferred empirically from `retrieveUserQuota.resetTime` samples now
+  that `--online` can collect them?
+- Is refreshing an expired `oauth_creds.json` token ever acceptable, or
+  does "read-only against tool data" permanently cap this path at
+  "works while the CLI's own token is fresh"?
 - Should Pro/Ultra allowances be crowd-sourced/configurable given they are
   unpublished?

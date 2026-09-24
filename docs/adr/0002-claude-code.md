@@ -89,9 +89,37 @@ sessions still queryable.
   **CodeBurn**, and menu-bar/taskbar variants — close to "runway" but
   none normalise across tools; listed in `docs/landscape.md`.
 
+## Online fallback (T-03, 2026-09-22)
+
+The `oauth/usage` fallback anticipated above now exists, strictly as an
+opt-in: `token-finops report|status --online` sends `GET
+api.anthropic.com/api/oauth/usage` with `anthropic-beta:
+oauth-2025-04-20` and a bearer token read (never written, never
+refreshed) from `~/.claude/.credentials.json`, yielding a `QuotaSnapshot`
+with `source="claude_oauth_usage"` — distinguishable at a glance from the
+collector's `claude_statusline`. The response shape is undocumented, so
+the parser accepts `five_hour`/`fiveHour`/`5h` (and the `7d` twin) and
+reads the utilisation either as a percentage or as a 0–1 fraction.
+
+**The status-line collector remains the supported source.** This path is a
+fallback for users who have not wired the hook (or whose session is not
+running under Claude Code at all), not a replacement: the endpoint is
+reverse-engineered and hands out 429s freely, which is exactly why the
+response is cached >= 180 s in `~/.token-finops/online-cache.json` —
+*including failures*, so a polled status bar retries at most once every
+three minutes instead of on every redraw. A 429, an expired token, a
+Keychain-only install with no `.credentials.json`, or a drifted body all
+fail closed to the existing offline behaviour with no error shown.
+
 ## Open questions
 
 - Should the status-line collector ship as a required install step, or
   degrade silently to "no runway, tokens only" when absent?
-- Is the RE `oauth/usage` endpoint worth adopting as a `--online` opt-in
-  fallback given its rate-limit fragility?
+- ~~Is the RE `oauth/usage` endpoint worth adopting as a `--online` opt-in
+  fallback given its rate-limit fragility?~~ Answered by T-03 (see above):
+  yes, opt-in, cached, and fail-closed — but as a fallback behind the
+  collector, never as the primary source.
+- macOS keeps the OAuth token in the Keychain on some installs, where
+  `.credentials.json` does not exist. Is shelling out to `security
+  find-generic-password` acceptable, or does that cross the line from
+  "read a file" into "operate the user's credential store"?
