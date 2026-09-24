@@ -3,6 +3,69 @@
 All notable changes to this project are documented here, in the format of
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] — 2026-09-24
+
+### Added
+
+- **`token-finops doctor`** — per-adapter found/empty/missing diagnosis with the exact paths
+  probed and one actionable hint each, so a fresh install's empty `report` output explains
+  itself instead of just looking broken.
+- **`--online`** on `report`/`status` — opt-in live quota fetchers for GitHub Copilot,
+  Claude Code, Gemini CLI and Hermes (OpenRouter), stdlib `urllib` only, cached >= 180 s in
+  `~/.token-finops/online-cache.json`, hard-fail closed to the existing offline path on any
+  error (never on by default; a fetch failure is invisible to the user). Codex needs no
+  fetcher — it already writes `rate_limits` to disk itself.
+- **Configurable budget policy** — `~/.token-finops/config.json` + `TOKEN_FINOPS_*` env vars
+  override the `warn_at`/`critical_at` thresholds, the Copilot `cycle_day`, per-tool
+  `allowance`, and rolling `window_hours`, plus a `default_tool` so `--tool` doesn't need
+  repeating on every call. One precedence rule everywhere: explicit CLI flag > env var >
+  config.json > hardcoded default; a real provider-reported reset time or usage percentage
+  always outranks a configured fallback. See `docs/CONFIG.md`. `--budget`/`--allowance`/
+  `--cycle-day` are now accepted consistently across `report`/`sessions`/`doctor`/`status`/
+  `burn`/`cost-per-token` instead of only `report`/`status`.
+- **`token-finops savings --co2`** — an opt-in green-IT block comparing local (measured,
+  from the chosen power tariff) against cloud (an explicitly labelled order-of-magnitude
+  *estimate*, since no cloud AI provider publishes energy-per-token) gCO2e per 1M tokens,
+  with `--cloud-region` for different grid mixes. Every figure and its confidence level is
+  sourced in `docs/CO2_ESTIMATE.md`.
+- **`savings --own-hardware`** reframed as **Hosting vs. Licensing** — once a box is already
+  bought, capex is a sunk cost; the comparison that matters is the ongoing cost of running it
+  (energy + a flat, clearly-labelled `--management-overhead` assumption for wear/maintenance,
+  default 10%) against paying per token/plan.
+- A **MacBook Pro 16" M4 Max, 48 GB** hardware profile — the first laptop entry (previously
+  desktop/mini/studio machines and PC towers only).
+- **Claude Code `/runway` skill** (`contrib/claude-code/runway/`) and the equivalent Codex
+  custom prompt (`contrib/codex/prompts/runway.md`) — checks the token runway before an
+  agentic session fans out expensive sub-agent work.
+- **Shell completions** (bash/zsh/fish) under `contrib/completions/`, with a drift-guard test
+  against the real argparse parser.
+- **ADR-0013**: Claude Desktop / Cowork (macOS) investigation — Desktop chat has no local
+  telemetry (reference-only), but the account-wide 5h/7d quota is cached offline in
+  `plan-usage-history.json`, and on-computer Cowork sessions mirror full token/cost records to
+  `local-agent-mode-sessions/**/audit.jsonl` (a full adapter is a proposed follow-up).
+- **GitHub issue forms and a PR template** — five targeted forms (parser/adapter drift, bug,
+  new-assistant request routed into the ADR question set, feature request, stale/wrong number)
+  instead of a generic bug tracker, matching this project's own sourcing discipline.
+- A public **GitHub Pages docs site** (multi-page, one page per command, real asciinema
+  recordings throughout) plus a long-form **CO2 research page** on LLM inference energy
+  accounting.
+- Editor integrations that read the `status` cache read-only (never trigger a rescan):
+  a Neovim plugin (`contrib/nvim/token-finops.nvim`, lualine/heirline component +
+  `:TokenFinops` + `:checkhealth`), a VS Code status-bar extension (`contrib/vscode/`), and
+  an Emacs package (`contrib/emacs/token-finops.el`).
+- A drafted **Homebrew formula** (`contrib/homebrew/token-finops-cli.rb`) with a CI smoke test
+  that actually builds/installs it on a macOS runner; a weekly `pypi-smoke.yml` that installs
+  the real published wheel and exercises it end to end.
+
+### Fixed
+
+- **`self-audit` across Claude Code context-compaction boundaries** — a compacted session used
+  to silently report as two disconnected totals instead of one; transcript segments sharing a
+  session id are now stitched and deduplicated together, with `segments: N` in the header.
+- Copilot synthetic-data scale rebalanced to match real plan sizes (`synth --scenario steady`
+  now reads as a plausible ~20% of a Pro allowance instead of blowing past even Max's monthly
+  allowance in two weeks).
+
 ## [0.3.0] — 2026-09-05
 
 Everything since 0.2.0: the original Copilot-only tool becomes a modular,
