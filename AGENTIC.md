@@ -14,6 +14,7 @@ delete old rows — move them to "Done" below instead, so the history stays legi
 
 | Session | Branch | Task | Touches | Status |
 |---|---|---|---|---|
+| Claude Sonnet 5 (local) | `feature/agentic/budget-check-action` | T-21 (new, not pre-specified): design-and-build a reusable composite GitHub Action, `budget-check`, that reads an already-exported `self-audit --json`/`report --json` payload from a CI workflow (not live telemetry discovery on the runner) and comments on / optionally fails a PR when the usage total exceeds a configured USD budget | `.github/actions/budget-check/` (new: `action.yml`, `check_budget.py`, `README.md`), `docs/INTEGRATIONS.md`, `claude-tasks.md` | in progress |
 
 ## Done
 
