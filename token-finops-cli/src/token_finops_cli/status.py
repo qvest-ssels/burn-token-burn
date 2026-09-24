@@ -202,8 +202,63 @@ def render_json(snapshot, tools) -> str:
     return json.dumps(out, indent=2, allow_nan=False, default=str)
 
 
+# Prometheus text exposition format: https://prometheus.io/docs/instrumenting/exposition_formats/
+# node_exporter's textfile collector consumes exactly this, from a file ending in `.prom`:
+# `token-finops status --format prometheus > /var/lib/node_exporter/textfile_collector/token_finops.prom`
+# written by a cron job / systemd timer, the same "one refresher, many readers" pattern as the
+# other cached formats (see contrib/refresh/ and docs/INTEGRATIONS.md).
+_STATUSES = ("OK", "WARN", "CRITICAL", "EXHAUSTED", "UNLIMITED", "UNKNOWN")
+
+
+def _label_escape(value: str) -> str:
+    """Escape a Prometheus label value: backslash, double quote, newline."""
+    return str(value).replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+
+
+def render_prometheus(snapshot, tools) -> str:
+    lines = [
+        "# HELP token_finops_used_fraction Fraction of the tool's budget/quota used in the current window (0-1).",
+        "# TYPE token_finops_used_fraction gauge",
+    ]
+    for t in tools:
+        frac = t.get("used_fraction")
+        if frac is None:
+            continue  # unknown usage (e.g. no quota data yet) — omit rather than emit a bogus 0
+        lines.append(f'token_finops_used_fraction{{tool="{_label_escape(t["tool"])}"}} {frac}')
+
+    lines += [
+        "# HELP token_finops_runway_days Days of runway left at the current burn pace.",
+        "# TYPE token_finops_runway_days gauge",
+    ]
+    for t in tools:
+        rd = t.get("runway_days")
+        if rd is None:
+            # Unbounded runway (status UNLIMITED / no allowance, or OK with no burn yet) or an
+            # unknown pace — Prometheus's text format has no Infinity/NaN literal that survives a
+            # round trip through `promtool`/scrape parsing without breaking `<` alerting rules, so
+            # (consistent with `_sanitize()`'s cache-contract choice) we omit the series entirely
+            # for that tool rather than emit a number that would silently miscompare.
+            continue
+        lines.append(f'token_finops_runway_days{{tool="{_label_escape(t["tool"])}"}} {rd}')
+
+    lines += [
+        "# HELP token_finops_status Current status per tool, one series per known status value "
+        "(1 = active, 0 = inactive) so alerting rules can match a specific status without relying "
+        "on absent-series semantics.",
+        "# TYPE token_finops_status gauge",
+    ]
+    for t in tools:
+        tool = _label_escape(t["tool"])
+        current = t.get("status")
+        for s in _STATUSES:
+            lines.append(f'token_finops_status{{tool="{tool}",status="{s}"}} {1 if s == current else 0}')
+
+    return "\n".join(lines) + "\n"
+
+
 RENDERERS = {"plain": render_plain, "tmux": render_tmux, "starship": render_starship, "waybar": render_waybar,
-             "polybar": render_polybar, "i3": render_i3, "xbar": render_xbar, "json": render_json}
+             "polybar": render_polybar, "i3": render_i3, "xbar": render_xbar, "json": render_json,
+             "prometheus": render_prometheus}
 
 
 def render(snapshot: dict, fmt: str, tool_filter: Optional[list[str]] = None, show_all: bool = False) -> str:

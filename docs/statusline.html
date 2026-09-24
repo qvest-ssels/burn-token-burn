@@ -47,6 +47,29 @@ $ token-finops status --format waybar</code></pre>
 <h2>Wiring it up</h2>
 <p>Drop the format your bar expects into its config — the full snippets for tmux, starship, waybar and the Claude Code status line are in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/INTEGRATIONS.md">docs/INTEGRATIONS.md</a> and <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/TMUX.md">docs/TMUX.md</a>.</p>
 
+<h3>Prometheus (node_exporter textfile collector)</h3>
+<p><code>--format prometheus</code> writes the standard text exposition format — no daemon, no network from our side, just a file the textfile collector already watches:</p>
+<pre><code>$ token-finops status --format prometheus
+# HELP token_finops_used_fraction Fraction of the tool's budget/quota used in the current window (0-1).
+# TYPE token_finops_used_fraction gauge
+token_finops_used_fraction{tool="claude_code"} 0.61
+# HELP token_finops_runway_days Days of runway left at the current burn pace.
+# TYPE token_finops_runway_days gauge
+token_finops_runway_days{tool="claude_code"} 0.08
+# HELP token_finops_status Current status per tool, one series per known status value (1 = active, 0 = inactive) so alerting rules can match a specific status without relying on absent-series semantics.
+# TYPE token_finops_status gauge
+token_finops_status{tool="claude_code",status="OK"} 0
+token_finops_status{tool="claude_code",status="WARN"} 1
+token_finops_status{tool="claude_code",status="CRITICAL"} 0
+token_finops_status{tool="claude_code",status="EXHAUSTED"} 0
+token_finops_status{tool="claude_code",status="UNLIMITED"} 0
+token_finops_status{tool="claude_code",status="UNKNOWN"} 0</code></pre>
+<p>A tool with an unbounded runway (<code>UNLIMITED</code> status, or <code>OK</code> with no burn yet) has no <code>token_finops_runway_days</code> series at all — Prometheus's text format has no <code>Infinity</code>/<code>NaN</code> literal that survives scraping without silently breaking a <code>&lt;</code> alerting rule, so the metric is omitted for that tool rather than emitted as a bogus number. Point a cron job or systemd timer — the same refresher pattern as everything else on this page — at the collector's watched directory:</p>
+<pre><code># cron, every minute
+* * * * * token-finops status --format prometheus > /var/lib/node_exporter/textfile_collector/token_finops.prom.$$ \
+  && mv /var/lib/node_exporter/textfile_collector/token_finops.prom.$$ /var/lib/node_exporter/textfile_collector/token_finops.prom</code></pre>
+<p>The write-then-rename avoids node_exporter reading a half-written file. Like every other format, this is read-only against the cache — no new rescan behaviour, nothing written except what you redirect yourself.</p>
+
 <h2>One refresher, many widgets</h2>
 <p><code>status</code> reads a cache (<code>~/.token-finops/last.json</code>) and only rescans your telemetry with <code>--fresh</code>, or when the cache is older than <code>--max-age</code> seconds (default 300). A Claude Code project directory alone can hold hundreds of MB of JSONL — <code>report</code> rescanning that on every keystroke of a shell prompt would be unusable. Keep the cache warm with <strong>one</strong> timer and let every widget (prompt, tmux, waybar, whatever else you wire up) poll the cache as often as it likes, for free:</p>
 <pre><code>$ token-finops status                     # served from cache, plain, binding tools only
@@ -77,11 +100,6 @@ $ token-finops status --fresh             # force a real re-read right now</code
   <li><strong>Codex CLI</strong> — the equivalent as a custom prompt, <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/contrib/codex/prompts/runway.md">contrib/codex/prompts/runway.md</a>. Drop it in <code>~/.codex/prompts/</code> and invoke it as <code>/prompts:runway</code>.</li>
 </ul>
 <p>Both wrap the same thing — <code>token-finops report --json</code>, read for the binding constraint. You can type <code>/runway</code> yourself, but the useful case is the description being written so the model invokes it on its own initiative before a large fan-out, and then says "you have 1.9 h of your 5 h window left; this will likely exhaust it" instead of finding out afterwards. The design reasoning, and what the equivalent would look like for the other agents, is in <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/docs/INTEGRATIONS.md">docs/INTEGRATIONS.md</a> §3.</p>
-
-<div class="planned">
-  <h3>Planned, not shipped</h3>
-  <p>This is a named backlog item (<a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/claude-tasks.md">claude-tasks.md</a>), not a current feature: a Prometheus textfile exporter (T-12). If you need it today, the cache file and <code>status --format json</code> are stable enough to script against in the meantime.</p>
-</div>
 
 <footer>
   <p>Recordings are asciicast v2 files committed in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/docs/casts">docs/casts/</a> — play them locally with <code>asciinema play &lt;file&gt;</code>. This page ships no analytics and no tracking.</p>

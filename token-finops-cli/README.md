@@ -188,6 +188,7 @@ token-finops status                      # CC 61% 2h! | CX 17% 3h | CP 29% 41d |
 token-finops status --format tmux        # for status-right (contrib/tmux/token-finops.tmux)
 token-finops status --format starship    # binding constraint only
 token-finops status --format waybar      # JSON; also polybar, i3, xbar, json
+token-finops status --format prometheus  # node_exporter textfile collector, .prom output
 ```
 
 `status` serves a cache (`~/.token-finops/last.json`) and rescans only with `--fresh` or when
@@ -322,6 +323,7 @@ cases, see the repository root:
 - [`../docs/SYNTH.md`](../docs/SYNTH.md) — synthetic telemetry generator
 - [`../docs/USECASES.md`](../docs/USECASES.md) — every executable use case
 - [`../docs/TMUX.md`](../docs/TMUX.md) — `status --format …` for tmux, starship, waybar, polybar, i3, SwiftBar
+- [`../docs/INTEGRATIONS.md`](../docs/INTEGRATIONS.md) §4 — `status --format prometheus` for node_exporter's textfile collector
 - [`../docs/INTEGRATIONS.md`](../docs/INTEGRATIONS.md) — editor / agent-native / desktop integrations (design doc)
 - [`../CHANGELOG.md`](../CHANGELOG.md), [`../CONTRIBUTING.md`](../CONTRIBUTING.md)
 

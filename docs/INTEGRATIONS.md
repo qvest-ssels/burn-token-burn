@@ -155,6 +155,26 @@ makes the lesson operational instead of retrospective.
 All five share one implementation: a stable JSON contract plus a ~20-line wrapper. The
 per-agent work is packaging, not logic.
 
+### 3.1 CI guardrail: from personal dashboard to team check
+
+Everything above puts a number in front of the person who ran the session. The next honest step
+is a check a *team* enforces on a pull request, not just something an individual glances at.
+
+**Shipped** (T-21): `.github/actions/budget-check/` — a reusable composite GitHub Action a team
+can reference from their own repo (`owner/repo/.github/actions/budget-check@ref`) that reads an
+already-exported `self-audit --json` or `report --json` payload and comments on the PR — and
+optionally fails the job via `fail-on-exceed: true` — when usage exceeds a configured
+`budget-usd`. It deliberately does **not** run `token-finops` on the runner itself: the telemetry
+`token-finops` reads only exists on the machine where the coding session actually ran, so the
+Action's contract is "read a number a real session already exported," not "discover usage cold on
+a GitHub-hosted VM." See `.github/actions/budget-check/README.md` for the three realistic ways to
+get that JSON onto the runner (committed alongside the PR — this repo's own
+`.github/PULL_REQUEST_TEMPLATE.md` self-audit paste block is one convention for that — a build
+artifact from an earlier job, or a file already in the checked-out branch) and full example
+workflow YAML. Default is comment-only, matching this document's "cheapest honest way to put one
+number there" framing: a hard merge-block on an API-equivalent estimate is a strong claim, so it's
+opt-in per team via `fail-on-exceed`.
+
 ## 4. "Boring" GUI and desktop surfaces
 
 Unglamorous, but this is where a runway warning reaches someone who is *not* currently in a
@@ -173,7 +193,7 @@ terminal — and the WARN→CRIT transition is precisely the moment they are not
 | 9 | GNOME Argos / Executor | same executable-script convention as xbar | cached |
 | 10 | Stream Deck | plugin showing runway on a key; press → open watch pane | cached + on-press scan |
 | 11 | Home Assistant | `command_line` sensor running the CLI over SSH or on the HA host | `--json` |
-| 12 | Prometheus | node_exporter **textfile collector**: write `.prom` from the same refresher → Grafana | derived from cache |
+| 12 | Prometheus | `status --format prometheus` (shipped, T-12) → node_exporter **textfile collector**: write `.prom` from the same refresher → Grafana | derived from cache |
 | 13 | Slack / Teams digest | cron → incoming webhook, daily summary or WARN-only | `--json`, **opt-in** |
 | 14 | Obsidian daily note | cron appends a line to today's note (plain file write, no plugin needed) | cached |
 | 15 | Desktop notification | `notify-send` / `terminal-notifier` fired by the refresher on status transitions | cached |
@@ -182,6 +202,11 @@ terminal — and the WARN→CRIT transition is precisely the moment they are not
 
 Notes on three of them. **Prometheus** is the one that gives a team-level view without a server:
 the textfile collector is a file drop, so no daemon, no credentials, no network from our side.
+`status --format prometheus` emits `token_finops_used_fraction{tool=…}`, `token_finops_runway_days{tool=…}`
+(omitted for a tool with an unbounded runway — no `inf`/`nan` literal), and a one-hot
+`token_finops_status{tool=…,status=…}` gauge per known status value; wire it up with a cron job or
+systemd timer writing (via write-then-rename) into the collector's watched directory — same
+refresher pattern as every other cached format. See `docs/statusline.html` for the exact recipe.
 **Desktop notifications must be edge-triggered**, on OK→WARN and WARN→CRIT transitions only; a
 notification every 30 s trains people to dismiss them. **Notion/Confluence is deliberately out
 of scope**: both require an API token and push local usage data to a third-party server, which
@@ -218,7 +243,7 @@ crashed refresher two days ago is the one failure mode that destroys trust in th
 Instead of a shell one-liner per surface, add a subcommand:
 
 ```
-token-finops status --format tmux|starship|waybar|polybar|i3|xbar|plain|json [--tool T]
+token-finops status --format tmux|starship|waybar|polybar|i3|xbar|plain|json|prometheus [--tool T]
 ```
 
 One code path, one set of tests, per-format quoting/escaping handled once (waybar wants JSON
@@ -255,6 +280,7 @@ An ADR-style decision per integration, using the same tiering logic as the adapt
 | Tier | Meaning | Members |
 |---|---|---|
 | **First-party `contrib/`** | in-repo, CI-tested against synthetic data (`token-finops synth`) | `status` renderer, tmux, waybar/polybar, SwiftBar/xbar, Raycast, cache refresher units, Claude Code `/runway` |
+| **First-party `.github/actions/`** | in-repo composite Action, referenced by other repos via `owner/repo/.github/actions/<name>@ref` | `budget-check` (T-21) |
 | **First-party, separate release** | own repo/registry, own version | `token-finops.nvim`, `token-finops.el`, VS Code extension |
 | **Documented recipe** | snippet in docs, no maintenance promise | zsh/fish prompt, Vim, i3status, Argos, Übersicht, Alfred, Home Assistant, Obsidian, Scriptable, Slack digest |
 | **Deferred / out of scope** | reasons above | JetBrains (cost), Helix/Zed (API *to verify*), Notion/Confluence (network+token), Stream Deck (niche) |
