@@ -173,7 +173,7 @@ terminal — and the WARN→CRIT transition is precisely the moment they are not
 | 9 | GNOME Argos / Executor | same executable-script convention as xbar | cached |
 | 10 | Stream Deck | plugin showing runway on a key; press → open watch pane | cached + on-press scan |
 | 11 | Home Assistant | `command_line` sensor running the CLI over SSH or on the HA host | `--json` |
-| 12 | Prometheus | node_exporter **textfile collector**: write `.prom` from the same refresher → Grafana | derived from cache |
+| 12 | Prometheus | `status --format prometheus` (shipped, T-12) → node_exporter **textfile collector**: write `.prom` from the same refresher → Grafana | derived from cache |
 | 13 | Slack / Teams digest | cron → incoming webhook, daily summary or WARN-only | `--json`, **opt-in** |
 | 14 | Obsidian daily note | cron appends a line to today's note (plain file write, no plugin needed) | cached |
 | 15 | Desktop notification | `notify-send` / `terminal-notifier` fired by the refresher on status transitions | cached |
@@ -182,6 +182,11 @@ terminal — and the WARN→CRIT transition is precisely the moment they are not
 
 Notes on three of them. **Prometheus** is the one that gives a team-level view without a server:
 the textfile collector is a file drop, so no daemon, no credentials, no network from our side.
+`status --format prometheus` emits `token_finops_used_fraction{tool=…}`, `token_finops_runway_days{tool=…}`
+(omitted for a tool with an unbounded runway — no `inf`/`nan` literal), and a one-hot
+`token_finops_status{tool=…,status=…}` gauge per known status value; wire it up with a cron job or
+systemd timer writing (via write-then-rename) into the collector's watched directory — same
+refresher pattern as every other cached format. See `docs/statusline.html` for the exact recipe.
 **Desktop notifications must be edge-triggered**, on OK→WARN and WARN→CRIT transitions only; a
 notification every 30 s trains people to dismiss them. **Notion/Confluence is deliberately out
 of scope**: both require an API token and push local usage data to a third-party server, which
@@ -218,7 +223,7 @@ crashed refresher two days ago is the one failure mode that destroys trust in th
 Instead of a shell one-liner per surface, add a subcommand:
 
 ```
-token-finops status --format tmux|starship|waybar|polybar|i3|xbar|plain|json [--tool T]
+token-finops status --format tmux|starship|waybar|polybar|i3|xbar|plain|json|prometheus [--tool T]
 ```
 
 One code path, one set of tests, per-format quoting/escaping handled once (waybar wants JSON

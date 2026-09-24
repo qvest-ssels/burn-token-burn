@@ -14,6 +14,9 @@ delete old rows — move them to "Done" below instead, so the history stays legi
 
 | Session | Branch | Task | Touches | Status |
 |---|---|---|---|---|
+| Claude Sonnet 5 (local) | `feature/agentic/notify-on-status-change` | T-11: `status --notify` desktop notifications when the binding-constraint status class changes (macOS `terminal-notifier`/`osascript`, Linux `notify-send`, Windows PowerShell best-effort), state in `~/.token-finops/notify-state.json` | `token-finops-cli/src/token_finops_cli/notify.py` (new), `status.py`, `cli.py`, `tests/test_notify.py` (new), `docs/statusline.html`, `docs/CONFIG.md`, `token-finops-cli/README.md`, `claude-tasks.md` | in progress |
+| Claude Sonnet 5 (local) | `feature/agentic/prometheus-exporter` | T-12: `status --format prometheus` textfile exporter (`token_finops_used_fraction`, `token_finops_runway_days`, `token_finops_status` gauges) for node_exporter's textfile collector; only touches `status.py`'s render-format dispatch (new `render_prometheus`, `RENDERERS` entry), not the notify logic T-11 is adding | `token-finops-cli/src/token_finops_cli/status.py`, `tests/test_status.py`, `docs/statusline.html`, `docs/INTEGRATIONS.md`, `token-finops-cli/README.md`, `claude-tasks.md` | in progress |
+| Claude Sonnet 5 (local) | `feature/agentic/budget-check-action` | New (not pre-specified) task: design-and-build a reusable composite GitHub Action, `budget-check`, that reads an already-exported `self-audit --json`/`report --json` payload from a CI workflow (not live telemetry discovery on the runner) and comments on / optionally fails a PR when the usage total exceeds a configured USD budget | `.github/actions/budget-check/` (new: `action.yml`, `check_budget.py`, `README.md`), `docs/INTEGRATIONS.md`, `claude-tasks.md` | in progress |
 
 ## Done
 
