@@ -33,9 +33,13 @@ applies no matter how deep in the call stack the budget policy is finally built.
 
 ## The file
 
-Default location `~/.token-finops/config.json` — the same directory
-`collect-statusline` already writes `quota.json` into. Point `TOKEN_FINOPS_CONFIG` at
-another path to override it (handy for a per-project or per-machine settings file).
+Default location `~/.token-finops/config.json` — the same directory `collect-statusline`
+already writes `quota.json` into, `status` writes its `last.json` cache into, and
+`status --notify` writes its `notify-state.json` last-seen-class file into (see
+[`statusline.html`](https://qvest-ssels.github.io/burn-token-burn/statusline.html#desktop-notifications-on-a-status-change)).
+Point `TOKEN_FINOPS_CONFIG` at another path to override the config file specifically
+(handy for a per-project or per-machine settings file); the other files in the directory
+are not affected by that variable.
 
 Every key is optional; a file containing only the keys you care about is normal.
 

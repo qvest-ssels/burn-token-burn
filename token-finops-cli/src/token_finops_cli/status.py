@@ -228,6 +228,11 @@ def add_status_parser(sub, parents=None):
                    help="opt-in: ask the provider for the live quota (implies a rescan; the response "
                         "itself is cached 180s in ~/.token-finops/online-cache.json). Falls back to "
                         "the offline path on any error")
+    s.add_argument("--notify", action="store_true",
+                   help="desktop notification when the binding constraint's status class changes "
+                        "(OK/WARN/CRITICAL/EXHAUSTED); fires only on a class change, never on every "
+                        "run. State in ~/.token-finops/notify-state.json")
+    s.add_argument("--notify-state-file", default=None, help="override ~/.token-finops/notify-state.json")
     # --budget / --allowance / --cycle-day come from cli.budget_override_parser()
 
 
@@ -245,6 +250,12 @@ def cmd_status(args) -> str:
         snap = build_snapshot(collect_report_payload(args))
         try:
             write_cache(snap, path)
+        except OSError:
+            pass
+    if getattr(args, "notify", False):
+        from .notify import STATE_FILE as NOTIFY_STATE_FILE, maybe_notify
+        try:
+            maybe_notify(snap, args.notify_state_file or NOTIFY_STATE_FILE)
         except OSError:
             pass
     return render(snap, args.format, args.tool, args.all)

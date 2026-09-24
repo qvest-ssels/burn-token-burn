@@ -14,6 +14,7 @@ delete old rows — move them to "Done" below instead, so the history stays legi
 
 | Session | Branch | Task | Touches | Status |
 |---|---|---|---|---|
+| Claude Sonnet 5 (local) | `feature/agentic/notify-on-status-change` | T-11: `status --notify` desktop notifications when the binding-constraint status class changes (macOS `terminal-notifier`/`osascript`, Linux `notify-send`, Windows PowerShell best-effort), state in `~/.token-finops/notify-state.json` | `token-finops-cli/src/token_finops_cli/notify.py` (new), `status.py`, `cli.py`, `tests/test_notify.py` (new), `docs/statusline.html`, `docs/CONFIG.md`, `token-finops-cli/README.md`, `claude-tasks.md` | in progress |
 
 ## Done
 

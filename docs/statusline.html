@@ -54,6 +54,17 @@ $ token-finops status --max-age 0         # never rescans — always serve the c
 $ token-finops status --fresh             # force a real re-read right now</code></pre>
 <p>The refresher itself lives in <a href="https://github.com/qvest-ssels/burn-token-burn/tree/main/contrib/refresh">contrib/refresh/</a> (a small timer that re-reads on an interval); the tmux plugin is <a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/contrib/tmux/token-finops.tmux">contrib/tmux/token-finops.tmux</a>. Widgets can grey out stale data using <code>stale_seconds</code> from <code>status --format json</code>.</p>
 
+<h2 id="desktop-notifications-on-a-status-change">Desktop notifications on a status change</h2>
+<p>A status bar only helps if you are looking at it. <code>status --notify</code> fires a native desktop notification instead, but only when the binding constraint's status class actually changes — <code>OK → WARN</code>, <code>WARN → CRITICAL</code>, and just as importantly <code>WARN</code>/<code>CRITICAL → OK</code> so you find out you are back in the clear. It never fires twice for the same class, so it is safe to run from the same timer that refreshes the cache:</p>
+<pre><code>$ token-finops status --fresh --notify</code></pre>
+<p>The last-seen class is recorded in <code>~/.token-finops/notify-state.json</code>; the first run only establishes that baseline and does not notify. The mechanism used depends on the OS:</p>
+<ul class="pagelist">
+  <li><strong>macOS</strong> — <code>terminal-notifier</code> if it is installed, otherwise <code>osascript -e 'display notification …'</code>, which ships with every macOS install and needs nothing extra.</li>
+  <li><strong>Linux</strong> — <code>notify-send</code> (part of <code>libnotify</code>, already on most GNOME/KDE desktops).</li>
+  <li><strong>Windows</strong> — <code>New-BurntToastNotification</code> if that (third-party) PowerShell module is installed, else a <code>System.Windows.Forms.NotifyIcon</code> balloon tip built from .NET types that ship with Windows. This path is best-effort: it was written from the documented API, not exercised on a real Windows machine.</li>
+</ul>
+<p>If none of the above is available, <code>--notify</code> degrades to a silent no-op (at most a note on stderr) — <code>status</code>'s normal output and exit code are unaffected either way.</p>
+
 <h3>Claude Code status line</h3>
 <p>Different mechanism, same cache directory: <code>collect-statusline</code> stores the rate-limit percentages Claude Code itself pushes into its status line, which is what makes a <code>CC</code> segment possible at all.</p>
 <pre><code>// ~/.claude/settings.json
@@ -69,7 +80,7 @@ $ token-finops status --fresh             # force a real re-read right now</code
 
 <div class="planned">
   <h3>Planned, not shipped</h3>
-  <p>These are named backlog items (<a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/claude-tasks.md">claude-tasks.md</a>), not current features: a Neovim plugin (T-08), a VS Code status-bar extension (T-09), an Emacs mode (T-10), desktop notifications at WARN/CRITICAL (T-11), and a Prometheus textfile exporter (T-12). If you need one of these today, the cache file and <code>status --format json</code> are stable enough to script against in the meantime.</p>
+  <p>This is a named backlog item (<a href="https://github.com/qvest-ssels/burn-token-burn/blob/main/claude-tasks.md">claude-tasks.md</a>), not a current feature: a Prometheus textfile exporter (T-12). If you need it today, the cache file and <code>status --format json</code> are stable enough to script against in the meantime.</p>
 </div>
 
 <footer>

@@ -114,9 +114,13 @@ follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a ta
 - [x] **T-10 Emacs `token-finops.el`** — branch `feature/agentic/emacs-plugin` — model: Sonnet — S
   Mode-line segment + transient buffer over the cache file. Shipped as `contrib/emacs/`.
 
-- [ ] **T-11 Desktop notifications at WARN/CRIT** — branch `feat/notify` — model: Sonnet — S
-  `token-finops status --notify` → `notify-send` / `terminal-notifier` / PowerShell toast when the
-  binding constraint changes class; state in `~/.token-finops/notify-state.json`.
+- [x] **T-11 Desktop notifications at WARN/CRIT** — branch `feature/agentic/notify-on-status-change`
+  — model: Sonnet — S. `token-finops status --notify` fires a desktop notification only when the
+  binding constraint's status class changes (never on every run), state in
+  `~/.token-finops/notify-state.json`. macOS (`terminal-notifier`/`osascript`) verified working;
+  Linux (`notify-send`) and Windows (PowerShell `BurntToast`/`NotifyIcon` fallback) are
+  presence-checked and command-shape tested but unverified end-to-end — no Linux desktop or
+  Windows machine in this environment.
 
 - [ ] **T-12 Prometheus textfile exporter** — branch `feat/prometheus` — model: Sonnet — S
   `status --format prometheus` writing `token_finops_used_fraction{tool=…}`,
