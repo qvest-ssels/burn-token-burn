@@ -125,9 +125,10 @@ follows `AGENTS.md`'s branch + PR rule — see `AGENTIC.md` before claiming a ta
   `token-finops status --notify` → `notify-send` / `terminal-notifier` / PowerShell toast when the
   binding constraint changes class; state in `~/.token-finops/notify-state.json`.
 
-- [ ] **T-12 Prometheus textfile exporter** — branch `feat/prometheus` — model: Sonnet — S
+- [x] **T-12 Prometheus textfile exporter** — branch `feature/agentic/prometheus-exporter` — model: Sonnet — S
   `status --format prometheus` writing `token_finops_used_fraction{tool=…}`,
-  `token_finops_runway_days{tool=…}` for node_exporter's textfile collector.
+  `token_finops_runway_days{tool=…}` (omitted when unbounded — no `inf`/`nan`), and a one-hot
+  `token_finops_status{tool=…,status=…}` gauge, for node_exporter's textfile collector. Shipped.
 
 - [ ] **T-13 Re-record asciinema casts on release** — branch `docs/casts-0.3.0` — model: Haiku — S
   Follow `docs/casts/README.md`; upload to asciinema.org and link from README.

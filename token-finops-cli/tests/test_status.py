@@ -89,6 +89,63 @@ def test_fmt_runway(days, expect):
     assert st.fmt_runway(days) == expect
 
 
+def test_prometheus_format_has_help_and_type_headers():
+    snap = st.build_snapshot(payload())
+    out = st.render(snap, "prometheus")
+    for metric in ("token_finops_used_fraction", "token_finops_runway_days", "token_finops_status"):
+        assert f"# HELP {metric} " in out
+        assert f"# TYPE {metric} gauge" in out
+
+
+def test_prometheus_emits_used_fraction_and_runway_per_tool():
+    snap = st.build_snapshot(payload())
+    out = st.render(snap, "prometheus", show_all=True)
+    assert 'token_finops_used_fraction{tool="copilot"} 0.294' in out
+    assert 'token_finops_used_fraction{tool="claude_code"} 0.61' in out
+    assert 'token_finops_runway_days{tool="copilot"} 41.2' in out
+    assert 'token_finops_runway_days{tool="claude_code"} 0.08' in out
+
+
+def test_prometheus_omits_runway_for_unbounded_or_unknown_and_never_emits_inf_nan():
+    snap = st.build_snapshot(payload())
+    out = st.render(snap, "prometheus", show_all=True)
+    # hermes: UNLIMITED, used_fraction/runway_days both None -> no series for either metric
+    assert 'tool="hermes"' not in out.split("token_finops_runway_days")[1].split("# HELP token_finops_status")[0]
+    assert "token_finops_used_fraction{tool=\"hermes\"}" not in out
+    # gemini_cli: runway_days is float("inf") -> sanitized to None by build_snapshot -> omitted
+    assert "inf" not in out
+    assert "nan" not in out.lower()
+    assert "token_finops_runway_days{tool=\"gemini_cli\"}" not in out
+    # gemini_cli used_fraction is known, so that series is still present
+    assert 'token_finops_used_fraction{tool="gemini_cli"} 0.06' in out
+
+
+def test_prometheus_status_gauge_is_one_hot_across_known_statuses():
+    snap = st.build_snapshot(payload())
+    out = st.render(snap, "prometheus", show_all=True)
+    for s in ("OK", "WARN", "CRITICAL", "EXHAUSTED", "UNLIMITED", "UNKNOWN"):
+        expected = 1 if s == "WARN" else 0
+        assert f'token_finops_status{{tool="claude_code",status="{s}"}} {expected}' in out
+    assert 'token_finops_status{tool="hermes",status="UNLIMITED"} 1' in out
+    assert 'token_finops_status{tool="hermes",status="OK"} 0' in out
+
+
+def test_prometheus_multiple_tools_all_present():
+    snap = st.build_snapshot(payload())
+    out = st.render(snap, "prometheus", show_all=True)
+    for tool in ("copilot", "claude_code", "hermes", "gemini_cli"):
+        assert f'tool="{tool}"' in out
+
+
+def test_prometheus_empty_snapshot_still_has_valid_headers_and_no_series():
+    snap = st.build_snapshot([])
+    out = st.render(snap, "prometheus")
+    assert "# TYPE token_finops_used_fraction gauge" in out
+    assert "token_finops_used_fraction{" not in out
+    assert "token_finops_runway_days{" not in out
+    assert "token_finops_status{" not in out
+
+
 def test_cli_status_uses_cache_then_refreshes(home, run_cli, tmp_path, monkeypatch):
     from token_finops_cli.adapters.copilot import build_synthetic_db
     db = tmp_path / "s.db"
