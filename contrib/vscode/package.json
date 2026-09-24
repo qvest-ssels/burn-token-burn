@@ -1,0 +1,66 @@
+{
+  "name": "token-finops-status",
+  "displayName": "Token FinOps Status",
+  "description": "Status-bar runway indicator for token-finops (Copilot/Claude Code/Codex/Gemini CLI/Cline/Roo/Kilo/... budget tracker), with a click-through detail view.",
+  "version": "0.1.0",
+  "publisher": "qvest-digital",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/qvest-ssels/burn-token-burn",
+    "directory": "contrib/vscode"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "token-finops",
+    "copilot",
+    "claude",
+    "cline",
+    "roo",
+    "kilo",
+    "budget",
+    "finops"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "tokenFinops.showDetail",
+        "title": "Token FinOps: Show Runway Detail"
+      },
+      {
+        "command": "tokenFinops.refresh",
+        "title": "Token FinOps: Refresh Now (--fresh)"
+      }
+    ],
+    "configuration": {
+      "title": "Token FinOps Status",
+      "properties": {
+        "tokenFinops.cliPath": {
+          "type": "string",
+          "default": "token-finops",
+          "description": "Binary/wrapper used only for the manual 'Refresh Now' command (e.g. 'uv run token-finops' if not on PATH). Not used for the periodic status-bar tick, which reads the cache file directly."
+        },
+        "tokenFinops.pollIntervalSeconds": {
+          "type": "number",
+          "default": 45,
+          "minimum": 10,
+          "description": "How often the status bar re-reads ~/.token-finops/last.json. This never spawns a process; it only re-reads the cache written by whatever refresh timer you already have running (cron, contrib/refresh, another widget's --fresh call, or this extension's own 'Refresh Now' command)."
+        },
+        "tokenFinops.showAll": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include UNLIMITED (usage-only, no allowance) tools in the status bar and detail view, matching 'token-finops status --all'."
+        }
+      }
+    }
+  }
+}

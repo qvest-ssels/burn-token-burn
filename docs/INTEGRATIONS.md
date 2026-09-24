@@ -60,11 +60,14 @@ Editors differ mainly in whether they can run a subprocess asynchronously and re
 in a status line. Where they can, `--json` is the contract; where they cannot, we are limited to
 whatever the cache file contains.
 
-**Neovim** — best fit. A small Lua module (`token-finops.nvim`) with two entry points: a
-component function for **lualine**/**heirline**/**mini.statusline**, and a `:TokenFinops`
-command opening a scratch buffer with full `report` output. The component must read the cache
-file (a synchronous `vim.fn.system()` on every statusline redraw is a well-known way to make
-Neovim stutter); refresh via `vim.uv` timer + `vim.system()` async. **LunarVim, AstroNvim,
+**Neovim** — **shipped** (`contrib/nvim/token-finops.nvim/`, T-08). A small Lua module with a
+`statusline()` function for **lualine** (primary target; heirline consumes the same function via
+a one-line `provider`), a `:TokenFinops` command opening a floating window with the full per-tool
+table, and `:checkhealth token-finops`. The component only reads the cache file synchronously via
+`vim.fn.readfile`/`vim.json.decode` on demand (lualine/heirline already redraw off their own
+timer, so there is no separate async refresh loop to write) — never a `vim.fn.system()` call into
+the CLI, which is the well-known way to make Neovim stutter on every statusline redraw, and never
+a rescan of the underlying telemetry. **LunarVim, AstroNvim,
 LazyVim and NvChad need nothing of their own** — they are Neovim configurations and consume the
 same Lua module through their normal plugin spec. Saying that explicitly avoids four fake
 "integrations" in the README.
@@ -282,7 +285,7 @@ JetBrains only on demand.
 | starship module | 1 segment | `[custom.*]`, cached | S | P1 |
 | zsh/fish prompt | 1 segment | precmd hook, cached | S | P2 (recipe) |
 | watch pane | everything | shipped (`--watch`) | — | done |
-| Neovim (lualine/heirline) | segment + `:TokenFinops` | Lua module, async `--json` | M | P1 |
+| Neovim (lualine/heirline) | segment + `:TokenFinops` | Lua module, cached read | — | done (`contrib/nvim/`) |
 | Emacs | mode-line + transient buffer | `token-finops.el` | M | P2 |
 | Vim | segment | `system()`, cached | S | P3 (recipe) |
 | VS Code | status bar + detail view | extension, `--json` | M | P1 |
