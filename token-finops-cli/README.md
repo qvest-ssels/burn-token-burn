@@ -195,6 +195,11 @@ token-finops status --format prometheus  # node_exporter textfile collector, .pr
 the cache is older than `--max-age` seconds. Refresh it from one timer (`contrib/refresh/`) and let
 every widget poll freely. Details: `../docs/TMUX.md`.
 
+`status --notify` fires a desktop notification (macOS `terminal-notifier`/`osascript`, Linux
+`notify-send`, Windows PowerShell best-effort) only when the binding constraint's status class
+changes — never on every run — with the last-seen class recorded in
+`~/.token-finops/notify-state.json`. See `../docs/statusline.html`.
+
 ## Self-audit
 
 Claude Code writes one line per content block, so naive counting
