@@ -37,16 +37,12 @@ A short, human-facing "what's outstanding" list. For the detailed agent-ready wo
 
 ## Open
 
-- [ ] **Investigate a rare `test_since_map` flake** — seen once (985 passed, 1 failed) right
-  after merging the configurable-budget-thresholds work (`core/config.py`); passed in isolation
-  and in 5+ subsequent full-suite runs. Correction: the original note here blamed "random test
-  ordering" and suggested capturing a `--randomly-seed` — but `pytest-randomly` is not installed
-  in this repo (`token-finops-cli/pyproject.toml`'s dev deps are just `pytest>=8.0` and
-  `ruff>=0.6`), so there is no seed and test order is actually fixed. The real cause is more
-  likely a rare global-state leak (an env var or module dict not fully reset by a preceding test)
-  that only shows up under specific timing/ordering from `-k`/`-n` flags or CI parallelism, not a
-  random seed. Not reproduced enough to bisect yet — if it recurs, note the exact command/flags
-  used and the full `pytest -q` output before investigating further.
+- [x] **`test_since_map` flake — root-caused and fixed.** Not random ordering (`pytest-randomly`
+  isn't even installed): `REAL_NOW` was a module-level constant captured once at collection time,
+  and on a 100+s full-suite run the test could execute well over its 5s tolerance later, failing
+  on nothing but elapsed wall-clock time. Fixed by comparing against a `now` taken at assertion
+  time instead. Shipped directly to `oh-my-agent-code/token-finops-cli` (PR #6, released in
+  v0.5.0 2026-10-19) rather than through this monorepo's `token-finops-cli/` subtree.
 
 - [ ] **Recurring public CO2-estimate data as a "know-how" service** — instead of a one-time
   static CO2 research page, periodically re-run the CO2/energy estimate (via a scheduled GitHub
@@ -90,11 +86,21 @@ A short, human-facing "what's outstanding" list. For the detailed agent-ready wo
 
 - [x] **PyPI trusted publishing + release** — resolved: the real, already-working trusted
   publisher lives on the separate standalone `oh-my-agent-code/token-finops-cli` repo (not
-  `tronicum/burn-token-burn`, which never had one). `token-finops-cli/` here is subtree-split into
-  that repo for each release. v0.3.0 shipped from there 2026-09-14; v0.4.0 prep is merged to this
-  repo's `main`, subtree-split PR open at `oh-my-agent-code/token-finops-cli#2` pending human
-  merge + tag. See `claude-tasks.md`'s T-05 entry for the full detail, including the
-  `.github/workflows/` subtree-split gotcha found along the way.
+  `tronicum/burn-token-burn`, which never had one). v0.3.0 (2026-09-14), v0.4.0 (2026-09-24,
+  merged after external review — security fix, see `oh-my-agent-code/token-finops-cli#2`), and
+  v0.5.0 (2026-10-19 — `--window 5h|7d` for Claude Code/Codex, `--version`/`-V`/`version`) have
+  all shipped from there. See `claude-tasks.md`'s T-05 entry for the subtree-split-era detail,
+  including the `.github/workflows/` gotcha found along the way.
+
+- [ ] **This monorepo's `token-finops-cli/` subtree is stale at 0.4.0** — the v0.5.0 work
+  (`--window`, `--version`, the `test_since_map` fix) was built and merged directly against
+  `oh-my-agent-code/token-finops-cli` (PRs #6/#7/#8), bypassing this repo's subtree-split release
+  flow entirely. `token-finops-cli/pyproject.toml` here still says `0.4.0` and is missing all
+  three changes. Needs a decision: either stop treating this monorepo's subtree as the source of
+  truth and pull changes *back* from the package repo periodically, or go back to shipping
+  package-level work through the subtree-split flow and stop PRing oh-my-agent-code directly.
+  Whichever is chosen, the current state (two diverging checkouts of the same package) should not
+  persist.
 
 ## From the existing backlog (`claude-tasks.md`) — remaining
 
